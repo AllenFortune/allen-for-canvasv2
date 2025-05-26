@@ -19,7 +19,8 @@ export const useAIFeedback = () => {
   const generateComprehensiveFeedback = async (
     submission: Submission,
     assignment: Assignment | null,
-    currentGrade?: string
+    currentGrade?: string,
+    useRubric: boolean = false
   ): Promise<AIGradingResponse | null> => {
     if (!submission || !assignment) {
       toast({
@@ -42,7 +43,8 @@ export const useAIFeedback = () => {
           assignmentDescription: assignment.description,
           pointsPossible: assignment.points_possible,
           currentGrade: currentGrade || null,
-          rubric: assignment.rubric ? JSON.stringify(assignment.rubric) : null
+          rubric: assignment.rubric ? JSON.stringify(assignment.rubric) : null,
+          useRubric: useRubric && assignment.rubric
         }
       });
 
@@ -59,7 +61,9 @@ export const useAIFeedback = () => {
       if (data && (data.feedback || data.grade !== undefined)) {
         toast({
           title: "Success",
-          description: "AI grading generated successfully!",
+          description: useRubric && assignment.rubric 
+            ? "AI grading generated using rubric criteria!" 
+            : "AI grading generated using assignment description!",
         });
         return {
           grade: data.grade,

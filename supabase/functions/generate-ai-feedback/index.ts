@@ -22,10 +22,12 @@ serve(async (req) => {
       assignmentDescription, 
       pointsPossible,
       currentGrade,
-      rubric
+      rubric,
+      useRubric = false
     } = await req.json();
 
     console.log('Generating comprehensive AI grading for assignment:', assignmentName);
+    console.log('Using rubric for grading:', useRubric);
 
     const systemPrompt = `You are an experienced educator providing comprehensive grading and feedback on student assignments. Your response should be constructive, encouraging, and educational.
 
@@ -40,26 +42,35 @@ You MUST format your response ONLY as a valid JSON object with the following str
 
 Do not include any explanations or text outside of this JSON structure.`;
 
-    const userPrompt = `Please analyze this student submission and provide comprehensive grading:
+    // Determine which grading criteria to use
+    const gradingCriteria = useRubric && rubric 
+      ? `Rubric Criteria: ${rubric}`
+      : `Assignment Description: ${assignmentDescription || 'No description provided'}`;
+
+    const gradingMode = useRubric && rubric ? 'rubric criteria' : 'assignment description';
+
+    const userPrompt = `Please analyze this student submission and provide comprehensive grading based on the ${gradingMode}:
 
 Assignment: ${assignmentName}
 Points Possible: ${pointsPossible}
 ${currentGrade ? `Current Grade: ${currentGrade}` : 'Not yet graded'}
 
-Assignment Description:
-${assignmentDescription || 'No description provided'}
-
-${rubric ? `Rubric Criteria: ${rubric}` : ''}
+${gradingCriteria}
 
 Student Submission:
 ${submissionContent || 'No content provided'}
 
 Please provide:
-1. A suggested grade (as a number out of ${pointsPossible})
+1. A suggested grade (as a number out of ${pointsPossible}) based on the ${gradingMode}
 2. Detailed feedback explaining the grade and offering constructive guidance
 3. 3-5 specific strengths of the submission
 4. 3-5 specific areas for improvement with actionable suggestions
 5. A brief summary (2-3 sentences) of the overall submission quality
+
+${useRubric && rubric ? 
+  'Focus your grading on how well the submission meets each rubric criterion. Reference specific rubric elements in your feedback.' :
+  'Focus your grading on how well the submission addresses the assignment requirements and objectives.'
+}
 
 Ensure your feedback is:
 - Constructive and encouraging
@@ -110,7 +121,7 @@ Ensure your feedback is:
       };
     }
 
-    console.log('AI grading generated successfully');
+    console.log('AI grading generated successfully using:', gradingMode);
 
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

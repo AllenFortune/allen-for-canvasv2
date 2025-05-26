@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Save, Award, Sparkles } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
@@ -33,6 +34,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   currentSubmission
 }) => {
   const { generateComprehensiveFeedback, isGenerating } = useAIFeedback();
+  const [useRubricForAI, setUseRubricForAI] = useState(false);
   const maxPoints = assignment?.points_possible || 100;
   const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
 
@@ -51,7 +53,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
     const aiResult = await generateComprehensiveFeedback(
       currentSubmission,
       assignment,
-      gradeInput
+      gradeInput,
+      useRubricForAI
     );
 
     if (aiResult) {
@@ -90,6 +93,9 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
       setCommentInput(comprehensiveFeedback);
     }
   };
+
+  // Check if assignment has a rubric
+  const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
 
   return (
     <Card className="sticky top-6">
@@ -166,6 +172,33 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           />
         </div>
 
+        {/* AI Grading Options */}
+        {hasRubric && (
+          <div className="space-y-3 p-3 bg-gray-50 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  AI Grading Mode
+                </label>
+                <p className="text-xs text-gray-500">
+                  {useRubricForAI 
+                    ? "AI will use the assignment rubric for grading" 
+                    : "AI will use the assignment description for grading"
+                  }
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">Description</span>
+                <Switch
+                  checked={useRubricForAI}
+                  onCheckedChange={setUseRubricForAI}
+                />
+                <span className="text-xs text-gray-600">Rubric</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="space-y-3">
           <Button 
@@ -183,6 +216,11 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
               <>
                 <Sparkles className="w-4 h-4" />
                 AI-Assisted Grading
+                {hasRubric && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {useRubricForAI ? 'Rubric' : 'Description'}
+                  </Badge>
+                )}
               </>
             )}
           </Button>
