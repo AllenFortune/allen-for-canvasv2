@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, Sparkles } from 'lucide-react';
-import { Assignment, Submission } from '@/types/grading';
+import { Assignment, DiscussionSubmission } from '@/types/grading';
 
 interface ActionButtonsProps {
   onAIGrading: () => void;
@@ -12,7 +12,7 @@ interface ActionButtonsProps {
   isProcessingFiles: boolean;
   saving: boolean;
   gradeInput: string;
-  currentSubmission?: Submission;
+  currentSubmission?: DiscussionSubmission;
   assignment: Assignment | null;
   useRubricForAI: boolean;
   isSummativeAssessment: boolean;
