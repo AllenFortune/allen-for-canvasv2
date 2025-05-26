@@ -33,6 +33,8 @@ serve(async (req) => {
     const body = await req.json();
     const { courseId, discussionId, userId, grade, feedback } = body;
 
+    console.log('Grading discussion entry:', { courseId, discussionId, userId, grade });
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('canvas_instance_url, canvas_access_token')
@@ -48,17 +50,58 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Grade the discussion for the specific student
-    const gradeUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/entries/grade`;
+    // First, get the discussion details to find the assignment_id
+    const discussionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}?include[]=assignment`;
+    
+    const discussionResponse = await fetch(discussionUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!discussionResponse.ok) {
+      console.error(`Failed to get discussion details: ${discussionResponse.status}`);
+      return new Response(
+        JSON.stringify({ error: `Failed to get discussion details: ${discussionResponse.status}` }),
+        { status: discussionResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const discussionData = await discussionResponse.json();
+    const assignmentId = discussionData.assignment_id;
+    
+    console.log('Discussion assignment_id:', assignmentId);
+
+    if (!assignmentId) {
+      return new Response(
+        JSON.stringify({ error: 'This discussion is not associated with an assignment and cannot be graded' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Grade through the assignment submission endpoint
+    const gradeUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`;
     
     const gradeData = {
-      user_id: userId,
-      grade: grade,
-      text_comment: feedback
+      submission: {
+        posted_grade: grade
+      }
     };
 
+    // Add comment if feedback is provided
+    if (feedback && feedback.trim()) {
+      gradeData.comment = {
+        text_comment: feedback
+      };
+    }
+
+    console.log('Grading at URL:', gradeUrl);
+    console.log('Grade data:', gradeData);
+
     const response = await fetch(gradeUrl, {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
@@ -76,6 +119,7 @@ serve(async (req) => {
     }
 
     const result = await response.json();
+    console.log('Grade saved successfully:', result);
     
     return new Response(
       JSON.stringify({ success: true, result }),
