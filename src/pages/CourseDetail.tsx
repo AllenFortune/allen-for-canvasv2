@@ -61,6 +61,8 @@ const CourseDetail = () => {
   const [discussionsLoading, setDiscussionsLoading] = useState(false);
   const [quizzesLoading, setQuizzesLoading] = useState(false);
 
+  console.log('CourseDetail component loaded with courseId:', courseId);
+
   useEffect(() => {
     if (courseId) {
       fetchCourseDetails();
@@ -224,6 +226,7 @@ const CourseDetail = () => {
               quizzesLoading={quizzesLoading}
               totalNeedsGrading={totalNeedsGrading}
               totalUnread={totalUnread}
+              courseId={courseId}
             />
           </div>
         </div>

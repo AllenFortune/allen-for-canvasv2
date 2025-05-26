@@ -28,6 +28,8 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  console.log('DiscussionsList rendered with:', { courseId, discussionsCount: discussions.length });
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No due date';
     const date = new Date(dateString);
@@ -35,13 +37,23 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
   };
 
   const handleGradeDiscussion = (discussionId: number) => {
-    console.log('Navigating to grade discussion:', { courseId, discussionId });
-    if (courseId) {
-      const path = `/courses/${courseId}/discussions/${discussionId}/grade`;
-      console.log('Navigation path:', path);
-      navigate(path);
-    } else {
+    console.log('Grade button clicked for discussion:', { courseId, discussionId });
+    
+    if (!courseId) {
       console.error('No courseId available for navigation');
+      alert('Error: Course ID is missing. Please refresh the page and try again.');
+      return;
+    }
+
+    const path = `/courses/${courseId}/discussions/${discussionId}/grade`;
+    console.log('Navigating to:', path);
+    
+    try {
+      navigate(path);
+      console.log('Navigation attempted successfully');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      alert('Navigation failed. Please try again.');
     }
   };
 
@@ -50,6 +62,9 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
       <CardHeader>
         <CardTitle>Discussions</CardTitle>
         <p className="text-gray-600">Manage and moderate discussions for this course</p>
+        {!courseId && (
+          <p className="text-red-600 text-sm">Warning: Course ID is missing</p>
+        )}
       </CardHeader>
       <CardContent>
         {discussionsLoading ? (
@@ -85,6 +100,7 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
                   <Button 
                     onClick={() => handleGradeDiscussion(discussion.id)}
                     className="bg-gray-900 hover:bg-gray-800 text-white"
+                    disabled={!courseId}
                   >
                     Grade
                   </Button>

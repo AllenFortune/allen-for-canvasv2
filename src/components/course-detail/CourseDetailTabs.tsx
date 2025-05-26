@@ -22,6 +22,8 @@ interface Discussion {
   discussion_type: string;
   unread_count: number;
   todo_date: string | null;
+  assignment_id?: number;
+  is_assignment?: boolean;
 }
 
 interface Quiz {
@@ -44,6 +46,7 @@ interface CourseDetailTabsProps {
   quizzesLoading: boolean;
   totalNeedsGrading: number;
   totalUnread: number;
+  courseId?: string;
 }
 
 const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({ 
@@ -54,8 +57,11 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
   quizzes,
   quizzesLoading,
   totalNeedsGrading,
-  totalUnread
+  totalUnread,
+  courseId
 }) => {
+  console.log('CourseDetailTabs rendered with courseId:', courseId);
+
   return (
     <Tabs defaultValue="assignments" className="w-full">
       <TabsList className="grid w-full grid-cols-5">
@@ -85,7 +91,11 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="discussions" className="mt-6">
-        <DiscussionsList discussions={discussions} discussionsLoading={discussionsLoading} />
+        <DiscussionsList 
+          discussions={discussions} 
+          discussionsLoading={discussionsLoading} 
+          courseId={courseId}
+        />
       </TabsContent>
       
       <TabsContent value="quizzes" className="mt-6">
