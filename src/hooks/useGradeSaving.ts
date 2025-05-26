@@ -109,14 +109,13 @@ export const useGradeSaving = () => {
         variant: "default",
       });
       
-      // Update the local submission status
-      setSubmissions(prevSubmissions => 
-        prevSubmissions.map(sub => 
-          sub.id === submissionId 
-            ? { ...sub, score: parseFloat(grade) || null, workflow_state: 'graded' }
-            : sub
-        )
+      // Update the local submission status - fix the TypeScript error
+      const updatedSubmissions = submissions.map(sub => 
+        sub.id === submissionId 
+          ? { ...sub, score: parseFloat(grade) || null, workflow_state: 'graded' }
+          : sub
       );
+      setSubmissions(updatedSubmissions);
       
       return true;
     } catch (error) {
