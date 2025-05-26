@@ -9,7 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          canvas_access_token: string | null
+          canvas_instance_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          school_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          canvas_access_token?: string | null
+          canvas_instance_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          school_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canvas_access_token?: string | null
+          canvas_instance_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          school_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
