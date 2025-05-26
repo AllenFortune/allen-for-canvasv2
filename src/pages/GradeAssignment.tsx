@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -95,6 +94,8 @@ const GradeAssignment = () => {
     if (!user || !courseId || !assignmentId) return;
 
     try {
+      console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
+      
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-submissions', {
         body: { 
           courseId: parseInt(courseId), 
@@ -108,6 +109,8 @@ const GradeAssignment = () => {
       if (error) throw error;
       
       if (data.submissions) {
+        console.log(`Received ${data.submissions.length} submissions from Canvas`);
+        
         // Sort submissions by student's sortable name
         const sortedSubmissions = data.submissions.sort((a: Submission, b: Submission) => {
           return (a.user.sortable_name || a.user.name).localeCompare(b.user.sortable_name || b.user.name);
@@ -116,14 +119,18 @@ const GradeAssignment = () => {
         setSubmissions(sortedSubmissions);
         
         // Set initial grade and comment if submission has them
-        const firstSubmission = sortedSubmissions[0];
-        if (firstSubmission) {
+        if (sortedSubmissions.length > 0) {
+          const firstSubmission = sortedSubmissions[0];
           setGradeInput(firstSubmission.score?.toString() || '');
           setCommentInput(getLatestComment(firstSubmission.submission_comments) || '');
         }
+      } else {
+        console.log('No submissions found in response');
+        setSubmissions([]);
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }
@@ -134,27 +141,15 @@ const GradeAssignment = () => {
     return comments[comments.length - 1]?.comment || '';
   };
 
-  const filterSubmissions = () => {
-    if (activeTab === 'all') {
-      return submissions;
-    } else if (activeTab === 'submitted') {
-      return submissions.filter(s => s.submitted_at && s.workflow_state !== 'graded');
-    } else if (activeTab === 'graded') {
-      return submissions.filter(s => s.workflow_state === 'graded');
-    } else if (activeTab === 'missing') {
-      return submissions.filter(s => s.missing || (!s.submitted_at && s.workflow_state !== 'graded'));
-    }
-    return submissions;
-  };
-
-  const filteredSubmissions = filterSubmissions();
-  const currentSubmission = filteredSubmissions[currentSubmissionIndex];
+  const currentSubmission = submissions[currentSubmissionIndex];
 
   const handleSubmissionChange = (index: number) => {
     setCurrentSubmissionIndex(index);
-    const submission = filteredSubmissions[index];
-    setGradeInput(submission.score?.toString() || '');
-    setCommentInput(getLatestComment(submission.submission_comments) || '');
+    const submission = submissions[index];
+    if (submission) {
+      setGradeInput(submission.score?.toString() || '');
+      setCommentInput(getLatestComment(submission.submission_comments) || '');
+    }
   };
 
   const handleSaveGrade = async () => {
@@ -179,15 +174,12 @@ const GradeAssignment = () => {
       
       // Update local state
       const updatedSubmissions = [...submissions];
-      const originalIndex = submissions.findIndex(s => s.id === currentSubmission.id);
-      if (originalIndex !== -1) {
-        updatedSubmissions[originalIndex] = {
-          ...currentSubmission,
-          score: parseFloat(gradeInput) || null,
-          workflow_state: 'graded'
-        };
-        setSubmissions(updatedSubmissions);
-      }
+      updatedSubmissions[currentSubmissionIndex] = {
+        ...currentSubmission,
+        score: parseFloat(gradeInput) || null,
+        workflow_state: 'graded'
+      };
+      setSubmissions(updatedSubmissions);
       
       console.log('Grade saved successfully');
     } catch (error) {
@@ -265,7 +257,7 @@ const GradeAssignment = () => {
                       <p className="text-center text-gray-600">
                         {submissions.length === 0 
                           ? "No submissions found for this assignment." 
-                          : "No submissions match the current filter."}
+                          : "Select a student from the list to view their submission."}
                       </p>
                     </CardContent>
                   </Card>
