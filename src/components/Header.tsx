@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,7 +77,7 @@ const Header = () => {
               <Button variant="ghost" onClick={handleAuthAction}>
                 Login
               </Button>
-              <Button onClick={() => navigate("/canvas-setup")}>
+              <Button onClick={() => navigate("/auth")}>
                 Get Started
               </Button>
             </>
