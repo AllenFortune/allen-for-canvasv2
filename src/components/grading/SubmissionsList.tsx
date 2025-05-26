@@ -1,38 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-interface Assignment {
-  points_possible: number | null;
-}
-
-interface Submission {
-  id: number | string;
-  user_id: number;
-  assignment_id: number;
-  submitted_at: string | null;
-  graded_at: string | null;
-  grade: string | null;
-  score: number | null;
-  submission_comments: any[] | null;
-  body: string | null;
-  url: string | null;
-  attachments: any[];
-  workflow_state: string;
-  late: boolean;
-  missing: boolean;
-  submission_type: string | null;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    avatar_url: string | null;
-    sortable_name: string;
-  };
-}
+import { Assignment, Submission } from '@/types/grading';
 
 interface SubmissionsListProps {
   submissions: Submission[];

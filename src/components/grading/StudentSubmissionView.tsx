@@ -1,33 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-interface Submission {
-  id: number;
-  user_id: number;
-  assignment_id: number;
-  submitted_at: string | null;
-  graded_at: string | null;
-  grade: string | null;
-  score: number | null;
-  submission_comments: any[] | null;
-  body: string | null;
-  url: string | null;
-  attachments: any[];
-  workflow_state: string;
-  late: boolean;
-  missing: boolean;
-  submission_type: string | null;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    avatar_url: string | null;
-    sortable_name: string;
-  };
-}
+import { Submission } from '@/types/grading';
 
 interface StudentSubmissionViewProps {
   submission: Submission;
