@@ -74,12 +74,18 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
     } else if (activeTab === 'graded') {
       return submissions.filter(s => s.workflow_state === 'graded');
     } else if (activeTab === 'missing') {
-      return submissions.filter(s => s.missing || (!s.submitted_at && s.workflow_state !== 'graded'));
+      // Include students who haven't submitted (no submitted_at) and those marked as missing
+      return submissions.filter(s => s.missing || !s.submitted_at);
     }
     return submissions;
   };
 
   const filteredSubmissions = filterSubmissions();
+
+  // Calculate counts for tab labels
+  const submittedCount = submissions.filter(s => s.submitted_at && s.workflow_state !== 'graded').length;
+  const gradedCount = submissions.filter(s => s.workflow_state === 'graded').length;
+  const missingCount = submissions.filter(s => s.missing || !s.submitted_at).length;
 
   return (
     <Card>
@@ -91,13 +97,13 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">All ({submissions.length})</TabsTrigger>
             <TabsTrigger value="submitted">
-              Needs Grading ({submissions.filter(s => s.submitted_at && s.workflow_state !== 'graded').length})
+              Needs Grading ({submittedCount})
             </TabsTrigger>
             <TabsTrigger value="graded">
-              Graded ({submissions.filter(s => s.workflow_state === 'graded').length})
+              Graded ({gradedCount})
             </TabsTrigger>
             <TabsTrigger value="missing">
-              Missing ({submissions.filter(s => s.missing || (!s.submitted_at && s.workflow_state !== 'graded')).length})
+              Missing ({missingCount})
             </TabsTrigger>
           </TabsList>
         </Tabs>

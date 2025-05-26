@@ -52,7 +52,7 @@ serve(async (req) => {
 
     console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId} from Canvas: ${profile.canvas_instance_url}`);
 
-    // Fetch submissions with more detailed includes
+    // Fetch submissions with user data - this includes ALL enrolled students, not just those who submitted
     const response = await fetch(
       `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&include[]=submission_history&include[]=attachments&per_page=100`,
       {
@@ -69,14 +69,11 @@ serve(async (req) => {
 
     const submissions = await response.json();
 
-    // Filter out submissions that are just placeholders (no actual submission)
-    const actualSubmissions = submissions.filter((submission: any) => 
-      submission.submitted_at || submission.workflow_state === 'graded' || submission.body || submission.attachments?.length > 0
-    );
+    // Canvas returns submissions for ALL enrolled students, including those who haven't submitted
+    // We should include all of them to match the expected behavior shown in the screenshots
+    console.log(`Successfully fetched ${submissions.length} submission records from Canvas (including non-submitted students)`);
 
-    console.log(`Successfully fetched ${actualSubmissions.length} actual submissions from Canvas (${submissions.length} total records)`);
-
-    return new Response(JSON.stringify({ submissions: actualSubmissions }), {
+    return new Response(JSON.stringify({ submissions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
