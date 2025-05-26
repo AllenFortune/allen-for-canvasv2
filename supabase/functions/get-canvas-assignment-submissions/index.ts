@@ -52,8 +52,23 @@ serve(async (req) => {
 
     console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId} from Canvas: ${profile.canvas_instance_url}`);
 
-    // Fetch submissions with user data - this includes ALL enrolled students, not just those who submitted
-    const response = await fetch(
+    // First, try to get all enrolled students for this course
+    const studentsResponse = await fetch(
+      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/enrollments?type[]=StudentEnrollment&state[]=active&per_page=100`,
+      {
+        headers: {
+          'Authorization': `Bearer ${profile.canvas_access_token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!studentsResponse.ok) {
+      console.log('Failed to fetch students, falling back to submissions API');
+    }
+
+    // Fetch submissions - Canvas should return records for ALL enrolled students
+    const submissionsResponse = await fetch(
       `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&include[]=submission_history&include[]=attachments&per_page=100`,
       {
         headers: {
@@ -63,17 +78,51 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) {
-      throw new Error(`Canvas API error: ${response.status} ${response.statusText}`);
+    if (!submissionsResponse.ok) {
+      const errorText = await submissionsResponse.text();
+      console.error(`Canvas API error: ${submissionsResponse.status} ${submissionsResponse.statusText} - ${errorText}`);
+      throw new Error(`Canvas API error: ${submissionsResponse.status} ${submissionsResponse.statusText}`);
     }
 
-    const submissions = await response.json();
+    const submissions = await submissionsResponse.json();
+    
+    console.log(`Canvas API returned ${submissions.length} submission records`);
+    
+    // Log a sample submission to understand the data structure
+    if (submissions.length > 0) {
+      console.log('Sample submission:', JSON.stringify(submissions[0], null, 2));
+    }
 
     // Canvas returns submissions for ALL enrolled students, including those who haven't submitted
-    // We should include all of them to match the expected behavior shown in the screenshots
-    console.log(`Successfully fetched ${submissions.length} submission records from Canvas (including non-submitted students)`);
+    // Each enrolled student gets a submission record, even if they haven't submitted anything
+    const processedSubmissions = submissions.map((submission: any) => ({
+      id: submission.id,
+      user_id: submission.user_id,
+      assignment_id: submission.assignment_id,
+      submitted_at: submission.submitted_at,
+      graded_at: submission.graded_at,
+      grade: submission.grade,
+      score: submission.score,
+      submission_comments: submission.submission_comments || [],
+      body: submission.body,
+      url: submission.url,
+      attachments: submission.attachments || [],
+      workflow_state: submission.workflow_state,
+      late: submission.late || false,
+      missing: submission.missing || false,
+      submission_type: submission.submission_type,
+      user: {
+        id: submission.user?.id,
+        name: submission.user?.name || 'Unknown User',
+        email: submission.user?.email || '',
+        avatar_url: submission.user?.avatar_url,
+        sortable_name: submission.user?.sortable_name || submission.user?.name || 'Unknown User'
+      }
+    }));
 
-    return new Response(JSON.stringify({ submissions }), {
+    console.log(`Successfully processed ${processedSubmissions.length} submission records from Canvas`);
+
+    return new Response(JSON.stringify({ submissions: processedSubmissions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

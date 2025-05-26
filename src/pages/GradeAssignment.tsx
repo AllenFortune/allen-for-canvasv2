@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -58,6 +59,7 @@ const GradeAssignment = () => {
   const [commentInput, setCommentInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (courseId && assignmentId) {
@@ -70,6 +72,8 @@ const GradeAssignment = () => {
     if (!user || !courseId || !assignmentId) return;
 
     try {
+      console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
+      
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-details', {
         body: { 
           courseId: parseInt(courseId), 
@@ -80,13 +84,19 @@ const GradeAssignment = () => {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching assignment details:', error);
+        setError(`Failed to fetch assignment details: ${error.message}`);
+        return;
+      }
       
       if (data.assignment) {
         setAssignment(data.assignment);
+        console.log('Assignment details loaded:', data.assignment.name);
       }
     } catch (error) {
       console.error('Error fetching assignment details:', error);
+      setError('Failed to fetch assignment details');
     }
   };
 
@@ -106,9 +116,13 @@ const GradeAssignment = () => {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching submissions:', error);
+        setError(`Failed to fetch submissions: ${error.message}`);
+        return;
+      }
       
-      if (data.submissions) {
+      if (data && data.submissions) {
         console.log(`Received ${data.submissions.length} submissions from Canvas`);
         
         // Sort submissions by student's sortable name
@@ -117,6 +131,7 @@ const GradeAssignment = () => {
         });
         
         setSubmissions(sortedSubmissions);
+        setError(null);
         
         // Set initial grade and comment if submission has them
         if (sortedSubmissions.length > 0) {
@@ -127,9 +142,11 @@ const GradeAssignment = () => {
       } else {
         console.log('No submissions found in response');
         setSubmissions([]);
+        setError('No submissions found for this assignment');
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setError('Failed to fetch submissions');
       setSubmissions([]);
     } finally {
       setLoading(false);
@@ -218,6 +235,21 @@ const GradeAssignment = () => {
               assignment={assignment} 
             />
 
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600">{error}</p>
+                <button 
+                  onClick={() => {
+                    setError(null);
+                    fetchSubmissions();
+                  }}
+                  className="mt-2 text-sm text-red-700 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Assignment Details & Navigation */}
               <div className="lg:col-span-1 space-y-6">
@@ -256,7 +288,7 @@ const GradeAssignment = () => {
                     <CardContent className="py-8">
                       <p className="text-center text-gray-600">
                         {submissions.length === 0 
-                          ? "No submissions found for this assignment." 
+                          ? "No student submissions found for this assignment. This could mean no students are enrolled or there's an issue fetching the data." 
                           : "Select a student from the list to view their submission."}
                       </p>
                     </CardContent>
