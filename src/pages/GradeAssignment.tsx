@@ -3,7 +3,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import GradeAssignmentHeader from '@/components/grading/GradeAssignmentHeader';
+import EnhancedAssignmentHeader from '@/components/grading/EnhancedAssignmentHeader';
 import GradeAssignmentContent from '@/components/grading/GradeAssignmentContent';
 import ErrorDisplay from '@/components/grading/ErrorDisplay';
 import LoadingDisplay from '@/components/grading/LoadingDisplay';
@@ -36,24 +36,25 @@ const GradeAssignment = () => {
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="py-20">
-          <div className="max-w-7xl mx-auto px-6">
-            <GradeAssignmentHeader 
-              courseId={courseId!} 
-              assignment={assignment} 
-            />
+        <div className="pt-16"> {/* Account for fixed header */}
+          <EnhancedAssignmentHeader 
+            courseId={courseId!} 
+            assignment={assignment}
+            submissions={submissions}
+          />
 
-            {error && (
+          {error && (
+            <div className="max-w-7xl mx-auto px-6 py-6">
               <ErrorDisplay error={error} onRetry={retryFetch} />
-            )}
+            </div>
+          )}
 
-            <GradeAssignmentContent
-              assignment={assignment}
-              submissions={submissions}
-              saveGrade={saveGrade}
-              setSubmissions={setSubmissions}
-            />
-          </div>
+          <GradeAssignmentContent
+            assignment={assignment}
+            submissions={submissions}
+            saveGrade={saveGrade}
+            setSubmissions={setSubmissions}
+          />
         </div>
       </div>
     </ProtectedRoute>
