@@ -50,7 +50,7 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Try the /view endpoint first to get threaded discussion structure
+    // Use the /view endpoint to get threaded discussion structure with participants
     const viewUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/view`;
     
     console.log(`Making Canvas API request to: ${viewUrl}`);
@@ -88,9 +88,6 @@ serve(async (req) => {
       }
 
       const entriesData = await entriesResponse.json();
-      console.log(`Raw Canvas API response for discussion entries:`, JSON.stringify(entriesData, null, 2));
-      
-      // Process entries and extract nested replies
       const allEntries = flattenDiscussionEntries(entriesData);
       
       return new Response(
@@ -100,41 +97,47 @@ serve(async (req) => {
     }
 
     const viewData = await response.json();
-    console.log(`Raw Canvas API response for discussion view:`, JSON.stringify(viewData, null, 2));
+    console.log(`Raw Canvas API response for discussion view received`);
     
-    // Extract all entries from the view structure
+    // Extract all entries from the view structure with participant data
     let allEntries = [];
+    let participantMap = {};
     
+    // Create participant lookup map for better user names
     if (viewData.participants) {
       console.log(`Found ${viewData.participants.length} participants`);
+      viewData.participants.forEach(participant => {
+        participantMap[participant.id] = {
+          id: participant.id,
+          name: participant.display_name || participant.name || `User ${participant.id}`,
+          display_name: participant.display_name,
+          email: participant.email,
+          avatar_url: participant.avatar_image_url,
+          avatar_image_url: participant.avatar_image_url,
+          sortable_name: participant.sortable_name,
+          html_url: participant.html_url,
+          pronouns: participant.pronouns
+        };
+      });
     }
     
     if (viewData.view) {
       console.log(`Processing discussion view structure`);
-      allEntries = extractEntriesFromView(viewData.view);
+      allEntries = extractEntriesFromView(viewData.view, participantMap);
     } else if (viewData.entries) {
       console.log(`Processing entries from view response`);
-      allEntries = flattenDiscussionEntries(viewData.entries);
+      allEntries = flattenDiscussionEntries(viewData.entries, participantMap);
     } else {
-      console.log(`No recognized structure in view response, checking for direct entries array`);
-      allEntries = Array.isArray(viewData) ? flattenDiscussionEntries(viewData) : [];
+      console.log(`No recognized structure in view response`);
+      allEntries = [];
     }
     
     console.log(`Total entries processed: ${allEntries.length}`);
     
     if (allEntries.length > 0) {
-      console.log(`Sample processed entry:`, JSON.stringify(allEntries[0], null, 2));
-      
       // Log participation stats
       const uniqueUsers = [...new Set(allEntries.map(entry => entry.user_id))];
       console.log(`Unique participating users: ${uniqueUsers.length}`);
-      
-      uniqueUsers.forEach(userId => {
-        const userEntries = allEntries.filter(entry => entry.user_id === userId);
-        const userReplies = userEntries.filter(entry => entry.parent_id);
-        const userName = userEntries[0]?.user?.display_name || userEntries[0]?.user_name || `User ${userId}`;
-        console.log(`User "${userName}" (ID: ${userId}): ${userEntries.length} total posts, ${userReplies.length} replies`);
-      });
     }
     
     return new Response(
@@ -152,12 +155,18 @@ serve(async (req) => {
 });
 
 // Function to extract entries from Canvas discussion view structure
-function extractEntriesFromView(viewStructure: any[]): any[] {
+function extractEntriesFromView(viewStructure: any[], participantMap: any = {}): any[] {
   const allEntries: any[] = [];
   
   function processViewItem(item: any, parentId: number | null = null) {
     if (item.id && item.user_id) {
-      // This is an entry
+      // Get user info from participant map or fallback
+      const userInfo = participantMap[item.user_id] || {
+        id: item.user_id,
+        name: item.user_name || `User ${item.user_id}`,
+        display_name: item.user_name
+      };
+      
       const entry = {
         id: item.id,
         user_id: item.user_id,
@@ -166,13 +175,9 @@ function extractEntriesFromView(viewStructure: any[]): any[] {
         updated_at: item.updated_at,
         rating_count: item.rating_count,
         rating_sum: item.rating_sum,
-        user_name: item.user_name,
+        user_name: userInfo.name,
         message: item.message,
-        user: item.user || {
-          id: item.user_id,
-          display_name: item.user_name,
-          name: item.user_name
-        },
+        user: userInfo,
         read_state: item.read_state,
         forced_read_state: item.forced_read_state
       };
@@ -186,13 +191,6 @@ function extractEntriesFromView(viewStructure: any[]): any[] {
         });
       }
     }
-    
-    // If this item has children, process them
-    if (item.replies && Array.isArray(item.replies)) {
-      item.replies.forEach((child: any) => {
-        processViewItem(child, item.id);
-      });
-    }
   }
   
   viewStructure.forEach(item => {
@@ -203,32 +201,35 @@ function extractEntriesFromView(viewStructure: any[]): any[] {
 }
 
 // Function to flatten discussion entries and extract nested replies
-function flattenDiscussionEntries(entries: any[]): any[] {
+function flattenDiscussionEntries(entries: any[], participantMap: any = {}): any[] {
   const allEntries: any[] = [];
   
   function processEntry(entry: any, parentId: number | null = null) {
+    // Get user info from participant map or fallback
+    const userInfo = participantMap[entry.user_id] || {
+      id: entry.user_id,
+      name: entry.user?.display_name || entry.user_name || `User ${entry.user_id}`,
+      display_name: entry.user?.display_name || entry.user_name,
+      email: entry.user?.email,
+      avatar_url: entry.user?.avatar_image_url || entry.user?.avatar_url,
+      avatar_image_url: entry.user?.avatar_image_url,
+      sortable_name: entry.user?.sortable_name,
+      html_url: entry.user?.html_url,
+      pronouns: entry.user?.pronouns
+    };
+    
     // Normalize user data
     const normalizedEntry = {
       ...entry,
       parent_id: parentId,
-      user: {
-        id: entry.user_id,
-        name: entry.user?.display_name || entry.user_name || `User ${entry.user_id}`,
-        display_name: entry.user?.display_name || entry.user_name,
-        email: entry.user?.email,
-        avatar_url: entry.user?.avatar_image_url || entry.user?.avatar_url,
-        avatar_image_url: entry.user?.avatar_image_url,
-        sortable_name: entry.user?.sortable_name,
-        html_url: entry.user?.html_url,
-        pronouns: entry.user?.pronouns
-      }
+      user_name: userInfo.name,
+      user: userInfo
     };
     
     allEntries.push(normalizedEntry);
     
     // Process nested replies from recent_replies array
     if (entry.recent_replies && Array.isArray(entry.recent_replies)) {
-      console.log(`Processing ${entry.recent_replies.length} recent replies for entry ${entry.id}`);
       entry.recent_replies.forEach((reply: any) => {
         processEntry(reply, entry.id);
       });
@@ -236,7 +237,6 @@ function flattenDiscussionEntries(entries: any[]): any[] {
     
     // Process nested replies from replies array (alternative structure)
     if (entry.replies && Array.isArray(entry.replies)) {
-      console.log(`Processing ${entry.replies.length} replies for entry ${entry.id}`);
       entry.replies.forEach((reply: any) => {
         processEntry(reply, entry.id);
       });
@@ -246,8 +246,6 @@ function flattenDiscussionEntries(entries: any[]): any[] {
   entries.forEach(entry => {
     processEntry(entry);
   });
-  
-  console.log(`Flattened ${entries.length} original entries into ${allEntries.length} total entries`);
   
   return allEntries;
 }
