@@ -35,6 +35,24 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <div className="space-y-3">
+      {/* Indicators Section */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {hasFiles && (
+          <Badge variant="secondary" className="text-xs">
+            Files
+          </Badge>
+        )}
+        {hasRubric && (
+          <Badge variant="secondary" className="text-xs">
+            {useRubricForAI ? 'Rubric' : 'Description'}
+          </Badge>
+        )}
+        <Badge variant="secondary" className="text-xs">
+          {isSummativeAssessment ? 'Summative' : 'Formative'}
+        </Badge>
+      </div>
+
+      {/* AI Grading Button */}
       <Button 
         variant="outline" 
         className="w-full flex items-center gap-2"
@@ -55,19 +73,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           <>
             <Sparkles className="w-4 h-4" />
             AI-Assisted Grading
-            {hasFiles && (
-              <Badge variant="secondary" className="ml-1 text-xs">
-                Files
-              </Badge>
-            )}
-            {hasRubric && (
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {useRubricForAI ? 'Rubric' : 'Description'}
-              </Badge>
-            )}
-            <Badge variant="secondary" className="ml-1 text-xs">
-              {isSummativeAssessment ? 'Summative' : 'Formative'}
-            </Badge>
           </>
         )}
       </Button>
