@@ -20,6 +20,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase configuration');
       throw new Error('Missing Supabase configuration');
     }
 
@@ -28,6 +29,7 @@ serve(async (req) => {
     // Get the user from the request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { 
@@ -41,6 +43,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
+      console.error('Authentication failed:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid authentication' }),
         { 
@@ -51,9 +54,11 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { courseId } = await req.json();
+    const body = await req.json();
+    const { courseId } = body;
     
     if (!courseId) {
+      console.error('Course ID is missing from request');
       return new Response(
         JSON.stringify({ error: 'Course ID is required' }),
         { 
@@ -63,6 +68,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Processing request for course ID: ${courseId}, user: ${user.email}`);
+
     // Get user's Canvas credentials from profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -70,7 +77,19 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user profile' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      console.error('Canvas credentials not configured for user:', user.email);
       return new Response(
         JSON.stringify({ error: 'Canvas credentials not configured' }),
         { 
@@ -84,14 +103,21 @@ serve(async (req) => {
     
     console.log(`Fetching discussions for course ${courseId} from Canvas: ${canvas_instance_url}`);
 
-    // Fetch discussions from Canvas API
-    const response = await fetch(`${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics?per_page=100`, {
+    // Fetch discussions from Canvas API with proper parameters
+    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics?per_page=100&include[]=unread_count&include[]=assignment`;
+    
+    console.log(`Making request to Canvas API: ${canvasUrl}`);
+
+    const response = await fetch(canvasUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
     });
+
+    console.log(`Canvas API response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -103,6 +129,8 @@ serve(async (req) => {
         errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
       } else if (response.status === 404) {
         errorMessage = 'Course not found or Canvas URL not found. Please check your Canvas settings.';
+      } else if (response.status === 403) {
+        errorMessage = 'Access denied. You may not have permission to view discussions for this course.';
       }
 
       return new Response(
@@ -117,11 +145,24 @@ serve(async (req) => {
     const discussionsData = await response.json();
     
     console.log(`Successfully fetched ${discussionsData.length} discussions from Canvas`);
+    console.log('Sample discussion data:', discussionsData[0] ? JSON.stringify(discussionsData[0], null, 2) : 'No discussions found');
+
+    // Transform the data to match our expected format
+    const transformedDiscussions = discussionsData.map((discussion: any) => ({
+      id: discussion.id,
+      title: discussion.title,
+      posted_at: discussion.posted_at,
+      discussion_type: discussion.discussion_type || 'discussion',
+      unread_count: discussion.unread_count || 0,
+      todo_date: discussion.todo_date,
+      assignment_id: discussion.assignment_id,
+      is_assignment: !!discussion.assignment_id
+    }));
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        discussions: discussionsData
+        discussions: transformedDiscussions
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
