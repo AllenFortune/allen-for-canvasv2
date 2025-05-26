@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Assignment, Submission } from '@/types/grading';
+import { toast } from '@/hooks/use-toast';
 
 export const useGradeAssignment = (courseId: string | undefined, assignmentId: string | undefined) => {
   const { session } = useAuth();
@@ -131,7 +132,24 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   };
 
   const saveGrade = async (submissionId: number, grade: string, comment: string) => {
-    if (!courseId || !assignmentId) return false;
+    if (!courseId || !assignmentId) {
+      toast({
+        title: "Error",
+        description: "Missing course or assignment information",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Handle placeholder submissions
+    if (typeof submissionId === 'string' && submissionId.toString().startsWith('placeholder_')) {
+      toast({
+        title: "Cannot Grade",
+        description: "Cannot grade students who haven't submitted anything yet",
+        variant: "destructive",
+      });
+      return false;
+    }
 
     try {
       console.log(`Saving grade for submission ${submissionId}: ${grade}`);
@@ -155,11 +173,16 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       
       if (gradeError) {
         console.error('Error saving grade:', gradeError);
-        throw gradeError;
+        toast({
+          title: "Grade Save Failed",
+          description: `Failed to save grade: ${gradeError.message}`,
+          variant: "destructive",
+        });
+        return false;
       }
 
       // If there's a comment, add it separately
-      if (comment) {
+      if (comment && comment.trim()) {
         const { error: commentError } = await supabase.functions.invoke('canvas-proxy', {
           body: {
             canvasUrl: credentials.canvasUrl,
@@ -176,13 +199,38 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
 
         if (commentError) {
           console.warn('Could not add comment:', commentError);
+          toast({
+            title: "Partial Success",
+            description: "Grade saved but comment could not be added",
+            variant: "default",
+          });
         }
       }
       
       console.log('Grade saved successfully');
+      toast({
+        title: "Success",
+        description: "Grade and feedback saved to Canvas",
+        variant: "default",
+      });
+      
+      // Update the local submission status
+      setSubmissions(prevSubmissions => 
+        prevSubmissions.map(sub => 
+          sub.id === submissionId 
+            ? { ...sub, score: parseFloat(grade) || null, workflow_state: 'graded' }
+            : sub
+        )
+      );
+      
       return true;
     } catch (error) {
       console.error('Error saving grade:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while saving the grade",
+        variant: "destructive",
+      });
       return false;
     }
   };

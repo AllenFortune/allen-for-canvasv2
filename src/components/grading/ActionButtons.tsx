@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Save, Sparkles } from 'lucide-react';
+import { Save, Sparkles, CheckCircle } from 'lucide-react';
 import { Assignment, DiscussionSubmission } from '@/types/grading';
 
 interface ActionButtonsProps {
@@ -34,6 +34,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const hasFiles = currentSubmission?.attachments && currentSubmission.attachments.length > 0;
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
+  const isPlaceholderSubmission = typeof currentSubmission?.id === 'string' && 
+    currentSubmission.id.toString().startsWith('placeholder_');
+  const canSave = gradeInput && !saving && !isPlaceholderSubmission;
+  const isAlreadyGraded = currentSubmission?.workflow_state === 'graded';
 
   return (
     <div className="space-y-3">
@@ -57,6 +61,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
             Custom
           </Badge>
         )}
+        {isAlreadyGraded && (
+          <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Graded
+          </Badge>
+        )}
       </div>
 
       {/* AI Grading Button */}
@@ -64,7 +74,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         variant="outline" 
         className="w-full flex items-center gap-2"
         onClick={onAIGrading}
-        disabled={isGenerating || isProcessingFiles || !currentSubmission}
+        disabled={isGenerating || isProcessingFiles || !currentSubmission || isPlaceholderSubmission}
       >
         {isProcessingFiles ? (
           <>
@@ -86,14 +96,19 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
       <Button 
         onClick={onSaveGrade}
-        disabled={saving || !gradeInput}
+        disabled={!canSave}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white"
         size="lg"
       >
         {saving ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            Saving...
+            Saving to Canvas...
+          </div>
+        ) : isPlaceholderSubmission ? (
+          <div className="flex items-center gap-2">
+            <Save className="w-4 h-4" />
+            No Submission to Grade
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -102,6 +117,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           </div>
         )}
       </Button>
+      
+      {isPlaceholderSubmission && (
+        <p className="text-xs text-gray-500 text-center">
+          This student hasn't submitted anything yet
+        </p>
+      )}
     </div>
   );
 };
