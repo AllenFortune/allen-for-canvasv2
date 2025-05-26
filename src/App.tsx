@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import CanvasSetup from "./pages/CanvasSetup";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
+import GradeAssignment from "./pages/GradeAssignment";
 import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/canvas-setup" element={<CanvasSetup />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
+            <Route path="/courses/:courseId/assignments/:assignmentId/grade" element={<GradeAssignment />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

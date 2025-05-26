@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -18,10 +19,17 @@ interface AssignmentsListProps {
 }
 
 const AssignmentsList: React.FC<AssignmentsListProps> = ({ assignments, assignmentsLoading }) => {
+  const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId: string }>();
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No due date';
     const date = new Date(dateString);
     return date.toLocaleDateString();
+  };
+
+  const handleGradeClick = (assignmentId: number) => {
+    navigate(`/courses/${courseId}/assignments/${assignmentId}/grade`);
   };
 
   return (
@@ -57,7 +65,10 @@ const AssignmentsList: React.FC<AssignmentsListProps> = ({ assignments, assignme
                     )}
                   </div>
                 </div>
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                <Button 
+                  className="bg-gray-900 hover:bg-gray-800 text-white"
+                  onClick={() => handleGradeClick(assignment.id)}
+                >
                   Grade
                 </Button>
               </div>
