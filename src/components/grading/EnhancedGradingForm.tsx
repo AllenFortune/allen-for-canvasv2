@@ -36,6 +36,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
   const [useRubricForAI, setUseRubricForAI] = useState(false);
   const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
+  const [useCustomPrompt, setUseCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
   const maxPoints = assignment?.points_possible || 100;
 
   const handleAIAssistedGrading = async () => {
@@ -46,7 +48,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
       assignment,
       gradeInput,
       useRubricForAI,
-      isSummativeAssessment
+      isSummativeAssessment,
+      useCustomPrompt ? customPrompt : undefined
     );
 
     if (aiResult) {
@@ -85,6 +88,10 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           setIsSummativeAssessment={setIsSummativeAssessment}
           useRubricForAI={useRubricForAI}
           setUseRubricForAI={setUseRubricForAI}
+          useCustomPrompt={useCustomPrompt}
+          setUseCustomPrompt={setUseCustomPrompt}
+          customPrompt={customPrompt}
+          setCustomPrompt={setCustomPrompt}
           assignment={assignment}
         />
 
@@ -99,6 +106,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           assignment={assignment}
           useRubricForAI={useRubricForAI}
           isSummativeAssessment={isSummativeAssessment}
+          useCustomPrompt={useCustomPrompt}
         />
       </CardContent>
     </Card>

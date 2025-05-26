@@ -2,6 +2,7 @@
 import React from 'react';
 import AssessmentTypeToggle from './AssessmentTypeToggle';
 import RubricToggle from './RubricToggle';
+import CustomPromptToggle from './CustomPromptToggle';
 import { Assignment } from '@/types/grading';
 
 interface AIGradingSectionProps {
@@ -9,6 +10,10 @@ interface AIGradingSectionProps {
   setIsSummativeAssessment: (value: boolean) => void;
   useRubricForAI: boolean;
   setUseRubricForAI: (value: boolean) => void;
+  useCustomPrompt: boolean;
+  setUseCustomPrompt: (value: boolean) => void;
+  customPrompt: string;
+  setCustomPrompt: (value: string) => void;
   assignment: Assignment | null;
 }
 
@@ -17,6 +22,10 @@ const AIGradingSection: React.FC<AIGradingSectionProps> = ({
   setIsSummativeAssessment,
   useRubricForAI,
   setUseRubricForAI,
+  useCustomPrompt,
+  setUseCustomPrompt,
+  customPrompt,
+  setCustomPrompt,
   assignment
 }) => {
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
@@ -32,6 +41,13 @@ const AIGradingSection: React.FC<AIGradingSectionProps> = ({
         useRubricForAI={useRubricForAI}
         setUseRubricForAI={setUseRubricForAI}
         hasRubric={hasRubric}
+      />
+
+      <CustomPromptToggle
+        useCustomPrompt={useCustomPrompt}
+        setUseCustomPrompt={setUseCustomPrompt}
+        customPrompt={customPrompt}
+        setCustomPrompt={setCustomPrompt}
       />
     </div>
   );

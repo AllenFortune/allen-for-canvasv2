@@ -24,12 +24,14 @@ serve(async (req) => {
       currentGrade,
       rubric,
       useRubric = false,
-      isSummativeAssessment = true
+      isSummativeAssessment = true,
+      customPrompt
     } = await req.json();
 
     console.log('Generating comprehensive AI grading for assignment:', assignmentName);
     console.log('Using rubric for grading:', useRubric);
     console.log('Assessment type:', isSummativeAssessment ? 'Summative' : 'Formative');
+    console.log('Custom prompt provided:', !!customPrompt);
 
     // Adjust system prompt based on assessment type
     const assessmentInstructions = isSummativeAssessment 
@@ -52,7 +54,15 @@ Focus on:
 - Constructive guidance that promotes deeper understanding
 - Less emphasis on final grading, more on learning development`;
 
-    const systemPrompt = `${assessmentInstructions}
+    // Add custom prompt instructions if provided
+    const customInstructions = customPrompt && customPrompt.trim() 
+      ? `\n\nADDITIONAL GRADING INSTRUCTIONS FROM TEACHER:
+${customPrompt.trim()}
+
+Please incorporate these specific instructions into your grading and feedback approach.`
+      : '';
+
+    const systemPrompt = `${assessmentInstructions}${customInstructions}
 
 You MUST format your response ONLY as a valid JSON object with the following structure:
 {
@@ -175,6 +185,9 @@ Write the feedback as if you're having a conversation with the student. Use "you
     }
 
     console.log('AI grading generated successfully using:', gradingMode, 'for', assessmentType);
+    if (customPrompt) {
+      console.log('Custom grading instructions applied');
+    }
 
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

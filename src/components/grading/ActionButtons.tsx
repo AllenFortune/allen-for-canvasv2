@@ -16,6 +16,7 @@ interface ActionButtonsProps {
   assignment: Assignment | null;
   useRubricForAI: boolean;
   isSummativeAssessment: boolean;
+  useCustomPrompt: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -28,7 +29,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   currentSubmission,
   assignment,
   useRubricForAI,
-  isSummativeAssessment
+  isSummativeAssessment,
+  useCustomPrompt
 }) => {
   const hasFiles = currentSubmission?.attachments && currentSubmission.attachments.length > 0;
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
@@ -50,6 +52,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Badge variant="secondary" className="text-xs">
           {isSummativeAssessment ? 'Summative' : 'Formative'}
         </Badge>
+        {useCustomPrompt && (
+          <Badge variant="secondary" className="text-xs">
+            Custom
+          </Badge>
+        )}
       </div>
 
       {/* AI Grading Button */}
