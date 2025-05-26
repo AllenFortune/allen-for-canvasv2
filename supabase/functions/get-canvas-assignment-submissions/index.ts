@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting get-canvas-assignment-submissions function');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -28,11 +30,14 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     
     if (!user) {
+      console.error('User not authenticated');
       return new Response(JSON.stringify({ error: 'User not authenticated' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('User authenticated:', user.id);
 
     // Get user profile to retrieve Canvas credentials
     const { data: profile } = await supabaseClient
@@ -42,41 +47,48 @@ serve(async (req) => {
       .single();
 
     if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      console.error('Canvas credentials not configured');
       return new Response(JSON.stringify({ error: 'Canvas credentials not configured' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('Canvas credentials found for:', profile.canvas_instance_url);
+
     const { courseId, assignmentId } = await req.json();
 
-    console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId} from Canvas: ${profile.canvas_instance_url}`);
+    console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
 
-    // First, try to get all enrolled students for this course
-    const studentsResponse = await fetch(
-      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/enrollments?type[]=StudentEnrollment&state[]=active&per_page=100`,
-      {
-        headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // First, fetch all enrolled students in the course
+    const enrollmentsUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/enrollments?type[]=StudentEnrollment&state[]=active&per_page=100`;
+    console.log('Fetching enrollments from:', enrollmentsUrl);
 
-    if (!studentsResponse.ok) {
-      console.log('Failed to fetch students, falling back to submissions API');
+    const enrollmentsResponse = await fetch(enrollmentsUrl, {
+      headers: {
+        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    let enrolledStudents = [];
+    if (enrollmentsResponse.ok) {
+      enrolledStudents = await enrollmentsResponse.json();
+      console.log(`Found ${enrolledStudents.length} enrolled students`);
+    } else {
+      console.warn('Failed to fetch enrollments:', enrollmentsResponse.status, enrollmentsResponse.statusText);
     }
 
-    // Fetch submissions - Canvas should return records for ALL enrolled students
-    const submissionsResponse = await fetch(
-      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&include[]=submission_history&include[]=attachments&per_page=100`,
-      {
-        headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Fetch submissions with student information
+    const submissionsUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&include[]=submission_history&include[]=attachments&per_page=100`;
+    console.log('Fetching submissions from:', submissionsUrl);
+
+    const submissionsResponse = await fetch(submissionsUrl, {
+      headers: {
+        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!submissionsResponse.ok) {
       const errorText = await submissionsResponse.text();
@@ -85,44 +97,79 @@ serve(async (req) => {
     }
 
     const submissions = await submissionsResponse.json();
-    
-    console.log(`Canvas API returned ${submissions.length} submission records`);
-    
-    // Log a sample submission to understand the data structure
-    if (submissions.length > 0) {
-      console.log('Sample submission:', JSON.stringify(submissions[0], null, 2));
-    }
+    console.log(`Canvas returned ${submissions.length} submission records`);
 
-    // Canvas returns submissions for ALL enrolled students, including those who haven't submitted
-    // Each enrolled student gets a submission record, even if they haven't submitted anything
-    const processedSubmissions = submissions.map((submission: any) => ({
-      id: submission.id,
-      user_id: submission.user_id,
-      assignment_id: submission.assignment_id,
-      submitted_at: submission.submitted_at,
-      graded_at: submission.graded_at,
-      grade: submission.grade,
-      score: submission.score,
-      submission_comments: submission.submission_comments || [],
-      body: submission.body,
-      url: submission.url,
-      attachments: submission.attachments || [],
-      workflow_state: submission.workflow_state,
-      late: submission.late || false,
-      missing: submission.missing || false,
-      submission_type: submission.submission_type,
-      user: {
-        id: submission.user?.id,
-        name: submission.user?.name || 'Unknown User',
-        email: submission.user?.email || '',
-        avatar_url: submission.user?.avatar_url,
-        sortable_name: submission.user?.sortable_name || submission.user?.name || 'Unknown User'
+    // If we didn't get submissions for all enrolled students, we need to create placeholder submissions
+    const submissionsByUserId = new Map();
+    submissions.forEach((sub: any) => {
+      submissionsByUserId.set(sub.user_id, sub);
+    });
+
+    // Create a complete list that includes all enrolled students
+    const allSubmissions = [];
+
+    // Add existing submissions
+    submissions.forEach((submission: any) => {
+      allSubmissions.push({
+        id: submission.id,
+        user_id: submission.user_id,
+        assignment_id: submission.assignment_id,
+        submitted_at: submission.submitted_at,
+        graded_at: submission.graded_at,
+        grade: submission.grade,
+        score: submission.score,
+        submission_comments: submission.submission_comments || [],
+        body: submission.body,
+        url: submission.url,
+        attachments: submission.attachments || [],
+        workflow_state: submission.workflow_state,
+        late: submission.late || false,
+        missing: submission.missing || false,
+        submission_type: submission.submission_type,
+        user: {
+          id: submission.user?.id,
+          name: submission.user?.name || 'Unknown User',
+          email: submission.user?.email || '',
+          avatar_url: submission.user?.avatar_url,
+          sortable_name: submission.user?.sortable_name || submission.user?.name || 'Unknown User'
+        }
+      });
+    });
+
+    // Add enrolled students who don't have submission records
+    enrolledStudents.forEach((enrollment: any) => {
+      if (!submissionsByUserId.has(enrollment.user_id)) {
+        console.log(`Creating placeholder submission for student: ${enrollment.user?.name || 'Unknown'}`);
+        allSubmissions.push({
+          id: `placeholder_${enrollment.user_id}`,
+          user_id: enrollment.user_id,
+          assignment_id: parseInt(assignmentId),
+          submitted_at: null,
+          graded_at: null,
+          grade: null,
+          score: null,
+          submission_comments: [],
+          body: null,
+          url: null,
+          attachments: [],
+          workflow_state: 'unsubmitted',
+          late: false,
+          missing: true,
+          submission_type: null,
+          user: {
+            id: enrollment.user?.id,
+            name: enrollment.user?.name || 'Unknown User',
+            email: enrollment.user?.email || '',
+            avatar_url: enrollment.user?.avatar_url,
+            sortable_name: enrollment.user?.sortable_name || enrollment.user?.name || 'Unknown User'
+          }
+        });
       }
-    }));
+    });
 
-    console.log(`Successfully processed ${processedSubmissions.length} submission records from Canvas`);
+    console.log(`Successfully processed ${allSubmissions.length} total submission records (including enrolled students)`);
 
-    return new Response(JSON.stringify({ submissions: processedSubmissions }), {
+    return new Response(JSON.stringify({ submissions: allSubmissions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

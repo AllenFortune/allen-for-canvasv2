@@ -10,7 +10,7 @@ interface Assignment {
 }
 
 interface Submission {
-  id: number;
+  id: number | string;
   user_id: number;
   assignment_id: number;
   submitted_at: string | null;
@@ -53,16 +53,15 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
 }) => {
   const getSubmissionStatusBadge = (submission: Submission) => {
     if (submission.workflow_state === 'graded') {
-      return <Badge className="bg-green-500">Graded</Badge>;
-    } else if (submission.missing) {
-      return <Badge variant="destructive">Missing</Badge>;
+      return <Badge className="bg-green-500 text-white">Graded</Badge>;
+    } else if (submission.workflow_state === 'unsubmitted' || !submission.submitted_at) {
+      return <Badge variant="outline" className="text-gray-500">Not Submitted</Badge>;
     } else if (submission.late) {
-      return <Badge className="bg-yellow-500">Late</Badge>;
+      return <Badge className="bg-yellow-500 text-white">Late</Badge>;
     } else if (submission.submitted_at) {
-      return <Badge>Submitted</Badge>;
-    } else {
-      return <Badge variant="outline">Not Submitted</Badge>;
+      return <Badge className="bg-blue-500 text-white">Submitted</Badge>;
     }
+    return <Badge variant="outline">Unknown</Badge>;
   };
 
   const filterSubmissions = () => {
@@ -74,8 +73,8 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
     } else if (activeTab === 'graded') {
       return submissions.filter(s => s.workflow_state === 'graded');
     } else if (activeTab === 'missing') {
-      // Include students who haven't submitted (no submitted_at) and those marked as missing
-      return submissions.filter(s => s.missing || !s.submitted_at);
+      // Include students who haven't submitted
+      return submissions.filter(s => !s.submitted_at || s.workflow_state === 'unsubmitted');
     }
     return submissions;
   };
@@ -85,7 +84,7 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
   // Calculate counts for tab labels
   const submittedCount = submissions.filter(s => s.submitted_at && s.workflow_state !== 'graded').length;
   const gradedCount = submissions.filter(s => s.workflow_state === 'graded').length;
-  const missingCount = submissions.filter(s => s.missing || !s.submitted_at).length;
+  const missingCount = submissions.filter(s => !s.submitted_at || s.workflow_state === 'unsubmitted').length;
 
   return (
     <Card>
@@ -129,8 +128,8 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
                       : 'bg-white hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-6 h-6">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-8 h-8">
                       <AvatarImage src={submission.user.avatar_url || undefined} />
                       <AvatarFallback className="text-xs">
                         {submission.user.name.substring(0, 2).toUpperCase()}
@@ -140,9 +139,9 @@ const SubmissionsList: React.FC<SubmissionsListProps> = ({
                       <p className="text-sm font-medium truncate">{submission.user.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {getSubmissionStatusBadge(submission)}
-                        {submission.workflow_state === 'graded' && (
+                        {submission.workflow_state === 'graded' && submission.score !== null && (
                           <span className="text-xs text-gray-500">
-                            {submission.score}/{assignment?.points_possible}
+                            {submission.score}/{assignment?.points_possible || '?'}
                           </span>
                         )}
                         {submission.submitted_at && (
