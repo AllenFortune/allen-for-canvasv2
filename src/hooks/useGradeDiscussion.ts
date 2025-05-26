@@ -60,10 +60,31 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
       }
 
       console.log('Discussion entries received:', data);
+      console.log('Number of entries:', data.entries?.length || 0);
+      
+      // Add detailed logging for debugging
+      if (data.entries && data.entries.length > 0) {
+        console.log('First entry sample:', data.entries[0]);
+        console.log('Users in entries:', data.entries.map(entry => ({
+          id: entry.user_id,
+          name: entry.user?.name,
+          hasUser: !!entry.user
+        })));
+      } else {
+        console.warn('No discussion entries found');
+      }
+      
       setEntries(data.entries || []);
     } catch (err) {
       console.error('Error fetching discussion entries:', err);
       setError(err.message || 'Failed to fetch discussion entries');
+      
+      // Show user-friendly error message
+      toast({
+        title: "Error loading discussion entries",
+        description: "Could not load student discussion posts. Please check your Canvas connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -134,6 +155,7 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
   const retryFetch = async () => {
     console.log('Retrying fetch operations...');
     setLoading(true);
+    setError(null);
     await Promise.all([fetchDiscussionDetails(), fetchDiscussionEntries()]);
   };
 

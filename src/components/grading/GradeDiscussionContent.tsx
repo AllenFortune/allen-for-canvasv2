@@ -24,6 +24,12 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
   const [activeTab, setActiveTab] = useState('all');
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
 
+  console.log('GradeDiscussionContent rendering with:', {
+    discussionTitle: discussion?.title,
+    entriesCount: entries.length,
+    gradesCount: grades.length
+  });
+
   // Group entries by user
   const userEntries = entries.reduce((acc, entry) => {
     if (!acc[entry.user_id]) {
@@ -39,11 +45,26 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
   const users = Object.values(userEntries);
   const currentUser = users[currentUserIndex];
 
+  console.log('Processed user data:', {
+    uniqueUsers: users.length,
+    userIds: users.map(u => u.user.id),
+    currentUserIndex,
+    currentUser: currentUser ? { id: currentUser.user.id, name: currentUser.user.name } : null
+  });
+
   if (!discussion || users.length === 0) {
+    console.log('Showing empty state - discussion:', !!discussion, 'users:', users.length);
     return (
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="text-center py-12">
-          <p className="text-gray-600">No discussion entries found.</p>
+          <p className="text-gray-600">
+            {!discussion ? 'Loading discussion...' : 'No discussion entries found.'}
+          </p>
+          {discussion && users.length === 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              This discussion may not have any student posts yet, or there may be an issue loading the entries.
+            </p>
+          )}
         </div>
       </div>
     );
