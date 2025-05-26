@@ -30,18 +30,30 @@ interface Assignment {
   submission_types: string[];
 }
 
+interface Discussion {
+  id: number;
+  title: string;
+  posted_at: string | null;
+  discussion_type: string;
+  unread_count: number;
+  todo_date: string | null;
+}
+
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [discussionsLoading, setDiscussionsLoading] = useState(false);
 
   useEffect(() => {
     if (courseId) {
       fetchCourseDetails();
       fetchAssignments();
+      fetchDiscussions();
     }
   }, [courseId, user]);
 
@@ -92,7 +104,32 @@ const CourseDetail = () => {
     }
   };
 
+  const fetchDiscussions = async () => {
+    if (!user || !courseId) return;
+
+    setDiscussionsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-canvas-discussions', {
+        body: { courseId: parseInt(courseId) },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data.discussions) {
+        setDiscussions(data.discussions);
+      }
+    } catch (error) {
+      console.error('Error fetching discussions:', error);
+    } finally {
+      setDiscussionsLoading(false);
+    }
+  };
+
   const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
+  const totalUnread = discussions.reduce((total, discussion) => total + discussion.unread_count, 0);
 
   if (loading) {
     return (
@@ -144,7 +181,10 @@ const CourseDetail = () => {
             <CourseDetailTabs 
               assignments={assignments}
               assignmentsLoading={assignmentsLoading}
+              discussions={discussions}
+              discussionsLoading={discussionsLoading}
               totalNeedsGrading={totalNeedsGrading}
+              totalUnread={totalUnread}
             />
           </div>
         </div>

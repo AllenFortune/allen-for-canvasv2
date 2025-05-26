@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import AssignmentsList from './AssignmentsList';
+import DiscussionsList from './DiscussionsList';
 
 interface Assignment {
   id: number;
@@ -13,16 +14,31 @@ interface Assignment {
   submission_types: string[];
 }
 
+interface Discussion {
+  id: number;
+  title: string;
+  posted_at: string | null;
+  discussion_type: string;
+  unread_count: number;
+  todo_date: string | null;
+}
+
 interface CourseDetailTabsProps {
   assignments: Assignment[];
   assignmentsLoading: boolean;
+  discussions: Discussion[];
+  discussionsLoading: boolean;
   totalNeedsGrading: number;
+  totalUnread: number;
 }
 
 const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({ 
   assignments, 
   assignmentsLoading, 
-  totalNeedsGrading 
+  discussions,
+  discussionsLoading,
+  totalNeedsGrading,
+  totalUnread
 }) => {
   return (
     <Tabs defaultValue="assignments" className="w-full">
@@ -35,7 +51,14 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="discussions">Discussions</TabsTrigger>
+        <TabsTrigger value="discussions" className="relative">
+          Discussions
+          {totalUnread > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {totalUnread}
+            </span>
+          )}
+        </TabsTrigger>
         <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
         <TabsTrigger value="students">Students</TabsTrigger>
         <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -45,12 +68,8 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
         <AssignmentsList assignments={assignments} assignmentsLoading={assignmentsLoading} />
       </TabsContent>
       
-      <TabsContent value="discussions">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-gray-600 text-center py-8">Discussions feature coming soon.</p>
-          </CardContent>
-        </Card>
+      <TabsContent value="discussions" className="mt-6">
+        <DiscussionsList discussions={discussions} discussionsLoading={discussionsLoading} />
       </TabsContent>
       
       <TabsContent value="quizzes">
