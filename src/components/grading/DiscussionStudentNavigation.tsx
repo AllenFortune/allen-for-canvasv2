@@ -21,6 +21,20 @@ const DiscussionStudentNavigation: React.FC<DiscussionStudentNavigationProps> = 
   totalUsers,
   onUserChange
 }) => {
+  const getUserInitials = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'U';
+    }
+    return user.name.substring(0, 2).toUpperCase();
+  };
+
+  const getUserName = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'Unknown User';
+    }
+    return user.name;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -29,11 +43,11 @@ const DiscussionStudentNavigation: React.FC<DiscussionStudentNavigationProps> = 
             <Avatar className="w-10 h-10">
               <AvatarImage src={user.avatar_url || undefined} />
               <AvatarFallback>
-                {user.name.substring(0, 2).toUpperCase()}
+                {getUserInitials(user)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">{user.name}</CardTitle>
+              <CardTitle className="text-lg">{getUserName(user)}</CardTitle>
               <p className="text-sm text-gray-600">
                 {entriesCount} discussion post{entriesCount !== 1 ? 's' : ''}
               </p>

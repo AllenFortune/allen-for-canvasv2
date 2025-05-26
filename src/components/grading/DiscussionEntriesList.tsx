@@ -51,6 +51,20 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
   const gradedCount = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null)).length;
   const ungradedCount = users.length - gradedCount;
 
+  const getUserInitials = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'U';
+    }
+    return user.name.substring(0, 2).toUpperCase();
+  };
+
+  const getUserName = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'Unknown User';
+    }
+    return user.name;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -94,11 +108,11 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={userEntry.user.avatar_url || undefined} />
                       <AvatarFallback className="text-xs">
-                        {userEntry.user.name.substring(0, 2).toUpperCase()}
+                        {getUserInitials(userEntry.user)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{userEntry.user.name}</p>
+                      <p className="text-sm font-medium truncate">{getUserName(userEntry.user)}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {getGradeStatusBadge(userEntry.user.id)}
                         {grade && grade.score !== null && (
