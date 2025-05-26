@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Discussion, DiscussionGrade } from '@/types/grading';
+import { Discussion, DiscussionGrade, Submission } from '@/types/grading';
 import GradeInput from './GradeInput';
 import FeedbackInput from './FeedbackInput';
 import AIGradingSection from './AIGradingSection';
@@ -14,6 +14,7 @@ interface DiscussionGradingSectionProps {
   feedbackInput: string;
   setFeedbackInput: (value: string) => void;
   currentGrade: DiscussionGrade | undefined;
+  currentSubmission?: Submission;
   isSummativeAssessment: boolean;
   setIsSummativeAssessment: (value: boolean) => void;
   useRubricForAI: boolean;
@@ -35,6 +36,7 @@ const DiscussionGradingSection: React.FC<DiscussionGradingSectionProps> = ({
   feedbackInput,
   setFeedbackInput,
   currentGrade,
+  currentSubmission,
   isSummativeAssessment,
   setIsSummativeAssessment,
   useRubricForAI,
@@ -89,6 +91,7 @@ const DiscussionGradingSection: React.FC<DiscussionGradingSectionProps> = ({
               isProcessingFiles={false}
               saving={saving}
               gradeInput={gradeInput}
+              currentSubmission={currentSubmission}
               assignment={discussion.assignment || null}
               useRubricForAI={useRubricForAI}
               isSummativeAssessment={isSummativeAssessment}

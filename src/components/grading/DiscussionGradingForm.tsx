@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
 import DiscussionPostsView from './DiscussionPostsView';
@@ -50,6 +50,19 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   // Process student participation data
   const studentParticipation = useStudentParticipation({ entries, userId: user.id });
 
+  // Create mock submission for the current user
+  const mockSubmission = useMemo(() => {
+    const combinedContent = buildDiscussionContent({ user, studentParticipation });
+    return createMockSubmission(
+      user,
+      discussion.id,
+      discussion.assignment_id || discussion.id,
+      studentParticipation,
+      currentGrade,
+      combinedContent
+    );
+  }, [user, studentParticipation, discussion.id, discussion.assignment_id, currentGrade]);
+
   useEffect(() => {
     if (currentGrade) {
       setGradeInput(currentGrade.grade || '');
@@ -67,18 +80,6 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   };
 
   const handleAIGrading = async () => {
-    // Create comprehensive content including initial posts, replies, and context
-    const combinedContent = buildDiscussionContent({ user, studentParticipation });
-
-    const mockSubmission = createMockSubmission(
-      user,
-      discussion.id,
-      discussion.assignment_id || discussion.id,
-      studentParticipation,
-      currentGrade,
-      combinedContent
-    );
-
     const mockAssignment = {
       id: discussion.assignment_id || discussion.id,
       name: discussion.title,
@@ -131,6 +132,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
         feedbackInput={feedbackInput}
         setFeedbackInput={setFeedbackInput}
         currentGrade={currentGrade}
+        currentSubmission={mockSubmission}
         isSummativeAssessment={isSummativeAssessment}
         setIsSummativeAssessment={setIsSummativeAssessment}
         useRubricForAI={useRubricForAI}
