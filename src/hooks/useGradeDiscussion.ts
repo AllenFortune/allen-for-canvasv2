@@ -12,19 +12,28 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  console.log('useGradeDiscussion hook initialized with:', { courseId, discussionId });
+
   const fetchDiscussionDetails = async () => {
-    if (!courseId || !discussionId) return;
+    if (!courseId || !discussionId) {
+      console.log('Missing courseId or discussionId for fetchDiscussionDetails');
+      return;
+    }
 
     try {
-      setLoading(true);
+      console.log('Fetching discussion details...');
       setError(null);
 
       const { data, error } = await supabase.functions.invoke('get-canvas-discussion-details', {
         body: { courseId, discussionId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from get-canvas-discussion-details:', error);
+        throw error;
+      }
 
+      console.log('Discussion details received:', data);
       setDiscussion(data.discussion);
     } catch (err) {
       console.error('Error fetching discussion details:', err);
@@ -33,16 +42,25 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
   };
 
   const fetchDiscussionEntries = async () => {
-    if (!courseId || !discussionId) return;
+    if (!courseId || !discussionId) {
+      console.log('Missing courseId or discussionId for fetchDiscussionEntries');
+      return;
+    }
 
     try {
+      console.log('Fetching discussion entries...');
+      
       const { data, error } = await supabase.functions.invoke('get-canvas-discussion-entries', {
         body: { courseId, discussionId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from get-canvas-discussion-entries:', error);
+        throw error;
+      }
 
-      setEntries(data.entries);
+      console.log('Discussion entries received:', data);
+      setEntries(data.entries || []);
     } catch (err) {
       console.error('Error fetching discussion entries:', err);
       setError(err.message || 'Failed to fetch discussion entries');
@@ -53,6 +71,7 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
 
   const saveGrade = async (userId: number, grade: string, feedback: string) => {
     if (!courseId || !discussionId) {
+      console.error('Missing courseId or discussionId for saveGrade');
       toast({
         title: "Error",
         description: "Missing course or discussion information",
@@ -62,6 +81,8 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
     }
 
     try {
+      console.log('Saving grade for user:', { userId, grade, feedback });
+      
       const { data, error } = await supabase.functions.invoke('grade-canvas-discussion-entry', {
         body: {
           courseId,
@@ -72,7 +93,12 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from grade-canvas-discussion-entry:', error);
+        throw error;
+      }
+
+      console.log('Grade saved successfully:', data);
 
       // Update local grades state
       setGrades(prev => {
@@ -106,12 +132,18 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
   };
 
   const retryFetch = async () => {
+    console.log('Retrying fetch operations...');
+    setLoading(true);
     await Promise.all([fetchDiscussionDetails(), fetchDiscussionEntries()]);
   };
 
   useEffect(() => {
     if (courseId && discussionId) {
+      console.log('Starting fetch operations...');
       Promise.all([fetchDiscussionDetails(), fetchDiscussionEntries()]);
+    } else {
+      console.log('Missing courseId or discussionId in useEffect');
+      setLoading(false);
     }
   }, [courseId, discussionId]);
 

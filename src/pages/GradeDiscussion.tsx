@@ -13,6 +13,9 @@ import { useAuth } from '@/contexts/AuthContext';
 const GradeDiscussion = () => {
   const { courseId, discussionId } = useParams<{ courseId: string; discussionId: string }>();
   const { session } = useAuth();
+  
+  console.log('GradeDiscussion page loaded with params:', { courseId, discussionId });
+  
   const {
     discussion,
     entries,
@@ -26,11 +29,21 @@ const GradeDiscussion = () => {
   } = useGradeDiscussion(courseId, discussionId);
 
   if (!session) {
+    console.log('No session found, showing loading...');
     return <LoadingDisplay />;
   }
 
   if (loading) {
+    console.log('Loading discussion data...');
     return <LoadingDisplay />;
+  }
+
+  if (error) {
+    console.error('Error loading discussion:', error);
+  }
+
+  if (!discussion && !loading) {
+    console.warn('No discussion data found and not loading');
   }
 
   return (
