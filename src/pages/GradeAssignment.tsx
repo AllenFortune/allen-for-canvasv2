@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -50,7 +49,7 @@ interface Submission {
 
 const GradeAssignment = () => {
   const { courseId, assignmentId } = useParams<{ courseId: string; assignmentId: string }>();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
@@ -62,14 +61,14 @@ const GradeAssignment = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (courseId && assignmentId) {
+    if (courseId && assignmentId && session) {
       fetchAssignmentDetails();
       fetchSubmissions();
     }
-  }, [courseId, assignmentId, user]);
+  }, [courseId, assignmentId, session]);
 
   const fetchAssignmentDetails = async () => {
-    if (!user || !courseId || !assignmentId) return;
+    if (!session || !courseId || !assignmentId) return;
 
     try {
       console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
@@ -78,10 +77,7 @@ const GradeAssignment = () => {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
-        },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
+        }
       });
       
       if (error) {
@@ -101,7 +97,7 @@ const GradeAssignment = () => {
   };
 
   const fetchSubmissions = async () => {
-    if (!user || !courseId || !assignmentId) return;
+    if (!session || !courseId || !assignmentId) return;
 
     try {
       console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
@@ -110,10 +106,7 @@ const GradeAssignment = () => {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
-        },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
+        }
       });
       
       if (error) {
@@ -170,7 +163,7 @@ const GradeAssignment = () => {
   };
 
   const handleSaveGrade = async () => {
-    if (!currentSubmission) return;
+    if (!currentSubmission || !session) return;
 
     setSaving(true);
     try {
@@ -181,10 +174,7 @@ const GradeAssignment = () => {
           submissionId: currentSubmission.id,
           grade: gradeInput,
           comment: commentInput
-        },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
+        }
       });
       
       if (error) throw error;
