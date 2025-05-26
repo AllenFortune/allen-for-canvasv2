@@ -16,12 +16,24 @@ serve(async (req) => {
   try {
     console.log('Starting get-canvas-assignment-details function');
     
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
+    console.log('Authorization header received:', !!authHeader);
+    
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
@@ -76,7 +88,7 @@ serve(async (req) => {
     console.log('Canvas URL:', profile.canvas_instance_url);
 
     // Fetch assignment details from Canvas with include parameters to get full description
-    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}?include[]=description`;
+    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}?include[]=description&include[]=rubric_criteria`;
     console.log('Making Canvas API request to:', assignmentUrl);
 
     const assignmentResponse = await fetch(assignmentUrl, {
@@ -89,12 +101,21 @@ serve(async (req) => {
     if (!assignmentResponse.ok) {
       const errorText = await assignmentResponse.text();
       console.error(`Canvas API error: ${assignmentResponse.status} ${assignmentResponse.statusText} - ${errorText}`);
+      
+      if (assignmentResponse.status === 401) {
+        return new Response(JSON.stringify({ error: 'Canvas API authentication failed. Please check your Canvas access token.' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       throw new Error(`Canvas API error: ${assignmentResponse.status} ${assignmentResponse.statusText}`);
     }
 
     const assignment = await assignmentResponse.json();
     console.log('Successfully fetched assignment details:', assignment.name);
     console.log('Assignment description length:', assignment.description?.length || 0);
+    console.log('Assignment description preview:', assignment.description?.substring(0, 100) || 'No description');
 
     return new Response(JSON.stringify({ assignment }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

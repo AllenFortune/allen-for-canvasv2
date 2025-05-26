@@ -12,11 +12,14 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   const [error, setError] = useState<string | null>(null);
 
   const fetchAssignmentDetails = async () => {
-    if (!session || !courseId || !assignmentId) return;
+    if (!session?.access_token || !courseId || !assignmentId) {
+      console.log('Missing required data:', { hasSession: !!session, hasAccessToken: !!session?.access_token, courseId, assignmentId });
+      return;
+    }
 
     try {
       console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
-      console.log('Session exists:', !!session);
+      console.log('Session access token exists:', !!session.access_token);
       
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-details', {
         body: { 
@@ -25,6 +28,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -38,6 +42,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         setAssignment(data.assignment);
         console.log('Assignment details loaded:', data.assignment.name);
         console.log('Assignment description received:', data.assignment.description?.length > 0 ? 'Yes' : 'No');
+        console.log('Assignment description preview:', data.assignment.description?.substring(0, 100));
       } else {
         console.error('No assignment data received');
         setError('No assignment data received from server');
@@ -49,11 +54,13 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   };
 
   const fetchSubmissions = async () => {
-    if (!session || !courseId || !assignmentId) return;
+    if (!session?.access_token || !courseId || !assignmentId) {
+      console.log('Missing required data for submissions:', { hasSession: !!session, hasAccessToken: !!session?.access_token, courseId, assignmentId });
+      return;
+    }
 
     try {
       console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
-      console.log('Session exists:', !!session);
       
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-submissions', {
         body: { 
@@ -62,6 +69,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -73,7 +81,6 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       
       if (data && data.submissions) {
         console.log(`Received ${data.submissions.length} submissions from Canvas`);
-        console.log('First submission sample:', data.submissions[0]);
         
         // Sort submissions by student's sortable name
         const sortedSubmissions = data.submissions.sort((a: Submission, b: Submission) => {
@@ -97,7 +104,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   };
 
   const saveGrade = async (submissionId: number, grade: string, comment: string) => {
-    if (!session || !courseId || !assignmentId) return false;
+    if (!session?.access_token || !courseId || !assignmentId) return false;
 
     try {
       console.log(`Saving grade for submission ${submissionId}: ${grade}`);
@@ -112,6 +119,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -137,12 +145,20 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   };
 
   useEffect(() => {
-    if (courseId && assignmentId && session) {
-      console.log('Initializing grade assignment with:', { courseId, assignmentId, sessionExists: !!session });
+    if (courseId && assignmentId && session?.access_token) {
+      console.log('Initializing grade assignment with:', { 
+        courseId, 
+        assignmentId, 
+        hasSession: !!session,
+        hasAccessToken: !!session.access_token 
+      });
       fetchAssignmentDetails();
       fetchSubmissions();
+    } else {
+      setLoading(false);
+      setError('Missing authentication or course/assignment information');
     }
-  }, [courseId, assignmentId, session]);
+  }, [courseId, assignmentId, session?.access_token]);
 
   return {
     assignment,

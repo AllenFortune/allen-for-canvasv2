@@ -8,9 +8,11 @@ import GradeAssignmentContent from '@/components/grading/GradeAssignmentContent'
 import ErrorDisplay from '@/components/grading/ErrorDisplay';
 import LoadingDisplay from '@/components/grading/LoadingDisplay';
 import { useGradeAssignment } from '@/hooks/useGradeAssignment';
+import { useAuth } from '@/contexts/AuthContext';
 
 const GradeAssignment = () => {
   const { courseId, assignmentId } = useParams<{ courseId: string; assignmentId: string }>();
+  const { session } = useAuth();
   const {
     assignment,
     submissions,
@@ -20,6 +22,11 @@ const GradeAssignment = () => {
     retryFetch,
     setSubmissions
   } = useGradeAssignment(courseId, assignmentId);
+
+  // Show loading if still authenticating
+  if (!session) {
+    return <LoadingDisplay />;
+  }
 
   if (loading) {
     return <LoadingDisplay />;
