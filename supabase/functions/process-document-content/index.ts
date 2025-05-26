@@ -44,35 +44,51 @@ serve(async (req) => {
       // Convert ArrayBuffer to Uint8Array for processing
       const uint8Array = new Uint8Array(fileBuffer);
       
-      // For .docx files, we need to extract from the ZIP structure
-      // This is a simplified approach - for production, consider using a proper docx parser
       try {
-        // Convert to string and look for document content
-        const decoder = new TextDecoder('utf-8', { fatal: false });
-        const fileContent = decoder.decode(uint8Array);
+        // For .docx files, we need to extract from the ZIP structure
+        // Convert to binary string for processing
+        let binaryString = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          binaryString += String.fromCharCode(uint8Array[i]);
+        }
         
-        // Look for text content in the document.xml part of the docx
-        // .docx files contain XML with text in <w:t> tags
-        const textMatches = fileContent.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
-        if (textMatches && textMatches.length > 0) {
-          extractedText = textMatches
-            .map(match => {
-              // Extract text between the tags and decode XML entities
-              const text = match.replace(/<w:t[^>]*>([^<]*)<\/w:t>/, '$1');
-              return text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-            })
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+        // Look for document.xml content (the main document content in .docx files)
+        // .docx files are ZIP archives, so we look for the document.xml content
+        const documentXmlMatch = binaryString.match(/document\.xml.*?(<\?xml.*?<\/w:document>)/s);
+        
+        if (documentXmlMatch && documentXmlMatch[1]) {
+          const xmlContent = documentXmlMatch[1];
+          console.log('Found document.xml content, length:', xmlContent.length);
+          
+          // Extract text from <w:t> tags (Word text elements)
+          const textMatches = xmlContent.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+          if (textMatches && textMatches.length > 0) {
+            extractedText = textMatches
+              .map(match => {
+                // Extract text between the tags and decode XML entities
+                const text = match.replace(/<w:t[^>]*>([^<]*)<\/w:t>/, '$1');
+                return text
+                  .replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>')
+                  .replace(/&amp;/g, '&')
+                  .replace(/&quot;/g, '"')
+                  .replace(/&apos;/g, "'");
+              })
+              .join(' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+          }
         }
 
-        // If no text found with w:t tags, try alternative extraction
+        // If still no text found, try a more aggressive approach
         if (!extractedText || extractedText.length < 10) {
-          // Look for any readable text in the file
-          const readableText = fileContent.match(/[a-zA-Z0-9\s.,!?;:()"\-']{10,}/g);
-          if (readableText) {
-            extractedText = readableText
-              .filter(text => text.trim().length > 5)
+          console.log('Trying alternative extraction method');
+          // Look for any text content in the document
+          const allTextMatches = binaryString.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
+          if (allTextMatches) {
+            extractedText = allTextMatches
+              .map(match => match.replace(/<w:t[^>]*>([^<]+)<\/w:t>/, '$1'))
+              .filter(text => text.trim().length > 0)
               .join(' ')
               .replace(/\s+/g, ' ')
               .trim();
@@ -80,9 +96,10 @@ serve(async (req) => {
         }
 
         console.log('Extracted text length:', extractedText.length);
+        console.log('Extracted text preview:', extractedText.substring(0, 200));
         
         if (!extractedText || extractedText.length < 5) {
-          extractedText = `[DOCX file "${fileName}" was processed but no readable text content could be extracted. The file may be empty, corrupted, or contain only images/formatting. Please ask the student to resubmit as plain text or verify the file content.]`;
+          extractedText = `[DOCX file "${fileName}" was processed but no readable text content could be extracted. The file may be empty, contain only images/formatting, or have a complex structure. Please ask the student to resubmit as plain text or verify the file content.]`;
         }
         
       } catch (extractError) {
