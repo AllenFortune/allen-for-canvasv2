@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Save, Award, Sparkles, FileText } from 'lucide-react';
+import { Save, Award, Sparkles, FileText, GraduationCap, Target } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
 
@@ -35,6 +35,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
 }) => {
   const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
   const [useRubricForAI, setUseRubricForAI] = useState(false);
+  const [isSummativeAssessment, setIsSummativeAssessment] = useState(true);
   const maxPoints = assignment?.points_possible || 100;
   const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
 
@@ -54,7 +55,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
       currentSubmission,
       assignment,
       gradeInput,
-      useRubricForAI
+      useRubricForAI,
+      isSummativeAssessment
     );
 
     if (aiResult) {
@@ -163,31 +165,65 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
         )}
 
         {/* AI Grading Options */}
-        {hasRubric && (
-          <div className="space-y-3 p-3 bg-gray-50 rounded-lg border">
+        <div className="space-y-4 p-3 bg-gray-50 rounded-lg border">
+          {/* Assessment Type Toggle */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">
-                  AI Grading Mode
+                  Assessment Type
                 </label>
                 <p className="text-xs text-gray-500">
-                  {useRubricForAI 
-                    ? "AI will use the assignment rubric for grading" 
-                    : "AI will use the assignment description for grading"
+                  {isSummativeAssessment 
+                    ? "Final evaluation with comprehensive grading and feedback" 
+                    : "Learning-focused feedback to guide improvement"
                   }
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Description</span>
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <Target className="w-3 h-3" />
+                  <span>Formative</span>
+                </div>
                 <Switch
-                  checked={useRubricForAI}
-                  onCheckedChange={setUseRubricForAI}
+                  checked={isSummativeAssessment}
+                  onCheckedChange={setIsSummativeAssessment}
                 />
-                <span className="text-xs text-gray-600">Rubric</span>
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <GraduationCap className="w-3 h-3" />
+                  <span>Summative</span>
+                </div>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Rubric/Description Toggle (only show if rubric exists) */}
+          {hasRubric && (
+            <div className="space-y-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Grading Criteria
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    {useRubricForAI 
+                      ? "AI will use the assignment rubric for grading" 
+                      : "AI will use the assignment description for grading"
+                    }
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Description</span>
+                  <Switch
+                    checked={useRubricForAI}
+                    onCheckedChange={setUseRubricForAI}
+                  />
+                  <span className="text-xs text-gray-600">Rubric</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="space-y-3">
@@ -205,7 +241,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
             ) : isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                Generating Student Feedback...
+                Generating {isSummativeAssessment ? 'Summative' : 'Formative'} Feedback...
               </>
             ) : (
               <>
@@ -221,6 +257,9 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
                     {useRubricForAI ? 'Rubric' : 'Description'}
                   </Badge>
                 )}
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {isSummativeAssessment ? 'Summative' : 'Formative'}
+                </Badge>
               </>
             )}
           </Button>

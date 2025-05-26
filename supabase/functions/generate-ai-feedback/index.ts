@@ -23,13 +23,36 @@ serve(async (req) => {
       pointsPossible,
       currentGrade,
       rubric,
-      useRubric = false
+      useRubric = false,
+      isSummativeAssessment = true
     } = await req.json();
 
     console.log('Generating comprehensive AI grading for assignment:', assignmentName);
     console.log('Using rubric for grading:', useRubric);
+    console.log('Assessment type:', isSummativeAssessment ? 'Summative' : 'Formative');
 
-    const systemPrompt = `You are an experienced educator providing comprehensive grading and feedback directly to a student on their assignment submission. Your response should be encouraging, constructive, and written in a conversational tone as if you're speaking directly to the student.
+    // Adjust system prompt based on assessment type
+    const assessmentInstructions = isSummativeAssessment 
+      ? `You are an experienced educator providing comprehensive SUMMATIVE grading and feedback directly to a student on their assignment submission. This is a final evaluation that will determine their grade. Your response should be thorough, evaluative, and written in a professional yet encouraging tone as if you're speaking directly to the student about their final performance.
+
+Focus on:
+- Overall achievement and mastery demonstration
+- How well learning objectives were met
+- Comprehensive evaluation of strengths and areas that needed improvement
+- Final performance assessment with clear justification for the grade
+- Recognition of accomplishments and constructive guidance for future work`
+      
+      : `You are an experienced educator providing FORMATIVE feedback directly to a student on their assignment submission. This is developmental feedback focused on learning and improvement rather than final evaluation. Your response should be encouraging, growth-oriented, and written in a supportive tone as if you're guiding the student's learning journey.
+
+Focus on:
+- Learning progress and growth opportunities
+- Specific actionable steps for improvement
+- Encouragement and motivation for continued learning
+- Identifying strengths to build upon
+- Constructive guidance that promotes deeper understanding
+- Less emphasis on final grading, more on learning development`;
+
+    const systemPrompt = `${assessmentInstructions}
 
 You MUST format your response ONLY as a valid JSON object with the following structure:
 {
@@ -50,8 +73,28 @@ Do not include any explanations, markdown formatting, or text outside of this JS
       : `Assignment Description: ${assignmentDescription || 'No description provided'}`;
 
     const gradingMode = useRubric && rubric ? 'rubric criteria' : 'assignment description';
+    const assessmentType = isSummativeAssessment ? 'summative assessment' : 'formative assessment';
 
-    const userPrompt = `Please analyze this student submission and provide comprehensive grading based on the ${gradingMode}:
+    // Adjust the user prompt based on assessment type
+    const gradeInstructions = isSummativeAssessment 
+      ? `Please provide a comprehensive summative evaluation with a suggested grade (as a number out of ${pointsPossible}) based on the ${gradingMode}. This should reflect the student's final achievement level and mastery demonstration.`
+      : `Please provide formative feedback with developmental guidance. ${pointsPossible > 0 ? `If appropriate, suggest a grade (as a number out of ${pointsPossible}) to indicate current progress level, but focus primarily on growth and improvement opportunities.` : 'Focus on learning progress rather than final grading.'}`;
+
+    const feedbackInstructions = isSummativeAssessment
+      ? `Provide comprehensive evaluation feedback that:
+- Clearly explains the final grade and what it represents
+- Acknowledges accomplishments and areas of strength
+- Identifies specific areas where improvement was needed
+- Offers constructive guidance for future assignments
+- Maintains an encouraging tone while being thoroughly evaluative`
+      : `Provide developmental feedback that:
+- Celebrates learning progress and effort
+- Identifies specific strengths to build upon
+- Offers clear, actionable steps for improvement
+- Encourages continued learning and growth
+- Focuses on the learning process rather than just the final product`;
+
+    const userPrompt = `Please analyze this student submission and provide ${assessmentType} feedback based on the ${gradingMode}:
 
 Assignment: ${assignmentName}
 Points Possible: ${pointsPossible}
@@ -62,19 +105,23 @@ ${gradingCriteria}
 Student Submission:
 ${submissionContent || 'No content provided'}
 
+${gradeInstructions}
+
+${feedbackInstructions}
+
 Please provide:
-1. A suggested grade (as a number out of ${pointsPossible}) based on the ${gradingMode}
-2. Detailed feedback written directly to the student in paragraph form, combining strengths and areas for improvement naturally
+1. ${isSummativeAssessment ? 'A final grade with clear justification' : 'Developmental feedback with optional progress indicator'}
+2. Detailed feedback written directly to the student in paragraph form
 3. 3-5 specific strengths of the submission
 4. 3-5 specific areas for improvement with actionable suggestions
-5. A brief summary (2-3 sentences) of the overall submission quality
+5. A brief summary (2-3 sentences) of the ${isSummativeAssessment ? 'overall evaluation' : 'learning progress and next steps'}
 
 ${useRubric && rubric ? 
-  'Focus your grading on how well the submission meets each rubric criterion. Reference specific rubric elements in your feedback.' :
-  'Focus your grading on how well the submission addresses the assignment requirements and objectives.'
+  `Focus your ${assessmentType} on how well the submission meets each rubric criterion. Reference specific rubric elements in your feedback.` :
+  `Focus your ${assessmentType} on how well the submission addresses the assignment requirements and objectives.`
 }
 
-Write the feedback as if you're having a conversation with the student. Use "you" and "your" language. Be specific, encouraging, and constructive. Combine praise for what they did well with clear guidance on how to improve, all in a natural flowing paragraph.`;
+Write the feedback as if you're having a conversation with the student. Use "you" and "your" language. Be specific, encouraging, and constructive. ${isSummativeAssessment ? 'Provide thorough evaluation while maintaining an encouraging tone.' : 'Focus on growth, learning, and actionable next steps.'}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -117,16 +164,17 @@ Write the feedback as if you're having a conversation with the student. Use "you
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', aiResponseContent);
       // Create a more helpful fallback response
+      const fallbackType = isSummativeAssessment ? 'comprehensive evaluation' : 'developmental feedback';
       parsedResponse = {
         grade: null,
-        feedback: "I encountered an issue while generating your detailed feedback. Please try again, and I'll provide you with comprehensive comments on your submission.",
+        feedback: `I encountered an issue while generating your ${fallbackType}. Please try again, and I'll provide you with detailed ${isSummativeAssessment ? 'summative assessment' : 'formative guidance'} on your submission.`,
         strengths: ["Your submission was received and reviewed"],
         areasForImprovement: ["Please resubmit for detailed feedback"],
-        summary: "Technical issue occurred during feedback generation. Please try again for personalized comments."
+        summary: `Technical issue occurred during ${assessmentType} generation. Please try again for personalized comments.`
       };
     }
 
-    console.log('AI grading generated successfully using:', gradingMode);
+    console.log('AI grading generated successfully using:', gradingMode, 'for', assessmentType);
 
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

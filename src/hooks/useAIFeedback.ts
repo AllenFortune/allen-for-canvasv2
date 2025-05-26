@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Assignment, Submission } from '@/types/grading';
@@ -108,7 +109,8 @@ export const useAIFeedback = () => {
     submission: Submission,
     assignment: Assignment | null,
     currentGrade?: string,
-    useRubric: boolean = false
+    useRubric: boolean = false,
+    isSummativeAssessment: boolean = true
   ): Promise<AIGradingResponse | null> => {
     if (!submission || !assignment) {
       toast({
@@ -136,7 +138,8 @@ export const useAIFeedback = () => {
           pointsPossible: assignment.points_possible,
           currentGrade: currentGrade || null,
           rubric: assignment.rubric ? JSON.stringify(assignment.rubric) : null,
-          useRubric: useRubric && assignment.rubric
+          useRubric: useRubric && assignment.rubric,
+          isSummativeAssessment
         }
       });
 
@@ -152,11 +155,12 @@ export const useAIFeedback = () => {
 
       if (data && (data.feedback || data.grade !== undefined)) {
         const feedbackType = useRubric && assignment.rubric ? 'rubric criteria' : 'assignment description';
+        const assessmentType = isSummativeAssessment ? 'summative' : 'formative';
         const hasFiles = submission.attachments && submission.attachments.length > 0;
         
         toast({
           title: "Success",
-          description: `AI grading generated using ${feedbackType}!${hasFiles ? ' File content processed.' : ''}`,
+          description: `AI ${assessmentType} grading generated using ${feedbackType}!${hasFiles ? ' File content processed.' : ''}`,
         });
         return {
           grade: data.grade,
