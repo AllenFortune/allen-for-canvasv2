@@ -6,9 +6,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Users, ExternalLink, Calendar, AlertCircle } from 'lucide-react';
+import CourseHeader from '@/components/course-detail/CourseHeader';
+import CourseInfoCards from '@/components/course-detail/CourseInfoCards';
+import GradingAlert from '@/components/course-detail/GradingAlert';
+import CourseDetailTabs from '@/components/course-detail/CourseDetailTabs';
 
 interface Course {
   id: number;
@@ -91,41 +92,6 @@ const CourseDetail = () => {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No due date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
-  const getDateRange = (startAt: string | null, endAt: string | null) => {
-    if (!startAt && !endAt) return 'No dates set';
-    if (!startAt) return `Ends ${formatDate(endAt)}`;
-    if (!endAt) return `Started ${formatDate(startAt)}`;
-    return `${formatDate(startAt)} - ${formatDate(endAt)}`;
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-600 text-white';
-      case 'unpublished':
-        return 'bg-yellow-600 text-white';
-      default:
-        return 'bg-gray-600 text-white';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'Active';
-      case 'unpublished':
-        return 'Unpublished';
-      default:
-        return status;
-    }
-  };
-
   const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
 
   if (loading) {
@@ -172,176 +138,14 @@ const CourseDetail = () => {
         <Header />
         <div className="py-20">
           <div className="max-w-7xl mx-auto px-6">
-            {/* Header with back button */}
-            <div className="mb-8">
-              <Link to="/courses" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Courses
-              </Link>
-              
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div className="mb-4 lg:mb-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-bold text-gray-900">{course.name}</h1>
-                    <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state)}`}>
-                      {getStatusLabel(course.workflow_state)}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">{course.course_code}</p>
-                </div>
-                
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in Canvas
-                </Button>
-              </div>
-            </div>
-
-            {/* Course Info Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Term</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">No term assigned</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Dates</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {getDateRange(course.start_at, course.end_at)}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Students</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Users className="w-4 h-4 mr-2" />
-                    {course.total_students > 0 ? `${course.total_students} students` : 'Unknown students'}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Needs Grading Alert */}
-            {totalNeedsGrading > 0 && (
-              <div className="mb-6">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <AlertCircle className="w-5 h-5 text-orange-500" />
-                    <p className="text-orange-800">
-                      You have <strong>{totalNeedsGrading}</strong> {totalNeedsGrading === 1 ? 'item' : 'items'} that need grading in this course.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tabs */}
-            <Tabs defaultValue="assignments" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="assignments" className="relative">
-                  Assignments
-                  {totalNeedsGrading > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {totalNeedsGrading}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="discussions">Discussions</TabsTrigger>
-                <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-                <TabsTrigger value="students">Students</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="assignments" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Assignments</CardTitle>
-                    <p className="text-gray-600">Manage and grade assignments for this course</p>
-                  </CardHeader>
-                  <CardContent>
-                    {assignmentsLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Loading assignments...</p>
-                      </div>
-                    ) : assignments.length > 0 ? (
-                      <div className="space-y-4">
-                        {assignments.map((assignment) => (
-                          <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 relative">
-                            {assignment.needs_grading_count > 0 && (
-                              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
-                                {assignment.needs_grading_count}
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-900">{assignment.name}</h3>
-                              <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                                <span>Due: {formatDate(assignment.due_at)}</span>
-                                <span>{assignment.points_possible || 0} points</span>
-                                {assignment.needs_grading_count > 0 && (
-                                  <span className="text-red-600 font-medium">
-                                    {assignment.needs_grading_count} need grading
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                              Grade
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-600 text-center py-8">No assignments found for this course.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="discussions">
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600 text-center py-8">Discussions feature coming soon.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="quizzes">
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600 text-center py-8">Quizzes feature coming soon.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="students">
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600 text-center py-8">Students feature coming soon.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="analytics">
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-gray-600 text-center py-8">Analytics feature coming soon.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <CourseHeader course={course} />
+            <CourseInfoCards course={course} />
+            <GradingAlert totalNeedsGrading={totalNeedsGrading} />
+            <CourseDetailTabs 
+              assignments={assignments}
+              assignmentsLoading={assignmentsLoading}
+              totalNeedsGrading={totalNeedsGrading}
+            />
           </div>
         </div>
       </div>
