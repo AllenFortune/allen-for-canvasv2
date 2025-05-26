@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Save, Award, Sparkles } from 'lucide-react';
+import { Save, Award, Sparkles, FileText } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
 
@@ -33,7 +33,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   currentScore,
   currentSubmission
 }) => {
-  const { generateComprehensiveFeedback, isGenerating } = useAIFeedback();
+  const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
   const [useRubricForAI, setUseRubricForAI] = useState(false);
   const maxPoints = assignment?.points_possible || 100;
   const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
@@ -70,6 +70,9 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
 
   // Check if assignment has a rubric
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
+
+  // Check if submission has files
+  const hasFiles = currentSubmission?.attachments && currentSubmission.attachments.length > 0;
 
   return (
     <Card className="sticky top-6">
@@ -146,6 +149,19 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           />
         </div>
 
+        {/* Submission Type Indicator */}
+        {hasFiles && (
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <FileText className="w-4 h-4" />
+              <span className="font-medium">File Submission Detected</span>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">
+              AI will process and analyze file content for grading
+            </p>
+          </div>
+        )}
+
         {/* AI Grading Options */}
         {hasRubric && (
           <div className="space-y-3 p-3 bg-gray-50 rounded-lg border">
@@ -179,9 +195,14 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
             variant="outline" 
             className="w-full flex items-center gap-2"
             onClick={handleAIAssistedGrading}
-            disabled={isGenerating || !currentSubmission}
+            disabled={isGenerating || isProcessingFiles || !currentSubmission}
           >
-            {isGenerating ? (
+            {isProcessingFiles ? (
+              <>
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                Processing Files...
+              </>
+            ) : isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 Generating Student Feedback...
@@ -190,6 +211,11 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
               <>
                 <Sparkles className="w-4 h-4" />
                 AI-Assisted Grading
+                {hasFiles && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    Files
+                  </Badge>
+                )}
                 {hasRubric && (
                   <Badge variant="secondary" className="ml-1 text-xs">
                     {useRubricForAI ? 'Rubric' : 'Description'}

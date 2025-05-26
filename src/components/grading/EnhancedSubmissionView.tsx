@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, FileText, Link, AlertCircle, MessageCircle } from 'lucide-react';
+import { Clock, FileText, Link, AlertCircle, MessageCircle, Download } from 'lucide-react';
 import { Submission } from '@/types/grading';
 
 interface EnhancedSubmissionViewProps {
@@ -34,6 +34,33 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
     } else {
       return <Badge variant="outline">Not Submitted</Badge>;
     }
+  };
+
+  const getFileTypeIcon = (filename: string) => {
+    const ext = filename.toLowerCase().split('.').pop();
+    switch (ext) {
+      case 'docx':
+      case 'doc':
+        return '📄';
+      case 'pdf':
+        return '📕';
+      case 'txt':
+        return '📝';
+      case 'xlsx':
+      case 'xls':
+        return '📊';
+      case 'pptx':
+      case 'ppt':
+        return '📊';
+      default:
+        return '📎';
+    }
+  };
+
+  const getFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -81,11 +108,16 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
         </CardHeader>
         <CardContent>
           {submission.body ? (
-            <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border">
-              <div dangerouslySetInnerHTML={{ __html: submission.body }} />
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-700 mb-2">Text Submission:</h4>
+              <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border">
+                <div dangerouslySetInnerHTML={{ __html: submission.body }} />
+              </div>
             </div>
-          ) : submission.url ? (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          ) : null}
+
+          {submission.url ? (
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Link className="w-4 h-4 text-blue-600" />
                 <span className="font-medium text-blue-800">Website Submission</span>
@@ -99,37 +131,59 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                 {submission.url}
               </a>
             </div>
-          ) : submission.attachments && submission.attachments.length > 0 ? (
+          ) : null}
+
+          {submission.attachments && submission.attachments.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-gray-700 font-medium">
                 <FileText className="w-4 h-4" />
                 File Attachments ({submission.attachments.length})
+                <Badge variant="secondary" className="text-xs">
+                  AI Processable
+                </Badge>
               </div>
               <div className="grid gap-3">
                 {submission.attachments.map((attachment: any, index: number) => (
-                  <a 
+                  <div 
                     key={index}
-                    href={attachment.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg"
                   >
-                    <FileText className="w-5 h-5 text-gray-500" />
+                    <div className="text-2xl">
+                      {getFileTypeIcon(attachment.filename || attachment.display_name)}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
                         {attachment.filename || attachment.display_name}
                       </p>
-                      {attachment.size && (
-                        <p className="text-sm text-gray-500">
-                          {(attachment.size / 1024).toFixed(1)} KB
-                        </p>
-                      )}
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        {attachment.size && (
+                          <span>{getFileSize(attachment.size)}</span>
+                        )}
+                        {attachment['content-type'] && (
+                          <span>{attachment['content-type']}</span>
+                        )}
+                      </div>
                     </div>
-                  </a>
+                    <a 
+                      href={attachment.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </a>
+                  </div>
                 ))}
               </div>
+              <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded border border-blue-200">
+                <strong>AI Processing:</strong> .docx and .txt files will be automatically processed for content analysis. 
+                PDF files and other formats will be noted but may require manual review.
+              </div>
             </div>
-          ) : (
+          ) : null}
+
+          {!submission.body && !submission.url && (!submission.attachments || submission.attachments.length === 0) && (
             <div className="text-center py-8 text-gray-500">
               <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p>No submission content available</p>
