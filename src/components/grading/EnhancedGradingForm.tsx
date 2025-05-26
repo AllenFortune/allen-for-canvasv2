@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Save, Award } from 'lucide-react';
-import { Assignment } from '@/types/grading';
+import { Bot, Save, Award, Sparkles } from 'lucide-react';
+import { Assignment, Submission } from '@/types/grading';
+import { useAIFeedback } from '@/hooks/useAIFeedback';
 
 interface EnhancedGradingFormProps {
   assignment: Assignment | null;
@@ -17,6 +18,7 @@ interface EnhancedGradingFormProps {
   onSaveGrade: () => void;
   saving: boolean;
   currentScore?: number | null;
+  currentSubmission?: Submission;
 }
 
 const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
@@ -27,8 +29,10 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   setCommentInput,
   onSaveGrade,
   saving,
-  currentScore
+  currentScore,
+  currentSubmission
 }) => {
+  const { generateFeedback, isGenerating } = useAIFeedback();
   const maxPoints = assignment?.points_possible || 100;
   const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
 
@@ -39,6 +43,20 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
     if (percent >= 80) return 'text-blue-600 bg-blue-50 border-blue-200';
     if (percent >= 70) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-red-600 bg-red-50 border-red-200';
+  };
+
+  const handleAIFeedback = async () => {
+    if (!currentSubmission || !assignment) return;
+
+    const aiFeedback = await generateFeedback(
+      currentSubmission,
+      assignment,
+      gradeInput
+    );
+
+    if (aiFeedback) {
+      setCommentInput(aiFeedback);
+    }
   };
 
   return (
@@ -121,10 +139,20 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           <Button 
             variant="outline" 
             className="w-full flex items-center gap-2"
-            onClick={() => {/* TODO: Implement AI assist */}}
+            onClick={handleAIFeedback}
+            disabled={isGenerating || !currentSubmission}
           >
-            <Bot className="w-4 h-4" />
-            AI-Powered Feedback
+            {isGenerating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                Generating Feedback...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                AI-Powered Feedback
+              </>
+            )}
           </Button>
 
           <Button 

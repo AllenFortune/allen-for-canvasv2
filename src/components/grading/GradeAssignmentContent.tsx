@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import HorizontalStudentNav from './HorizontalStudentNav';
@@ -97,6 +96,7 @@ const GradeAssignmentContent: React.FC<GradeAssignmentContentProps> = ({
                 onSaveGrade={onSaveGrade}
                 saving={saving}
                 currentScore={currentSubmission.score}
+                currentSubmission={currentSubmission}
               />
             )}
           </div>
