@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
@@ -47,7 +48,7 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
     }
 
     try {
-      console.log('Fetching discussion entries...');
+      console.log('Fetching ALL discussion entries...');
       
       const { data, error } = await supabase.functions.invoke('get-canvas-discussion-entries', {
         body: { courseId, discussionId }
@@ -61,7 +62,7 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
       console.log('Discussion entries received:', data);
       console.log('Number of entries:', data.entries?.length || 0);
       
-      // Process entries to normalize user data from Canvas API
+      // Process ALL entries to normalize user data from Canvas API
       const processedEntries = data.entries?.map((entry: any) => ({
         ...entry,
         user: {
@@ -77,16 +78,26 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
         }
       })) || [];
       
-      console.log('Processed entries:', processedEntries.length);
+      console.log('Processed ALL entries:', processedEntries.length);
       if (processedEntries.length > 0) {
-        console.log('First processed entry:', processedEntries[0]);
-        console.log('Users in processed entries:', processedEntries.map(entry => ({
-          id: entry.user_id,
-          name: entry.user?.name,
-          hasValidUser: !!entry.user?.name
-        })));
+        console.log('Sample processed entry:', processedEntries[0]);
+        
+        // Log unique users for debugging
+        const uniqueUsers = Array.from(
+          new Set(processedEntries.map(entry => entry.user_id))
+        ).map(userId => {
+          const entry = processedEntries.find(e => e.user_id === userId);
+          return {
+            id: userId,
+            name: entry?.user?.name,
+            entriesCount: processedEntries.filter(e => e.user_id === userId).length
+          };
+        });
+        
+        console.log('Unique participating users:', uniqueUsers);
       }
       
+      // Store ALL entries (not filtered by user)
       setEntries(processedEntries);
     } catch (err) {
       console.error('Error fetching discussion entries:', err);
@@ -94,7 +105,7 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
       
       toast({
         title: "Error loading discussion entries",
-        description: "Could not load student discussion posts. Please check your Canvas connection and try again.",
+        description: "Could not load discussion posts. Please check your Canvas connection and try again.",
         variant: "destructive",
       });
     } finally {

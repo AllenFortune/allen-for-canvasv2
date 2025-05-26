@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Discussion, DiscussionEntry, DiscussionGrade, DiscussionSubmission } from '@/types/grading';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
 import DiscussionPostsView from './DiscussionPostsView';
@@ -15,6 +15,15 @@ interface DiscussionGradingFormProps {
   currentUserIndex: number;
   totalUsers: number;
   onUserChange: (index: number) => void;
+}
+
+interface StudentParticipation {
+  studentEntries: DiscussionEntry[];
+  initialPosts: DiscussionEntry[];
+  replies: DiscussionEntry[];
+  repliedToPosts: DiscussionEntry[];
+  allRelevantEntries: DiscussionEntry[];
+  totalParticipation: number;
 }
 
 const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
@@ -41,6 +50,31 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
 
   const currentGrade = grades.find(g => g.user_id === user.id);
 
+  // Process student participation data
+  const studentParticipation: StudentParticipation = useMemo(() => {
+    const studentEntries = entries.filter(entry => entry.user_id === user.id);
+    const initialPosts = studentEntries.filter(entry => !entry.parent_id);
+    const replies = studentEntries.filter(entry => entry.parent_id);
+    
+    // Get original posts that this student replied to for context
+    const repliedToPosts = replies.map(reply => {
+      return entries.find(entry => entry.id === reply.parent_id);
+    }).filter(Boolean) as DiscussionEntry[];
+
+    // Combine all relevant entries in chronological order
+    const allRelevantEntries = [...initialPosts, ...replies, ...repliedToPosts]
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    return {
+      studentEntries,
+      initialPosts,
+      replies,
+      repliedToPosts,
+      allRelevantEntries,
+      totalParticipation: studentEntries.length
+    };
+  }, [entries, user.id]);
+
   useEffect(() => {
     if (currentGrade) {
       setGradeInput(currentGrade.grade || '');
@@ -58,14 +92,52 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   };
 
   const handleAIGrading = async () => {
-    // Create a discussion submission object with proper user data handling
-    const combinedContent = entries.map(entry => entry.message).join('\n\n');
+    // Create comprehensive content including initial posts, replies, and context
+    let combinedContent = '';
     
+    // Add participation summary
+    combinedContent += `=== DISCUSSION PARTICIPATION SUMMARY ===\n`;
+    combinedContent += `Student: ${user.name || 'Unknown Student'}\n`;
+    combinedContent += `Total Posts: ${studentParticipation.totalParticipation}\n`;
+    combinedContent += `Initial Posts: ${studentParticipation.initialPosts.length}\n`;
+    combinedContent += `Replies: ${studentParticipation.replies.length}\n\n`;
+
+    // Add initial posts
+    if (studentParticipation.initialPosts.length > 0) {
+      combinedContent += `=== INITIAL POSTS ===\n`;
+      studentParticipation.initialPosts.forEach((post, index) => {
+        combinedContent += `Initial Post ${index + 1} (Posted: ${new Date(post.created_at).toLocaleDateString()}):\n`;
+        combinedContent += `${post.message}\n\n`;
+      });
+    }
+
+    // Add replies with context
+    if (studentParticipation.replies.length > 0) {
+      combinedContent += `=== REPLIES TO CLASSMATES ===\n`;
+      studentParticipation.replies.forEach((reply, index) => {
+        const originalPost = studentParticipation.repliedToPosts.find(p => p?.id === reply.parent_id);
+        combinedContent += `Reply ${index + 1} (Posted: ${new Date(reply.created_at).toLocaleDateString()}):\n`;
+        
+        if (originalPost) {
+          combinedContent += `Replying to: ${originalPost.user?.name || 'Unknown'}\n`;
+          combinedContent += `Original Post: ${originalPost.message.substring(0, 200)}${originalPost.message.length > 200 ? '...' : ''}\n`;
+        }
+        
+        combinedContent += `Student's Reply: ${reply.message}\n\n`;
+      });
+    }
+
+    // If no participation, note it
+    if (studentParticipation.totalParticipation === 0) {
+      combinedContent += `=== NO PARTICIPATION ===\n`;
+      combinedContent += `This student has not participated in the discussion.\n`;
+    }
+
     const mockSubmission: DiscussionSubmission = {
       id: user.id,
       user_id: user.id,
       assignment_id: discussion.assignment_id || 0,
-      submitted_at: entries[0]?.created_at || null,
+      submitted_at: studentParticipation.studentEntries[0]?.created_at || null,
       graded_at: null,
       grade: currentGrade?.grade || null,
       score: currentGrade?.score || null,
@@ -73,9 +145,9 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
       body: combinedContent,
       url: null,
       attachments: [],
-      workflow_state: 'submitted',
+      workflow_state: studentParticipation.totalParticipation > 0 ? 'submitted' : 'unsubmitted',
       late: false,
-      missing: false,
+      missing: studentParticipation.totalParticipation === 0,
       submission_type: 'discussion_topic',
       user: user
     };
@@ -93,7 +165,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
     };
 
     const result = await generateComprehensiveFeedback(
-      mockSubmission as any, // Type assertion for compatibility with the hook
+      mockSubmission as any,
       mockAssignment,
       currentGrade?.grade || undefined,
       useRubricForAI,
@@ -113,13 +185,17 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
     <div className="space-y-6">
       <DiscussionStudentNavigation
         user={user}
-        entriesCount={entries.length}
+        entriesCount={studentParticipation.totalParticipation}
         currentUserIndex={currentUserIndex}
         totalUsers={totalUsers}
         onUserChange={onUserChange}
       />
 
-      <DiscussionPostsView entries={entries} />
+      <DiscussionPostsView 
+        entries={studentParticipation.allRelevantEntries}
+        studentUserId={user.id}
+        showContext={true}
+      />
 
       <DiscussionGradingSection
         discussion={discussion}

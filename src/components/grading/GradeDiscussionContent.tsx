@@ -30,7 +30,7 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
     gradesCount: grades.length
   });
 
-  // Group entries by user
+  // Group entries by user - ALL entries are available for context
   const userEntries = entries.reduce((acc, entry) => {
     if (!acc[entry.user_id]) {
       acc[entry.user_id] = {
@@ -90,7 +90,7 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
             <DiscussionGradingForm
               discussion={discussion}
               user={currentUser.user}
-              entries={currentUser.entries}
+              entries={entries} // Pass ALL entries for context
               grades={grades}
               saveGrade={saveGrade}
               currentUserIndex={currentUserIndex}
