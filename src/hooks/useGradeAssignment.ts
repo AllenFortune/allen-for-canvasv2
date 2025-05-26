@@ -150,63 +150,74 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       return false;
     }
 
+    // Find the submission to get the user_id
+    const submission = submissions.find(sub => sub.id === submissionId);
+    if (!submission) {
+      toast({
+        title: "Error",
+        description: "Submission not found",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const userId = submission.user_id;
+    console.log(`Saving grade for user ${userId} (submission ${submissionId}): ${grade}`);
+
     try {
-      console.log(`Saving grade for submission ${submissionId}: ${grade}`);
-      
       const credentials = await getCanvasCredentials();
       
-      // First, save the grade
-      const { data: gradeData, error: gradeError } = await supabase.functions.invoke('canvas-proxy', {
+      // Use the correct Canvas API endpoint with user_id and combine grade + comment
+      const requestBody: any = {
+        submission: {
+          posted_grade: grade
+        }
+      };
+
+      // Add comment to the submission if provided
+      if (comment && comment.trim()) {
+        requestBody.comment = {
+          text_comment: comment
+        };
+      }
+
+      console.log('Sending request to Canvas API:', {
+        endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`,
+        body: requestBody
+      });
+
+      const { data: response, error: gradeError } = await supabase.functions.invoke('canvas-proxy', {
         body: {
           canvasUrl: credentials.canvasUrl,
           canvasToken: credentials.canvasToken,
-          endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`,
+          endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`,
           method: 'PUT',
-          requestBody: {
-            submission: {
-              posted_grade: grade
-            }
-          }
+          requestBody: requestBody
         }
       });
       
       if (gradeError) {
-        console.error('Error saving grade:', gradeError);
+        console.error('Canvas API error details:', gradeError);
+        let errorMessage = `Failed to save grade: ${gradeError.message}`;
+        
+        // Provide more specific error messages based on common Canvas API errors
+        if (gradeError.message.includes('404')) {
+          errorMessage = 'Assignment or student not found. Please check if the assignment accepts submissions.';
+        } else if (gradeError.message.includes('403')) {
+          errorMessage = 'Permission denied. Please check your Canvas permissions for grading.';
+        } else if (gradeError.message.includes('422')) {
+          errorMessage = 'Invalid grade format. Please check the grade value and try again.';
+        }
+        
         toast({
           title: "Grade Save Failed",
-          description: `Failed to save grade: ${gradeError.message}`,
+          description: errorMessage,
           variant: "destructive",
         });
         return false;
       }
 
-      // If there's a comment, add it separately
-      if (comment && comment.trim()) {
-        const { error: commentError } = await supabase.functions.invoke('canvas-proxy', {
-          body: {
-            canvasUrl: credentials.canvasUrl,
-            canvasToken: credentials.canvasToken,
-            endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}/comments`,
-            method: 'PUT',
-            requestBody: {
-              comment: {
-                text_comment: comment
-              }
-            }
-          }
-        });
-
-        if (commentError) {
-          console.warn('Could not add comment:', commentError);
-          toast({
-            title: "Partial Success",
-            description: "Grade saved but comment could not be added",
-            variant: "default",
-          });
-        }
-      }
-      
-      console.log('Grade saved successfully');
+      console.log('Grade and feedback saved successfully to Canvas:', response);
       toast({
         title: "Success",
         description: "Grade and feedback saved to Canvas",
@@ -224,7 +235,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       
       return true;
     } catch (error) {
-      console.error('Error saving grade:', error);
+      console.error('Unexpected error saving grade:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while saving the grade",
