@@ -63,34 +63,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
         setGradeInput(aiResult.grade.toString());
       }
 
-      // Create comprehensive feedback combining all AI insights
-      let comprehensiveFeedback = '';
-      
-      if (aiResult.summary) {
-        comprehensiveFeedback += `**Summary:**\n${aiResult.summary}\n\n`;
-      }
-
-      if (aiResult.strengths && aiResult.strengths.length > 0) {
-        comprehensiveFeedback += `**Strengths:**\n`;
-        aiResult.strengths.forEach((strength, index) => {
-          comprehensiveFeedback += `${index + 1}. ${strength}\n`;
-        });
-        comprehensiveFeedback += '\n';
-      }
-
-      if (aiResult.areasForImprovement && aiResult.areasForImprovement.length > 0) {
-        comprehensiveFeedback += `**Areas for Improvement:**\n`;
-        aiResult.areasForImprovement.forEach((area, index) => {
-          comprehensiveFeedback += `${index + 1}. ${area}\n`;
-        });
-        comprehensiveFeedback += '\n';
-      }
-
-      if (aiResult.feedback) {
-        comprehensiveFeedback += `**Detailed Feedback:**\n${aiResult.feedback}`;
-      }
-
-      setCommentInput(comprehensiveFeedback);
+      // Use the AI-generated feedback directly - it's now student-directed and in paragraph form
+      setCommentInput(aiResult.feedback || 'AI feedback could not be generated. Please try again.');
     }
   };
 
@@ -161,12 +135,12 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
         {/* Feedback */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-gray-700">
-            Feedback
+            Feedback for Student
           </label>
           <Textarea
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Write feedback for the student or use AI-assisted grading to generate comprehensive feedback with grade suggestion..."
+            placeholder="Write feedback for the student or use AI-assisted grading to generate personalized, paragraph-form feedback..."
             rows={8}
             className="resize-none"
           />
@@ -210,7 +184,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
             {isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                Generating Grade & Feedback...
+                Generating Student Feedback...
               </>
             ) : (
               <>

@@ -29,18 +29,20 @@ serve(async (req) => {
     console.log('Generating comprehensive AI grading for assignment:', assignmentName);
     console.log('Using rubric for grading:', useRubric);
 
-    const systemPrompt = `You are an experienced educator providing comprehensive grading and feedback on student assignments. Your response should be constructive, encouraging, and educational.
+    const systemPrompt = `You are an experienced educator providing comprehensive grading and feedback directly to a student on their assignment submission. Your response should be encouraging, constructive, and written in a conversational tone as if you're speaking directly to the student.
 
 You MUST format your response ONLY as a valid JSON object with the following structure:
 {
   "grade": number,
-  "feedback": "string",
+  "feedback": "string - write this as a cohesive paragraph directed to the student, combining strengths and areas for improvement in a natural, encouraging way",
   "strengths": ["string", "string", ...],
   "areasForImprovement": ["string", "string", ...],
   "summary": "string"
 }
 
-Do not include any explanations or text outside of this JSON structure.`;
+The feedback field should be written as if you're talking directly to the student - use "you" and "your" language. Make it sound natural and encouraging while being educational and specific.
+
+Do not include any explanations, markdown formatting, or text outside of this JSON structure.`;
 
     // Determine which grading criteria to use
     const gradingCriteria = useRubric && rubric 
@@ -62,7 +64,7 @@ ${submissionContent || 'No content provided'}
 
 Please provide:
 1. A suggested grade (as a number out of ${pointsPossible}) based on the ${gradingMode}
-2. Detailed feedback explaining the grade and offering constructive guidance
+2. Detailed feedback written directly to the student in paragraph form, combining strengths and areas for improvement naturally
 3. 3-5 specific strengths of the submission
 4. 3-5 specific areas for improvement with actionable suggestions
 5. A brief summary (2-3 sentences) of the overall submission quality
@@ -72,12 +74,7 @@ ${useRubric && rubric ?
   'Focus your grading on how well the submission addresses the assignment requirements and objectives.'
 }
 
-Ensure your feedback is:
-- Constructive and encouraging
-- Specific with examples from the submission
-- Educational and actionable
-- Appropriate for the assignment level
-- Professional but warm in tone`;
+Write the feedback as if you're having a conversation with the student. Use "you" and "your" language. Be specific, encouraging, and constructive. Combine praise for what they did well with clear guidance on how to improve, all in a natural flowing paragraph.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -103,7 +100,15 @@ Ensure your feedback is:
     }
 
     const data = await response.json();
-    const aiResponseContent = data.choices[0].message.content;
+    let aiResponseContent = data.choices[0].message.content;
+
+    // Clean up potential markdown wrapping
+    aiResponseContent = aiResponseContent.trim();
+    if (aiResponseContent.startsWith('```json')) {
+      aiResponseContent = aiResponseContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (aiResponseContent.startsWith('```')) {
+      aiResponseContent = aiResponseContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
 
     // Parse the JSON response from AI
     let parsedResponse;
@@ -111,13 +116,13 @@ Ensure your feedback is:
       parsedResponse = JSON.parse(aiResponseContent);
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', aiResponseContent);
-      // Fallback response if JSON parsing fails
+      // Create a more helpful fallback response
       parsedResponse = {
         grade: null,
-        feedback: aiResponseContent,
-        strengths: ["AI response could not be parsed properly"],
-        areasForImprovement: ["Please try generating feedback again"],
-        summary: "There was an issue processing the AI response."
+        feedback: "I encountered an issue while generating your detailed feedback. Please try again, and I'll provide you with comprehensive comments on your submission.",
+        strengths: ["Your submission was received and reviewed"],
+        areasForImprovement: ["Please resubmit for detailed feedback"],
+        summary: "Technical issue occurred during feedback generation. Please try again for personalized comments."
       };
     }
 
