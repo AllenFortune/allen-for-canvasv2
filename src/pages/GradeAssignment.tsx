@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -77,6 +78,9 @@ const GradeAssignment = () => {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -106,6 +110,9 @@ const GradeAssignment = () => {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -174,6 +181,9 @@ const GradeAssignment = () => {
           submissionId: currentSubmission.id,
           grade: gradeInput,
           comment: commentInput
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
