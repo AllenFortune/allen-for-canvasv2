@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, FileText, Link, AlertCircle } from 'lucide-react';
+import { Clock, FileText, Link, AlertCircle, MessageCircle } from 'lucide-react';
 import { Submission } from '@/types/grading';
 
 interface EnhancedSubmissionViewProps {
@@ -137,6 +137,35 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
           )}
         </CardContent>
       </Card>
+
+      {/* Student Comments */}
+      {submission.submission_comments && submission.submission_comments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Student Comments ({submission.submission_comments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {submission.submission_comments.map((comment: any, index: number) => (
+                <div key={index} className="border-l-4 border-l-gray-300 pl-4 py-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-medium text-sm text-gray-700">
+                      {comment.author_name || 'Student'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-gray-800">{comment.comment}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

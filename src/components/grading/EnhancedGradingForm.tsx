@@ -102,15 +102,15 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           </div>
         </div>
 
-        {/* Comments */}
+        {/* Feedback */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-gray-700">
-            Feedback & Comments
+            Feedback
           </label>
           <Textarea
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Provide constructive feedback for the student..."
+            placeholder="Write feedback for the student or use AI-assist to generate feedback..."
             rows={5}
             className="resize-none"
           />
@@ -118,6 +118,15 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
 
         {/* Action Buttons */}
         <div className="space-y-3">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center gap-2"
+            onClick={() => {/* TODO: Implement AI assist */}}
+          >
+            <Bot className="w-4 h-4" />
+            AI-Powered Feedback
+          </Button>
+
           <Button 
             onClick={onSaveGrade}
             disabled={saving || !gradeInput}
@@ -135,15 +144,6 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
                 Save Grade & Feedback
               </div>
             )}
-          </Button>
-
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center gap-2"
-            onClick={() => {/* TODO: Implement AI assist */}}
-          >
-            <Bot className="w-4 h-4" />
-            AI-Powered Feedback
           </Button>
         </div>
       </CardContent>

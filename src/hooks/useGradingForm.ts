@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Submission } from '@/types/grading';
 
@@ -6,18 +7,14 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
   const [commentInput, setCommentInput] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const getLatestComment = (comments: any[] | null) => {
-    if (!comments || comments.length === 0) return '';
-    return comments[comments.length - 1]?.comment || '';
-  };
-
   const currentSubmission = submissions[currentSubmissionIndex];
 
   // Update form when submission changes
   useEffect(() => {
     if (currentSubmission) {
       setGradeInput(currentSubmission.score?.toString() || '');
-      setCommentInput(getLatestComment(currentSubmission.submission_comments) || '');
+      // Initialize with empty comment for teacher feedback
+      setCommentInput('');
     }
   }, [currentSubmission]);
 
@@ -26,7 +23,8 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
     if (submissions.length > 0) {
       const firstSubmission = submissions[0];
       setGradeInput(firstSubmission.score?.toString() || '');
-      setCommentInput(getLatestComment(firstSubmission.submission_comments) || '');
+      // Initialize with empty comment for teacher feedback
+      setCommentInput('');
     }
   }, [submissions]);
 
