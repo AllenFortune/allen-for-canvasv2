@@ -2,9 +2,28 @@
 import { useState, useEffect } from 'react';
 
 interface Submission {
-  id: number;
+  id: number | string;
+  user_id: number;
+  assignment_id: number;
+  submitted_at: string | null;
+  graded_at: string | null;
+  grade: string | null;
   score: number | null;
   submission_comments: any[] | null;
+  body: string | null;
+  url: string | null;
+  attachments: any[];
+  workflow_state: string;
+  late: boolean;
+  missing: boolean;
+  submission_type: string | null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    avatar_url: string | null;
+    sortable_name: string;
+  };
 }
 
 export const useGradingForm = (submissions: Submission[], currentSubmissionIndex: number) => {
@@ -41,7 +60,17 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
 
     setSaving(true);
     try {
-      const success = await saveGradeFn(currentSubmission.id, gradeInput, commentInput);
+      // Handle both string and number IDs - only proceed if it's a valid number
+      const submissionId = typeof currentSubmission.id === 'string' 
+        ? (currentSubmission.id.startsWith('placeholder_') ? null : parseInt(currentSubmission.id))
+        : currentSubmission.id;
+
+      if (!submissionId) {
+        console.warn('Cannot save grade for placeholder submission');
+        return;
+      }
+
+      const success = await saveGradeFn(submissionId, gradeInput, commentInput);
       
       if (success) {
         // Update local state
@@ -49,10 +78,12 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
         updatedSubmissions[currentSubmissionIndex] = {
           ...currentSubmission,
           score: parseFloat(gradeInput) || null,
-          workflow_state: 'graded' as any
+          workflow_state: 'graded'
         };
         updateSubmissions(updatedSubmissions);
       }
+    } catch (error) {
+      console.error('Error saving grade:', error);
     } finally {
       setSaving(false);
     }

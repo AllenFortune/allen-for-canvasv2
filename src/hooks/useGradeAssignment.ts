@@ -15,7 +15,7 @@ interface Assignment {
 }
 
 interface Submission {
-  id: number;
+  id: number | string;
   user_id: number;
   assignment_id: number;
   submitted_at: string | null;
@@ -102,6 +102,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       
       if (data && data.submissions) {
         console.log(`Received ${data.submissions.length} submissions from Canvas`);
+        console.log('First submission sample:', data.submissions[0]);
         
         // Sort submissions by student's sortable name
         const sortedSubmissions = data.submissions.sort((a: Submission, b: Submission) => {
@@ -128,6 +129,8 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
     if (!session || !courseId || !assignmentId) return false;
 
     try {
+      console.log(`Saving grade for submission ${submissionId}: ${grade}`);
+      
       const { data, error } = await supabase.functions.invoke('grade-canvas-submission', {
         body: { 
           courseId: parseInt(courseId), 
@@ -141,7 +144,10 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving grade:', error);
+        throw error;
+      }
       
       console.log('Grade saved successfully');
       return true;
@@ -152,12 +158,16 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
   };
 
   const retryFetch = () => {
+    console.log('Retrying fetch operations...');
     setError(null);
+    setLoading(true);
+    fetchAssignmentDetails();
     fetchSubmissions();
   };
 
   useEffect(() => {
     if (courseId && assignmentId && session) {
+      console.log('Initializing grade assignment with:', { courseId, assignmentId, sessionExists: !!session });
       fetchAssignmentDetails();
       fetchSubmissions();
     }
