@@ -1,4 +1,3 @@
-
 export interface Assignment {
   id: number;
   name: string;
@@ -8,6 +7,7 @@ export interface Assignment {
   course_id: number;
   html_url: string;
   submission_types: string[];
+  rubric?: any; // Add rubric property as optional
 }
 
 export interface Submission {
