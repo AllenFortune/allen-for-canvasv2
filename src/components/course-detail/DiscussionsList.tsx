@@ -35,8 +35,13 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
   };
 
   const handleGradeDiscussion = (discussionId: number) => {
+    console.log('Navigating to grade discussion:', { courseId, discussionId });
     if (courseId) {
-      navigate(`/courses/${courseId}/discussions/${discussionId}/grade`);
+      const path = `/courses/${courseId}/discussions/${discussionId}/grade`;
+      console.log('Navigation path:', path);
+      navigate(path);
+    } else {
+      console.error('No courseId available for navigation');
     }
   };
 
