@@ -201,16 +201,15 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <GradeInput
-                value={gradeInput}
-                onChange={setGradeInput}
-                maxPoints={discussion.points_possible || undefined}
-                placeholder="Enter grade..."
+                gradeInput={gradeInput}
+                setGradeInput={setGradeInput}
+                maxPoints={discussion.points_possible || 100}
+                currentScore={currentGrade?.score}
               />
               
               <FeedbackInput
-                value={feedbackInput}
-                onChange={setFeedbackInput}
-                placeholder="Enter your feedback for the student's discussion participation..."
+                commentInput={feedbackInput}
+                setCommentInput={setFeedbackInput}
               />
             </div>
 
