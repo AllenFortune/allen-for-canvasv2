@@ -35,7 +35,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
 }) => {
   const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
   const [useRubricForAI, setUseRubricForAI] = useState(false);
-  const [isSummativeAssessment, setIsSummativeAssessment] = useState(true);
+  const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
   const maxPoints = assignment?.points_possible || 100;
 
   const handleAIAssistedGrading = async () => {
