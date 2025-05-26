@@ -49,13 +49,10 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
     }).join(', ');
   };
 
-  const stripHtmlTags = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
+  const hasDescription = assignment?.description && assignment.description.trim() !== '' && assignment.description !== '<p></p>';
 
-  const hasDescription = assignment?.description && assignment.description.trim() !== '';
+  console.log('Assignment description in component:', assignment?.description);
+  console.log('Has description:', hasDescription);
 
   return (
     <Card>
@@ -102,15 +99,17 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2">
-                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                    {assignment?.description ? (
-                      <div dangerouslySetInnerHTML={{ __html: assignment.description }} />
-                    ) : (
-                      stripHtmlTags(assignment?.description || '')
-                    )}
+                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md prose prose-sm max-w-none">
+                    <div dangerouslySetInnerHTML={{ __html: assignment?.description || '' }} />
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+            </div>
+          )}
+
+          {!hasDescription && (
+            <div className="mt-4 text-sm text-gray-500 italic">
+              No description provided for this assignment.
             </div>
           )}
         </div>

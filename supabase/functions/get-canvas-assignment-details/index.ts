@@ -75,8 +75,8 @@ serve(async (req) => {
     console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
     console.log('Canvas URL:', profile.canvas_instance_url);
 
-    // Fetch assignment details from Canvas
-    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}`;
+    // Fetch assignment details from Canvas with include parameters to get full description
+    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}?include[]=description`;
     console.log('Making Canvas API request to:', assignmentUrl);
 
     const assignmentResponse = await fetch(assignmentUrl, {
@@ -94,6 +94,7 @@ serve(async (req) => {
 
     const assignment = await assignmentResponse.json();
     console.log('Successfully fetched assignment details:', assignment.name);
+    console.log('Assignment description length:', assignment.description?.length || 0);
 
     return new Response(JSON.stringify({ assignment }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
