@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,6 +32,7 @@ interface Quiz {
   time_limit: number | null;
   allowed_attempts: number | null;
   published: boolean;
+  needs_grading_count?: number;
 }
 
 interface CourseDetailTabsProps {

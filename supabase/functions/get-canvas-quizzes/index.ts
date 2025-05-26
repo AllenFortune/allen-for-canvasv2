@@ -104,7 +104,7 @@ serve(async (req) => {
     console.log(`Fetching quizzes for course ${courseId} from Canvas: ${canvas_instance_url}`);
 
     // Fetch quizzes from Canvas API with proper parameters
-    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes?per_page=100&include[]=assignment&include[]=all_dates`;
+    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes?per_page=100&include[]=assignment&include[]=all_dates&include[]=needs_grading_count`;
     
     console.log(`Making request to Canvas API: ${canvasUrl}`);
 
@@ -159,7 +159,7 @@ serve(async (req) => {
       published: quiz.published,
       assignment_id: quiz.assignment_id,
       is_assignment: !!quiz.assignment_id,
-      needs_grading_count: 0 // Quizzes don't typically have a needs_grading_count like assignments
+      needs_grading_count: quiz.needs_grading_count || 0
     }));
 
     return new Response(
