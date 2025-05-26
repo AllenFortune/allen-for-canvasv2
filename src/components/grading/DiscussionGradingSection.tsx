@@ -50,6 +50,27 @@ const DiscussionGradingSection: React.FC<DiscussionGradingSectionProps> = ({
   isGenerating,
   saving
 }) => {
+  // Calculate the correct points possible value
+  const getMaxPoints = () => {
+    // First check if discussion has points_possible directly
+    if (discussion.points_possible && discussion.points_possible > 0) {
+      console.log('Using discussion.points_possible:', discussion.points_possible);
+      return discussion.points_possible;
+    }
+    
+    // Then check if the linked assignment has points_possible
+    if (discussion.assignment?.points_possible && discussion.assignment.points_possible > 0) {
+      console.log('Using discussion.assignment.points_possible:', discussion.assignment.points_possible);
+      return discussion.assignment.points_possible;
+    }
+    
+    // Fallback to 100 if no points found
+    console.log('No valid points_possible found, using fallback of 100');
+    return 100;
+  };
+
+  const maxPoints = getMaxPoints();
+
   return (
     <Card>
       <CardHeader>
@@ -61,7 +82,7 @@ const DiscussionGradingSection: React.FC<DiscussionGradingSectionProps> = ({
             <GradeInput
               gradeInput={gradeInput}
               setGradeInput={setGradeInput}
-              maxPoints={discussion.points_possible || 100}
+              maxPoints={maxPoints}
               currentScore={currentGrade?.score}
             />
             

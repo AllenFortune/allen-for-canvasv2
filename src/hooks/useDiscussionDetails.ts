@@ -30,6 +30,10 @@ export const useDiscussionDetails = (courseId?: string, discussionId?: string): 
       }
 
       console.log('Discussion details received:', data);
+      console.log('Discussion points_possible:', data.discussion?.points_possible);
+      console.log('Assignment data:', data.discussion?.assignment);
+      console.log('Assignment points_possible:', data.discussion?.assignment?.points_possible);
+      
       setDiscussion(data.discussion);
     } catch (err) {
       console.error('Error fetching discussion details:', err);
