@@ -28,7 +28,11 @@ const Courses = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('get-canvas-courses');
+      const { data, error } = await supabase.functions.invoke('get-canvas-courses', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
       
       if (error) throw error;
       
