@@ -1,3 +1,4 @@
+
 export interface Assignment {
   id: number;
   name: string;
@@ -33,4 +34,43 @@ export interface Submission {
     avatar_url: string | null;
     sortable_name: string;
   };
+}
+
+export interface Discussion {
+  id: number;
+  title: string;
+  message: string;
+  posted_at: string | null;
+  discussion_type: string;
+  points_possible: number | null;
+  course_id: number;
+  html_url: string;
+  assignment_id?: number;
+  assignment?: Assignment;
+}
+
+export interface DiscussionEntry {
+  id: number;
+  user_id: number;
+  discussion_id: number;
+  created_at: string;
+  updated_at: string;
+  message: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    avatar_url: string | null;
+    sortable_name: string;
+  };
+  replies?: DiscussionEntry[];
+  rating_sum?: number;
+  rating_count?: number;
+}
+
+export interface DiscussionGrade {
+  user_id: number;
+  grade: string | null;
+  score: number | null;
+  feedback: string | null;
 }

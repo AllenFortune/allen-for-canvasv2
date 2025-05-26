@@ -14,6 +14,7 @@ import CanvasSetup from "./pages/CanvasSetup";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import GradeAssignment from "./pages/GradeAssignment";
+import GradeDiscussion from "./pages/GradeDiscussion";
 import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/courses/:courseId/assignments/:assignmentId/grade" element={<GradeAssignment />} />
+            <Route path="/courses/:courseId/discussions/:discussionId/grade" element={<GradeDiscussion />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
