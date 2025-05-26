@@ -22,6 +22,9 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -34,6 +37,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       if (data && data.assignment) {
         setAssignment(data.assignment);
         console.log('Assignment details loaded:', data.assignment.name);
+        console.log('Assignment description received:', data.assignment.description?.length > 0 ? 'Yes' : 'No');
       } else {
         console.error('No assignment data received');
         setError('No assignment data received from server');
@@ -55,6 +59,9 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -102,6 +109,9 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
           submissionId,
           grade,
           comment
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
