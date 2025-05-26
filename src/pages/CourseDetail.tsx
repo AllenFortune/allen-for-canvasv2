@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -39,21 +38,35 @@ interface Discussion {
   todo_date: string | null;
 }
 
+interface Quiz {
+  id: number;
+  title: string;
+  due_at: string | null;
+  points_possible: number | null;
+  quiz_type: string;
+  time_limit: number | null;
+  allowed_attempts: number | null;
+  published: boolean;
+}
+
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [discussionsLoading, setDiscussionsLoading] = useState(false);
+  const [quizzesLoading, setQuizzesLoading] = useState(false);
 
   useEffect(() => {
     if (courseId) {
       fetchCourseDetails();
       fetchAssignments();
       fetchDiscussions();
+      fetchQuizzes();
     }
   }, [courseId, user]);
 
@@ -128,6 +141,30 @@ const CourseDetail = () => {
     }
   };
 
+  const fetchQuizzes = async () => {
+    if (!user || !courseId) return;
+
+    setQuizzesLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-canvas-quizzes', {
+        body: { courseId: parseInt(courseId) },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data.quizzes) {
+        setQuizzes(data.quizzes);
+      }
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+    } finally {
+      setQuizzesLoading(false);
+    }
+  };
+
   const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
   const totalUnread = discussions.reduce((total, discussion) => total + discussion.unread_count, 0);
 
@@ -183,6 +220,8 @@ const CourseDetail = () => {
               assignmentsLoading={assignmentsLoading}
               discussions={discussions}
               discussionsLoading={discussionsLoading}
+              quizzes={quizzes}
+              quizzesLoading={quizzesLoading}
               totalNeedsGrading={totalNeedsGrading}
               totalUnread={totalUnread}
             />

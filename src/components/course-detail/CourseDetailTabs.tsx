@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import AssignmentsList from './AssignmentsList';
 import DiscussionsList from './DiscussionsList';
+import QuizzesList from './QuizzesList';
 
 interface Assignment {
   id: number;
@@ -23,11 +24,24 @@ interface Discussion {
   todo_date: string | null;
 }
 
+interface Quiz {
+  id: number;
+  title: string;
+  due_at: string | null;
+  points_possible: number | null;
+  quiz_type: string;
+  time_limit: number | null;
+  allowed_attempts: number | null;
+  published: boolean;
+}
+
 interface CourseDetailTabsProps {
   assignments: Assignment[];
   assignmentsLoading: boolean;
   discussions: Discussion[];
   discussionsLoading: boolean;
+  quizzes: Quiz[];
+  quizzesLoading: boolean;
   totalNeedsGrading: number;
   totalUnread: number;
 }
@@ -37,6 +51,8 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
   assignmentsLoading, 
   discussions,
   discussionsLoading,
+  quizzes,
+  quizzesLoading,
   totalNeedsGrading,
   totalUnread
 }) => {
@@ -72,12 +88,8 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
         <DiscussionsList discussions={discussions} discussionsLoading={discussionsLoading} />
       </TabsContent>
       
-      <TabsContent value="quizzes">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-gray-600 text-center py-8">Quizzes feature coming soon.</p>
-          </CardContent>
-        </Card>
+      <TabsContent value="quizzes" className="mt-6">
+        <QuizzesList quizzes={quizzes} quizzesLoading={quizzesLoading} />
       </TabsContent>
       
       <TabsContent value="students">
