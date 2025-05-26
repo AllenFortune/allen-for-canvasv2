@@ -1,5 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
@@ -175,9 +175,11 @@ const Courses = () => {
                             <Users className="w-4 h-4 mr-2" />
                             {course.total_students > 0 ? `${course.total_students} students` : 'Unknown students'}
                           </div>
-                          <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white mt-4">
-                            View Course
-                          </Button>
+                          <Link to={`/courses/${course.id}`}>
+                            <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white mt-4">
+                              View Course
+                            </Button>
+                          </Link>
                         </div>
                       </CardContent>
                     </Card>
