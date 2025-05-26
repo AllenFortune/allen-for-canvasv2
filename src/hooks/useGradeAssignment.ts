@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,14 +16,12 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
 
     try {
       console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
+      console.log('Session exists:', !!session);
       
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-details', {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -32,9 +31,12 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
         return;
       }
       
-      if (data.assignment) {
+      if (data && data.assignment) {
         setAssignment(data.assignment);
         console.log('Assignment details loaded:', data.assignment.name);
+      } else {
+        console.error('No assignment data received');
+        setError('No assignment data received from server');
       }
     } catch (error) {
       console.error('Error fetching assignment details:', error);
@@ -47,14 +49,12 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
 
     try {
       console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
+      console.log('Session exists:', !!session);
       
       const { data, error } = await supabase.functions.invoke('get-canvas-assignment-submissions', {
         body: { 
           courseId: parseInt(courseId), 
           assignmentId: parseInt(assignmentId) 
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         }
       });
       
@@ -102,9 +102,6 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
           submissionId,
           grade,
           comment
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         }
       });
       

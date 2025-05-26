@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting get-canvas-assignment-details function');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -24,24 +26,44 @@ serve(async (req) => {
       }
     );
 
-    // Get the current user
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    // Get the current user with better error handling
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError) {
+      console.error('Supabase auth error:', userError);
+      return new Response(JSON.stringify({ error: 'Authentication failed', details: userError.message }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     if (!user) {
+      console.error('No authenticated user found');
       return new Response(JSON.stringify({ error: 'User not authenticated' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('User authenticated:', user.id, user.email);
+
     // Get user profile to retrieve Canvas credentials
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(JSON.stringify({ error: 'Failed to fetch user profile', details: profileError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      console.error('Canvas credentials missing:', { hasUrl: !!profile?.canvas_instance_url, hasToken: !!profile?.canvas_access_token });
       return new Response(JSON.stringify({ error: 'Canvas credentials not configured' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -50,25 +72,28 @@ serve(async (req) => {
 
     const { courseId, assignmentId } = await req.json();
 
-    console.log(`Fetching assignment ${assignmentId} details for course ${courseId} from Canvas: ${profile.canvas_instance_url}`);
+    console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
+    console.log('Canvas URL:', profile.canvas_instance_url);
 
-    const response = await fetch(
-      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Fetch assignment details from Canvas
+    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}`;
+    console.log('Making Canvas API request to:', assignmentUrl);
 
-    if (!response.ok) {
-      throw new Error(`Canvas API error: ${response.status} ${response.statusText}`);
+    const assignmentResponse = await fetch(assignmentUrl, {
+      headers: {
+        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!assignmentResponse.ok) {
+      const errorText = await assignmentResponse.text();
+      console.error(`Canvas API error: ${assignmentResponse.status} ${assignmentResponse.statusText} - ${errorText}`);
+      throw new Error(`Canvas API error: ${assignmentResponse.status} ${assignmentResponse.statusText}`);
     }
 
-    const assignment = await response.json();
-
-    console.log(`Successfully fetched assignment details from Canvas`);
+    const assignment = await assignmentResponse.json();
+    console.log('Successfully fetched assignment details:', assignment.name);
 
     return new Response(JSON.stringify({ assignment }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

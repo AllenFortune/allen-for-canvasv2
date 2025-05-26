@@ -26,39 +26,54 @@ serve(async (req) => {
       }
     );
 
-    // Get the current user
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    // Get the current user with better error handling
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError) {
+      console.error('Supabase auth error:', userError);
+      return new Response(JSON.stringify({ error: 'Authentication failed', details: userError.message }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     if (!user) {
-      console.error('User not authenticated');
+      console.error('No authenticated user found');
       return new Response(JSON.stringify({ error: 'User not authenticated' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated:', user.id, user.email);
 
     // Get user profile to retrieve Canvas credentials
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(JSON.stringify({ error: 'Failed to fetch user profile', details: profileError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
-      console.error('Canvas credentials not configured');
+      console.error('Canvas credentials missing:', { hasUrl: !!profile?.canvas_instance_url, hasToken: !!profile?.canvas_access_token });
       return new Response(JSON.stringify({ error: 'Canvas credentials not configured' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Canvas credentials found for:', profile.canvas_instance_url);
-
     const { courseId, assignmentId } = await req.json();
 
     console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId}`);
+    console.log('Canvas URL:', profile.canvas_instance_url);
 
     // First, fetch all enrolled students in the course
     const enrollmentsUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/enrollments?type[]=StudentEnrollment&state[]=active&per_page=100`;
