@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Discussion, DiscussionEntry, DiscussionGrade, DiscussionSubmission } from '@/types/grading';
+
+import React, { useState, useEffect } from 'react';
+import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
 import DiscussionPostsView from './DiscussionPostsView';
 import DiscussionGradingSection from './DiscussionGradingSection';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
+import { useStudentParticipation } from './StudentParticipationProcessor';
+import { buildDiscussionContent, createMockSubmission } from './DiscussionContentBuilder';
 
 interface DiscussionGradingFormProps {
   discussion: Discussion;
@@ -14,15 +17,6 @@ interface DiscussionGradingFormProps {
   currentUserIndex: number;
   totalUsers: number;
   onUserChange: (index: number) => void;
-}
-
-interface StudentParticipation {
-  studentEntries: DiscussionEntry[];
-  initialPosts: DiscussionEntry[];
-  replies: DiscussionEntry[];
-  repliedToPosts: DiscussionEntry[];
-  allRelevantEntries: DiscussionEntry[];
-  totalParticipation: number;
 }
 
 const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
@@ -54,45 +48,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   console.log('DiscussionGradingForm - Entries sample:', entries.slice(0, 3));
 
   // Process student participation data
-  const studentParticipation: StudentParticipation = useMemo(() => {
-    console.log('Processing participation for user ID:', user.id);
-    
-    const studentEntries = entries.filter(entry => entry.user_id === user.id);
-    console.log('Student entries found:', studentEntries.length, studentEntries);
-    
-    const initialPosts = studentEntries.filter(entry => !entry.parent_id);
-    console.log('Initial posts:', initialPosts.length, initialPosts);
-    
-    const replies = studentEntries.filter(entry => entry.parent_id);
-    console.log('Replies:', replies.length, replies);
-    
-    // Get original posts that this student replied to for context
-    const repliedToPosts = replies.map(reply => {
-      const originalPost = entries.find(entry => entry.id === reply.parent_id);
-      console.log(`Looking for parent ${reply.parent_id} for reply ${reply.id}:`, originalPost ? 'FOUND' : 'NOT FOUND');
-      return originalPost;
-    }).filter(Boolean) as DiscussionEntry[];
-
-    console.log('Replied to posts found:', repliedToPosts.length);
-
-    // Combine all relevant entries in chronological order
-    const allRelevantEntries = [...initialPosts, ...replies, ...repliedToPosts]
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    console.log('All relevant entries:', allRelevantEntries.length);
-
-    const participation = {
-      studentEntries,
-      initialPosts,
-      replies,
-      repliedToPosts,
-      allRelevantEntries,
-      totalParticipation: studentEntries.length
-    };
-
-    console.log('Final participation object:', participation);
-    return participation;
-  }, [entries, user.id]);
+  const studentParticipation = useStudentParticipation({ entries, userId: user.id });
 
   useEffect(() => {
     if (currentGrade) {
@@ -112,64 +68,16 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
 
   const handleAIGrading = async () => {
     // Create comprehensive content including initial posts, replies, and context
-    let combinedContent = '';
-    
-    // Add participation summary
-    combinedContent += `=== DISCUSSION PARTICIPATION SUMMARY ===\n`;
-    combinedContent += `Student: ${user.name || 'Unknown Student'}\n`;
-    combinedContent += `Total Posts: ${studentParticipation.totalParticipation}\n`;
-    combinedContent += `Initial Posts: ${studentParticipation.initialPosts.length}\n`;
-    combinedContent += `Replies: ${studentParticipation.replies.length}\n\n`;
+    const combinedContent = buildDiscussionContent({ user, studentParticipation });
 
-    // Add initial posts
-    if (studentParticipation.initialPosts.length > 0) {
-      combinedContent += `=== INITIAL POSTS ===\n`;
-      studentParticipation.initialPosts.forEach((post, index) => {
-        combinedContent += `Initial Post ${index + 1} (Posted: ${new Date(post.created_at).toLocaleDateString()}):\n`;
-        combinedContent += `${post.message}\n\n`;
-      });
-    }
-
-    // Add replies with context
-    if (studentParticipation.replies.length > 0) {
-      combinedContent += `=== REPLIES TO CLASSMATES ===\n`;
-      studentParticipation.replies.forEach((reply, index) => {
-        const originalPost = studentParticipation.repliedToPosts.find(p => p?.id === reply.parent_id);
-        combinedContent += `Reply ${index + 1} (Posted: ${new Date(reply.created_at).toLocaleDateString()}):\n`;
-        
-        if (originalPost) {
-          combinedContent += `Replying to: ${originalPost.user?.name || 'Unknown'}\n`;
-          combinedContent += `Original Post: ${originalPost.message.substring(0, 200)}${originalPost.message.length > 200 ? '...' : ''}\n`;
-        }
-        
-        combinedContent += `Student's Reply: ${reply.message}\n\n`;
-      });
-    }
-
-    // If no participation, note it
-    if (studentParticipation.totalParticipation === 0) {
-      combinedContent += `=== NO PARTICIPATION ===\n`;
-      combinedContent += `This student has not participated in the discussion.\n`;
-    }
-
-    const mockSubmission: DiscussionSubmission = {
-      id: user.id,
-      user_id: user.id,
-      assignment_id: discussion.assignment_id || 0,
-      submitted_at: studentParticipation.studentEntries[0]?.created_at || null,
-      graded_at: null,
-      grade: currentGrade?.grade || null,
-      score: currentGrade?.score || null,
-      submission_comments: null,
-      body: combinedContent,
-      url: null,
-      attachments: [],
-      workflow_state: studentParticipation.totalParticipation > 0 ? 'submitted' : 'unsubmitted',
-      late: false,
-      missing: studentParticipation.totalParticipation === 0,
-      submission_type: 'discussion_topic',
-      user: user
-    };
+    const mockSubmission = createMockSubmission(
+      user,
+      discussion.id,
+      discussion.assignment_id || discussion.id,
+      studentParticipation,
+      currentGrade,
+      combinedContent
+    );
 
     const mockAssignment = {
       id: discussion.assignment_id || discussion.id,
