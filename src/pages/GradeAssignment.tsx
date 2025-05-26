@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Bot } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Bot, ExternalLink, Users, Clock, FileText } from 'lucide-react';
 
 interface Assignment {
   id: number;
@@ -18,6 +21,8 @@ interface Assignment {
   due_at: string | null;
   points_possible: number | null;
   course_id: number;
+  html_url: string;
+  submission_types: string[];
 }
 
 interface Submission {
@@ -25,13 +30,23 @@ interface Submission {
   user_id: number;
   assignment_id: number;
   submitted_at: string | null;
+  graded_at: string | null;
   grade: string | null;
   score: number | null;
-  submission_comments: string | null;
+  submission_comments: any[] | null;
   body: string | null;
+  url: string | null;
+  attachments: any[];
+  workflow_state: string;
+  late: boolean;
+  missing: boolean;
+  submission_type: string | null;
   user: {
+    id: number;
     name: string;
     email: string;
+    avatar_url: string | null;
+    sortable_name: string;
   };
 }
 
@@ -46,6 +61,7 @@ const GradeAssignment = () => {
   const [gradeInput, setGradeInput] = useState('');
   const [commentInput, setCommentInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     if (courseId && assignmentId) {
@@ -95,12 +111,18 @@ const GradeAssignment = () => {
       if (error) throw error;
       
       if (data.submissions) {
-        setSubmissions(data.submissions);
+        // Sort submissions by student's sortable name
+        const sortedSubmissions = data.submissions.sort((a: Submission, b: Submission) => {
+          return (a.user.sortable_name || a.user.name).localeCompare(b.user.sortable_name || b.user.name);
+        });
+        
+        setSubmissions(sortedSubmissions);
+        
         // Set initial grade and comment if submission has them
-        const firstSubmission = data.submissions[0];
+        const firstSubmission = sortedSubmissions[0];
         if (firstSubmission) {
           setGradeInput(firstSubmission.score?.toString() || '');
-          setCommentInput(firstSubmission.submission_comments || '');
+          setCommentInput(getLatestComment(firstSubmission.submission_comments) || '');
         }
       }
     } catch (error) {
@@ -110,13 +132,46 @@ const GradeAssignment = () => {
     }
   };
 
-  const currentSubmission = submissions[currentSubmissionIndex];
+  const getLatestComment = (comments: any[] | null) => {
+    if (!comments || comments.length === 0) return '';
+    return comments[comments.length - 1]?.comment || '';
+  };
+
+  const getSubmissionStatusBadge = (submission: Submission) => {
+    if (submission.workflow_state === 'graded') {
+      return <Badge className="bg-green-500">Graded</Badge>;
+    } else if (submission.missing) {
+      return <Badge variant="destructive">Missing</Badge>;
+    } else if (submission.late) {
+      return <Badge className="bg-yellow-500">Late</Badge>;
+    } else if (submission.submitted_at) {
+      return <Badge>Submitted</Badge>;
+    } else {
+      return <Badge variant="outline">Not Submitted</Badge>;
+    }
+  };
+
+  const filterSubmissions = () => {
+    if (activeTab === 'all') {
+      return submissions;
+    } else if (activeTab === 'submitted') {
+      return submissions.filter(s => s.submitted_at && s.workflow_state !== 'graded');
+    } else if (activeTab === 'graded') {
+      return submissions.filter(s => s.workflow_state === 'graded');
+    } else if (activeTab === 'missing') {
+      return submissions.filter(s => s.missing || (!s.submitted_at && s.workflow_state !== 'graded'));
+    }
+    return submissions;
+  };
+
+  const filteredSubmissions = filterSubmissions();
+  const currentSubmission = filteredSubmissions[currentSubmissionIndex];
 
   const handleSubmissionChange = (index: number) => {
     setCurrentSubmissionIndex(index);
-    const submission = submissions[index];
+    const submission = filteredSubmissions[index];
     setGradeInput(submission.score?.toString() || '');
-    setCommentInput(submission.submission_comments || '');
+    setCommentInput(getLatestComment(submission.submission_comments) || '');
   };
 
   const handleSaveGrade = async () => {
@@ -141,12 +196,15 @@ const GradeAssignment = () => {
       
       // Update local state
       const updatedSubmissions = [...submissions];
-      updatedSubmissions[currentSubmissionIndex] = {
-        ...currentSubmission,
-        score: parseFloat(gradeInput) || null,
-        submission_comments: commentInput
-      };
-      setSubmissions(updatedSubmissions);
+      const originalIndex = submissions.findIndex(s => s.id === currentSubmission.id);
+      if (originalIndex !== -1) {
+        updatedSubmissions[originalIndex] = {
+          ...currentSubmission,
+          score: parseFloat(gradeInput) || null,
+          workflow_state: 'graded'
+        };
+        setSubmissions(updatedSubmissions);
+      }
       
       console.log('Grade saved successfully');
     } catch (error) {
@@ -201,11 +259,19 @@ const GradeAssignment = () => {
                 Back to Course
               </Button>
               <h1 className="text-3xl font-bold text-gray-900">Grade Assignment</h1>
+              {assignment && (
+                <Button variant="outline" asChild>
+                  <a href={assignment.html_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open in Canvas
+                  </a>
+                </Button>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Assignment Details */}
-              <div className="lg:col-span-1">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Assignment Details & Navigation */}
+              <div className="lg:col-span-1 space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Assignment Details</CardTitle>
@@ -213,54 +279,102 @@ const GradeAssignment = () => {
                   <CardContent className="space-y-4">
                     <div>
                       <h3 className="font-semibold text-lg">{assignment?.name}</h3>
-                      <p className="text-gray-600 text-sm mt-1">{assignment?.description}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm"><strong>Due:</strong> {formatDate(assignment?.due_at)}</p>
-                      <p className="text-sm"><strong>Points:</strong> {assignment?.points_possible || 'Ungraded'}</p>
-                      <p className="text-sm"><strong>Submissions:</strong> {submissions.length}</p>
-                    </div>
-
-                    {/* Student Navigation */}
-                    {submissions.length > 1 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold">Students:</p>
-                        <div className="space-y-1 max-h-40 overflow-y-auto">
-                          {submissions.map((submission, index) => (
-                            <button
-                              key={submission.id}
-                              onClick={() => handleSubmissionChange(index)}
-                              className={`w-full text-left text-sm p-2 rounded ${
-                                index === currentSubmissionIndex 
-                                  ? 'bg-blue-100 border-blue-300' 
-                                  : 'bg-gray-50 hover:bg-gray-100'
-                              }`}
-                            >
-                              {submission.user.name}
-                            </button>
-                          ))}
+                      <div className="space-y-2 mt-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Clock className="w-4 h-4 mr-2" />
+                          Due: {formatDate(assignment?.due_at)}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <FileText className="w-4 h-4 mr-2" />
+                          {assignment?.points_possible || 0} points
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Users className="w-4 h-4 mr-2" />
+                          {submissions.length} submissions
                         </div>
                       </div>
-                    )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Submission Tabs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Submissions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="submitted">Needs Grading</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {filteredSubmissions.map((submission, index) => (
+                        <button
+                          key={submission.id}
+                          onClick={() => handleSubmissionChange(index)}
+                          className={`w-full text-left p-3 rounded-md border ${
+                            index === currentSubmissionIndex 
+                              ? 'bg-blue-50 border-blue-300' 
+                              : 'bg-white hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={submission.user.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {submission.user.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{submission.user.name}</p>
+                              <div className="flex items-center gap-1 mt-1">
+                                {getSubmissionStatusBadge(submission)}
+                                {submission.workflow_state === 'graded' && (
+                                  <span className="text-xs text-gray-500">
+                                    {submission.score}/{assignment?.points_possible}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Student Submission and Grading */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 {currentSubmission ? (
                   <>
                     {/* Student Info */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Student: {currentSubmission.user.name}</CardTitle>
-                        <p className="text-gray-600">{currentSubmission.user.email}</p>
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage src={currentSubmission.user.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {currentSubmission.user.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <CardTitle>{currentSubmission.user.name}</CardTitle>
+                            <p className="text-gray-600">{currentSubmission.user.email}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {getSubmissionStatusBadge(currentSubmission)}
+                              {currentSubmission.submitted_at && (
+                                <span className="text-sm text-gray-600">
+                                  Submitted: {formatDate(currentSubmission.submitted_at)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-600">
-                          Submitted: {formatDate(currentSubmission.submitted_at)}
-                        </p>
-                      </CardContent>
                     </Card>
 
                     {/* Submission Content */}
@@ -272,6 +386,35 @@ const GradeAssignment = () => {
                         {currentSubmission.body ? (
                           <div className="prose max-w-none">
                             <div dangerouslySetInnerHTML={{ __html: currentSubmission.body }} />
+                          </div>
+                        ) : currentSubmission.url ? (
+                          <div>
+                            <p className="mb-2">Website submission:</p>
+                            <a 
+                              href={currentSubmission.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {currentSubmission.url}
+                            </a>
+                          </div>
+                        ) : currentSubmission.attachments && currentSubmission.attachments.length > 0 ? (
+                          <div>
+                            <p className="mb-2">File attachments:</p>
+                            <div className="space-y-2">
+                              {currentSubmission.attachments.map((attachment: any, index: number) => (
+                                <a 
+                                  key={index}
+                                  href={attachment.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="block p-2 border rounded hover:bg-gray-50"
+                                >
+                                  {attachment.filename || attachment.display_name}
+                                </a>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <p className="text-gray-600">No submission content available.</p>
@@ -325,7 +468,11 @@ const GradeAssignment = () => {
                 ) : (
                   <Card>
                     <CardContent className="py-8">
-                      <p className="text-center text-gray-600">No submissions found for this assignment.</p>
+                      <p className="text-center text-gray-600">
+                        {submissions.length === 0 
+                          ? "No submissions found for this assignment." 
+                          : "No submissions match the current filter."}
+                      </p>
                     </CardContent>
                   </Card>
                 )}

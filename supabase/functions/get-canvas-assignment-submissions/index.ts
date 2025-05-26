@@ -52,8 +52,9 @@ serve(async (req) => {
 
     console.log(`Fetching submissions for assignment ${assignmentId} in course ${courseId} from Canvas: ${profile.canvas_instance_url}`);
 
+    // Fetch submissions with more detailed includes
     const response = await fetch(
-      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&per_page=100`,
+      `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&include[]=submission_history&include[]=attachments&per_page=100`,
       {
         headers: {
           'Authorization': `Bearer ${profile.canvas_access_token}`,
@@ -68,9 +69,14 @@ serve(async (req) => {
 
     const submissions = await response.json();
 
-    console.log(`Successfully fetched ${submissions.length} submissions from Canvas`);
+    // Filter out submissions that are just placeholders (no actual submission)
+    const actualSubmissions = submissions.filter((submission: any) => 
+      submission.submitted_at || submission.workflow_state === 'graded' || submission.body || submission.attachments?.length > 0
+    );
 
-    return new Response(JSON.stringify({ submissions }), {
+    console.log(`Successfully fetched ${actualSubmissions.length} actual submissions from Canvas (${submissions.length} total records)`);
+
+    return new Response(JSON.stringify({ submissions: actualSubmissions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
