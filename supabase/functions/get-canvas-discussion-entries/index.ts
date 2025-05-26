@@ -50,12 +50,12 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Fetch discussion entries with detailed logging
-    const entriesUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/entries?include[]=user&per_page=100`;
+    // Try the /view endpoint first to get threaded discussion structure
+    const viewUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/view`;
     
-    console.log(`Making Canvas API request to: ${entriesUrl}`);
+    console.log(`Making Canvas API request to: ${viewUrl}`);
 
-    const response = await fetch(entriesUrl, {
+    const response = await fetch(viewUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
@@ -64,49 +64,73 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Canvas API error: ${response.status} - ${errorText}`);
+      console.error(`Canvas API error: ${response.status} - ${await response.text()}`);
+      
+      // Fallback to entries endpoint if view doesn't work
+      const entriesUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/entries?include[]=user&per_page=100`;
+      console.log(`Falling back to entries endpoint: ${entriesUrl}`);
+      
+      const entriesResponse = await fetch(entriesUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!entriesResponse.ok) {
+        const errorText = await entriesResponse.text();
+        console.error(`Canvas API entries error: ${entriesResponse.status} - ${errorText}`);
+        return new Response(
+          JSON.stringify({ error: `Canvas API error: ${entriesResponse.status}` }),
+          { status: entriesResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const entriesData = await entriesResponse.json();
+      console.log(`Raw Canvas API response for discussion entries:`, JSON.stringify(entriesData, null, 2));
+      
+      // Process entries and extract nested replies
+      const allEntries = flattenDiscussionEntries(entriesData);
+      
       return new Response(
-        JSON.stringify({ error: `Canvas API error: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, entries: allEntries }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const entriesData = await response.json();
+    const viewData = await response.json();
+    console.log(`Raw Canvas API response for discussion view:`, JSON.stringify(viewData, null, 2));
     
-    console.log(`Raw Canvas API response for discussion entries:`, JSON.stringify(entriesData, null, 2));
-    console.log(`Total entries received: ${entriesData?.length || 0}`);
+    // Extract all entries from the view structure
+    let allEntries = [];
     
-    // Log detailed structure of first few entries
-    if (entriesData && entriesData.length > 0) {
-      console.log(`First entry structure:`, JSON.stringify(entriesData[0], null, 2));
+    if (viewData.participants) {
+      console.log(`Found ${viewData.participants.length} participants`);
+    }
+    
+    if (viewData.view) {
+      console.log(`Processing discussion view structure`);
+      allEntries = extractEntriesFromView(viewData.view);
+    } else if (viewData.entries) {
+      console.log(`Processing entries from view response`);
+      allEntries = flattenDiscussionEntries(viewData.entries);
+    } else {
+      console.log(`No recognized structure in view response, checking for direct entries array`);
+      allEntries = Array.isArray(viewData) ? flattenDiscussionEntries(viewData) : [];
+    }
+    
+    console.log(`Total entries processed: ${allEntries.length}`);
+    
+    if (allEntries.length > 0) {
+      console.log(`Sample processed entry:`, JSON.stringify(allEntries[0], null, 2));
       
-      if (entriesData.length > 1) {
-        console.log(`Second entry structure:`, JSON.stringify(entriesData[1], null, 2));
-      }
-      
-      // Analyze parent_id relationships
-      const entriesWithParentId = entriesData.filter(entry => entry.parent_id);
-      console.log(`Entries with parent_id: ${entriesWithParentId.length}`);
-      
-      if (entriesWithParentId.length > 0) {
-        console.log(`Sample entry with parent_id:`, JSON.stringify(entriesWithParentId[0], null, 2));
-      }
-      
-      // Check for alternative reply indicators
-      const entriesWithReplies = entriesData.filter(entry => entry.replies && entry.replies.length > 0);
-      console.log(`Entries with replies array: ${entriesWithReplies.length}`);
-      
-      if (entriesWithReplies.length > 0) {
-        console.log(`Entry with replies:`, JSON.stringify(entriesWithReplies[0], null, 2));
-      }
-      
-      // Log user participation stats
-      const uniqueUsers = [...new Set(entriesData.map(entry => entry.user_id))];
+      // Log participation stats
+      const uniqueUsers = [...new Set(allEntries.map(entry => entry.user_id))];
       console.log(`Unique participating users: ${uniqueUsers.length}`);
       
       uniqueUsers.forEach(userId => {
-        const userEntries = entriesData.filter(entry => entry.user_id === userId);
+        const userEntries = allEntries.filter(entry => entry.user_id === userId);
         const userReplies = userEntries.filter(entry => entry.parent_id);
         const userName = userEntries[0]?.user?.display_name || userEntries[0]?.user_name || `User ${userId}`;
         console.log(`User "${userName}" (ID: ${userId}): ${userEntries.length} total posts, ${userReplies.length} replies`);
@@ -114,7 +138,7 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ success: true, entries: entriesData }),
+      JSON.stringify({ success: true, entries: allEntries }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -126,3 +150,104 @@ serve(async (req) => {
     );
   }
 });
+
+// Function to extract entries from Canvas discussion view structure
+function extractEntriesFromView(viewStructure: any[]): any[] {
+  const allEntries: any[] = [];
+  
+  function processViewItem(item: any, parentId: number | null = null) {
+    if (item.id && item.user_id) {
+      // This is an entry
+      const entry = {
+        id: item.id,
+        user_id: item.user_id,
+        parent_id: parentId,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        rating_count: item.rating_count,
+        rating_sum: item.rating_sum,
+        user_name: item.user_name,
+        message: item.message,
+        user: item.user || {
+          id: item.user_id,
+          display_name: item.user_name,
+          name: item.user_name
+        },
+        read_state: item.read_state,
+        forced_read_state: item.forced_read_state
+      };
+      
+      allEntries.push(entry);
+      
+      // Process replies if they exist
+      if (item.replies && Array.isArray(item.replies)) {
+        item.replies.forEach((reply: any) => {
+          processViewItem(reply, item.id);
+        });
+      }
+    }
+    
+    // If this item has children, process them
+    if (item.replies && Array.isArray(item.replies)) {
+      item.replies.forEach((child: any) => {
+        processViewItem(child, item.id);
+      });
+    }
+  }
+  
+  viewStructure.forEach(item => {
+    processViewItem(item);
+  });
+  
+  return allEntries;
+}
+
+// Function to flatten discussion entries and extract nested replies
+function flattenDiscussionEntries(entries: any[]): any[] {
+  const allEntries: any[] = [];
+  
+  function processEntry(entry: any, parentId: number | null = null) {
+    // Normalize user data
+    const normalizedEntry = {
+      ...entry,
+      parent_id: parentId,
+      user: {
+        id: entry.user_id,
+        name: entry.user?.display_name || entry.user_name || `User ${entry.user_id}`,
+        display_name: entry.user?.display_name || entry.user_name,
+        email: entry.user?.email,
+        avatar_url: entry.user?.avatar_image_url || entry.user?.avatar_url,
+        avatar_image_url: entry.user?.avatar_image_url,
+        sortable_name: entry.user?.sortable_name,
+        html_url: entry.user?.html_url,
+        pronouns: entry.user?.pronouns
+      }
+    };
+    
+    allEntries.push(normalizedEntry);
+    
+    // Process nested replies from recent_replies array
+    if (entry.recent_replies && Array.isArray(entry.recent_replies)) {
+      console.log(`Processing ${entry.recent_replies.length} recent replies for entry ${entry.id}`);
+      entry.recent_replies.forEach((reply: any) => {
+        processEntry(reply, entry.id);
+      });
+    }
+    
+    // Process nested replies from replies array (alternative structure)
+    if (entry.replies && Array.isArray(entry.replies)) {
+      console.log(`Processing ${entry.replies.length} replies for entry ${entry.id}`);
+      entry.replies.forEach((reply: any) => {
+        processEntry(reply, entry.id);
+      });
+    }
+  }
+  
+  entries.forEach(entry => {
+    processEntry(entry);
+  });
+  
+  console.log(`Flattened ${entries.length} original entries into ${allEntries.length} total entries`);
+  
+  return allEntries;
+}

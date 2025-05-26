@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DiscussionEntry } from '@/types/grading';
-import { MessageCircle, Reply, User } from 'lucide-react';
+import { MessageCircle, Reply } from 'lucide-react';
 
 interface DiscussionPostsViewProps {
   entries: DiscussionEntry[];
@@ -55,13 +55,6 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
     allEntries: entries.length
   });
 
-  // Debug parent_id relationships
-  console.log('Parent ID analysis:', {
-    entriesWithParentId: entries.filter(e => e.parent_id).length,
-    parentIds: entries.filter(e => e.parent_id).map(e => ({ id: e.id, parent_id: e.parent_id, user_id: e.user_id })),
-    availableEntryIds: entries.map(e => e.id)
-  });
-
   if (entries.length === 0) {
     return (
       <Card>
@@ -90,19 +83,6 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Debug Information */}
-        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-          <h4 className="text-sm font-semibold text-yellow-800 mb-2">Debug Info</h4>
-          <div className="text-xs space-y-1 text-yellow-700">
-            <p>Total entries: {entries.length}</p>
-            <p>Student entries: {entries.filter(e => e.user_id === studentUserId).length}</p>
-            <p>Initial posts: {initialPosts.length}</p>
-            <p>Replies: {replies.length}</p>
-            <p>Context posts: {contextPosts.length}</p>
-            <p>Entries with parent_id: {entries.filter(e => e.parent_id).length}</p>
-          </div>
-        </div>
-
         {/* Initial Posts Section */}
         {initialPosts.length > 0 && (
           <div>
@@ -134,9 +114,6 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
                     className="prose prose-sm max-w-none text-gray-800"
                     dangerouslySetInnerHTML={{ __html: entry.message }}
                   />
-                  <div className="mt-2 text-xs text-gray-500">
-                    Entry ID: {entry.id} | Parent ID: {entry.parent_id || 'None'}
-                  </div>
                 </div>
               ))}
             </div>
@@ -181,9 +158,6 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
                               : originalPost.message 
                           }}
                         />
-                        <div className="mt-1 text-xs text-gray-400">
-                          Original Entry ID: {originalPost.id}
-                        </div>
                       </div>
                     )}
                     
@@ -210,9 +184,6 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
                         className="prose prose-sm max-w-none text-gray-800"
                         dangerouslySetInnerHTML={{ __html: reply.message }}
                       />
-                      <div className="mt-2 text-xs text-gray-500">
-                        Reply ID: {reply.id} | Parent ID: {reply.parent_id} | {originalPost ? 'Original found' : 'Original NOT found'}
-                      </div>
                     </div>
                   </div>
                 );
@@ -221,47 +192,11 @@ const DiscussionPostsView: React.FC<DiscussionPostsViewProps> = ({
           </div>
         )}
 
-        {/* Show all entries for debugging if no proper categorization */}
-        {initialPosts.length === 0 && replies.length === 0 && entries.filter(e => e.user_id === studentUserId).length > 0 && (
-          <div>
-            <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              All Student Entries (Debug View)
-            </h4>
-            <div className="space-y-4">
-              {entries.filter(e => e.user_id === studentUserId).map((entry) => (
-                <div key={entry.id} className="p-4 border-l-4 border-red-500 bg-red-50 rounded-r-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={entry.user.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-red-100">
-                        {getUserInitials(entry.user)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-red-800">{getUserName(entry.user)}</span>
-                        <Badge variant="outline" className="text-red-700 border-red-300">
-                          {entry.parent_id ? 'Has Parent ID' : 'No Parent ID'}
-                        </Badge>
-                      </div>
-                      <span className="text-sm text-gray-600">{formatDate(entry.created_at)}</span>
-                    </div>
-                  </div>
-                  <div 
-                    className="prose prose-sm max-w-none text-gray-800"
-                    dangerouslySetInnerHTML={{ __html: entry.message }}
-                  />
-                  <div className="mt-2 text-xs text-gray-500 bg-white p-2 rounded border">
-                    <strong>Raw Data:</strong><br />
-                    ID: {entry.id}<br />
-                    Parent ID: {entry.parent_id || 'null'}<br />
-                    User ID: {entry.user_id}<br />
-                    Created: {entry.created_at}
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Show message if no student participation */}
+        {initialPosts.length === 0 && replies.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p>This student has not participated in the discussion yet.</p>
           </div>
         )}
 
