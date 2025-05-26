@@ -80,32 +80,44 @@ const CanvasSetup = () => {
     setTestLoading(true);
     try {
       // Clean URL - remove trailing slash and ensure proper format
-      const cleanUrl = urlToTest.replace(/\/$/, '');
+      let cleanUrl = urlToTest.trim();
+      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+        cleanUrl = `https://${cleanUrl}`;
+      }
+      cleanUrl = cleanUrl.replace(/\/$/, '');
       
-      // Test Canvas API by fetching user profile
-      const response = await fetch(`${cleanUrl}/api/v1/users/self`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${tokenToTest}`,
-          'Content-Type': 'application/json',
+      console.log(`Testing Canvas connection through edge function`);
+
+      // Call our Supabase Edge Function instead of making direct API call
+      const { data, error } = await supabase.functions.invoke('test-canvas-connection', {
+        body: {
+          canvasUrl: cleanUrl,
+          canvasToken: tokenToTest,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Canvas API returned ${response.status}: ${response.statusText}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to test Canvas connection');
       }
 
-      const userData: CanvasUser = await response.json();
-      
+      if (!data.success) {
+        throw new Error(data.error || 'Canvas connection test failed');
+      }
+
       setConnectionStatus({
         connected: true,
-        user: userData,
+        user: data.user,
       });
+
+      // Update the URL state with the cleaned version
+      if (testUrl !== cleanUrl) {
+        setCanvasUrl(cleanUrl);
+      }
 
       if (showToast) {
         toast({
           title: 'Connection Successful!',
-          description: `Connected to Canvas as ${userData.name}`,
+          description: `Connected to Canvas as ${data.user.name}`,
         });
       }
     } catch (error) {
