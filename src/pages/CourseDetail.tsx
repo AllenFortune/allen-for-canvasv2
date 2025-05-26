@@ -279,12 +279,22 @@ const CourseDetail = () => {
                     ) : assignments.length > 0 ? (
                       <div className="space-y-4">
                         {assignments.map((assignment) => (
-                          <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                          <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 relative">
+                            {assignment.needs_grading_count > 0 && (
+                              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
+                                {assignment.needs_grading_count}
+                              </div>
+                            )}
                             <div className="flex-1">
                               <h3 className="font-medium text-gray-900">{assignment.name}</h3>
                               <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
                                 <span>Due: {formatDate(assignment.due_at)}</span>
                                 <span>{assignment.points_possible || 0} points</span>
+                                {assignment.needs_grading_count > 0 && (
+                                  <span className="text-red-600 font-medium">
+                                    {assignment.needs_grading_count} need grading
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <Button className="bg-gray-900 hover:bg-gray-800 text-white">
