@@ -17,9 +17,10 @@ interface Course {
 
 interface CourseCardProps {
   course: Course;
+  needsGradingCount?: number;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }) => {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No dates set';
     const date = new Date(dateString);
@@ -56,7 +57,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow relative">
+      {needsGradingCount > 0 && (
+        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
+          {needsGradingCount}
+        </div>
+      )}
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{course.name}</CardTitle>

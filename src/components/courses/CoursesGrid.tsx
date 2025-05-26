@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CourseCard from './CourseCard';
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Course {
   id: number;
@@ -23,6 +25,47 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
   filteredCourses,
   loading
 }) => {
+  const { user } = useAuth();
+  const [gradingCounts, setGradingCounts] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (filteredCourses.length > 0 && user) {
+      fetchGradingCounts();
+    }
+  }, [filteredCourses, user]);
+
+  const fetchGradingCounts = async () => {
+    if (!user) return;
+
+    const counts: Record<number, number> = {};
+    
+    // Fetch grading counts for all filtered courses
+    const promises = filteredCourses.map(async (course) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-canvas-assignments', {
+          body: { courseId: course.id },
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+        });
+        
+        if (!error && data.assignments) {
+          const totalNeedsGrading = data.assignments.reduce(
+            (total: number, assignment: any) => total + (assignment.needs_grading_count || 0),
+            0
+          );
+          counts[course.id] = totalNeedsGrading;
+        }
+      } catch (error) {
+        console.error(`Error fetching assignments for course ${course.id}:`, error);
+        counts[course.id] = 0;
+      }
+    });
+
+    await Promise.all(promises);
+    setGradingCounts(counts);
+  };
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -55,7 +98,11 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCourses.map((course) => (
-          <CourseCard key={course.id} course={course} />
+          <CourseCard 
+            key={course.id} 
+            course={course} 
+            needsGradingCount={gradingCounts[course.id] || 0}
+          />
         ))}
       </div>
     </>
