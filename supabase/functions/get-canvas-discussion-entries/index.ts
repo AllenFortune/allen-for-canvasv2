@@ -33,6 +33,8 @@ serve(async (req) => {
     const body = await req.json();
     const { courseId, discussionId } = body;
 
+    console.log(`Fetching discussion entries for course ${courseId}, discussion ${discussionId}`);
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('canvas_instance_url, canvas_access_token')
@@ -48,9 +50,11 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Fetch discussion entries
+    // Fetch discussion entries with detailed logging
     const entriesUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}/entries?include[]=user&per_page=100`;
     
+    console.log(`Making Canvas API request to: ${entriesUrl}`);
+
     const response = await fetch(entriesUrl, {
       method: 'GET',
       headers: {
@@ -69,6 +73,45 @@ serve(async (req) => {
     }
 
     const entriesData = await response.json();
+    
+    console.log(`Raw Canvas API response for discussion entries:`, JSON.stringify(entriesData, null, 2));
+    console.log(`Total entries received: ${entriesData?.length || 0}`);
+    
+    // Log detailed structure of first few entries
+    if (entriesData && entriesData.length > 0) {
+      console.log(`First entry structure:`, JSON.stringify(entriesData[0], null, 2));
+      
+      if (entriesData.length > 1) {
+        console.log(`Second entry structure:`, JSON.stringify(entriesData[1], null, 2));
+      }
+      
+      // Analyze parent_id relationships
+      const entriesWithParentId = entriesData.filter(entry => entry.parent_id);
+      console.log(`Entries with parent_id: ${entriesWithParentId.length}`);
+      
+      if (entriesWithParentId.length > 0) {
+        console.log(`Sample entry with parent_id:`, JSON.stringify(entriesWithParentId[0], null, 2));
+      }
+      
+      // Check for alternative reply indicators
+      const entriesWithReplies = entriesData.filter(entry => entry.replies && entry.replies.length > 0);
+      console.log(`Entries with replies array: ${entriesWithReplies.length}`);
+      
+      if (entriesWithReplies.length > 0) {
+        console.log(`Entry with replies:`, JSON.stringify(entriesWithReplies[0], null, 2));
+      }
+      
+      // Log user participation stats
+      const uniqueUsers = [...new Set(entriesData.map(entry => entry.user_id))];
+      console.log(`Unique participating users: ${uniqueUsers.length}`);
+      
+      uniqueUsers.forEach(userId => {
+        const userEntries = entriesData.filter(entry => entry.user_id === userId);
+        const userReplies = userEntries.filter(entry => entry.parent_id);
+        const userName = userEntries[0]?.user?.display_name || userEntries[0]?.user_name || `User ${userId}`;
+        console.log(`User "${userName}" (ID: ${userId}): ${userEntries.length} total posts, ${userReplies.length} replies`);
+      });
+    }
     
     return new Response(
       JSON.stringify({ success: true, entries: entriesData }),

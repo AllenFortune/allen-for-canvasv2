@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Discussion, DiscussionEntry, DiscussionGrade, DiscussionSubmission } from '@/types/grading';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
@@ -50,22 +49,39 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
 
   const currentGrade = grades.find(g => g.user_id === user.id);
 
+  console.log('DiscussionGradingForm - Current user:', user);
+  console.log('DiscussionGradingForm - All entries count:', entries.length);
+  console.log('DiscussionGradingForm - Entries sample:', entries.slice(0, 3));
+
   // Process student participation data
   const studentParticipation: StudentParticipation = useMemo(() => {
+    console.log('Processing participation for user ID:', user.id);
+    
     const studentEntries = entries.filter(entry => entry.user_id === user.id);
+    console.log('Student entries found:', studentEntries.length, studentEntries);
+    
     const initialPosts = studentEntries.filter(entry => !entry.parent_id);
+    console.log('Initial posts:', initialPosts.length, initialPosts);
+    
     const replies = studentEntries.filter(entry => entry.parent_id);
+    console.log('Replies:', replies.length, replies);
     
     // Get original posts that this student replied to for context
     const repliedToPosts = replies.map(reply => {
-      return entries.find(entry => entry.id === reply.parent_id);
+      const originalPost = entries.find(entry => entry.id === reply.parent_id);
+      console.log(`Looking for parent ${reply.parent_id} for reply ${reply.id}:`, originalPost ? 'FOUND' : 'NOT FOUND');
+      return originalPost;
     }).filter(Boolean) as DiscussionEntry[];
+
+    console.log('Replied to posts found:', repliedToPosts.length);
 
     // Combine all relevant entries in chronological order
     const allRelevantEntries = [...initialPosts, ...replies, ...repliedToPosts]
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-    return {
+    console.log('All relevant entries:', allRelevantEntries.length);
+
+    const participation = {
       studentEntries,
       initialPosts,
       replies,
@@ -73,6 +89,9 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
       allRelevantEntries,
       totalParticipation: studentEntries.length
     };
+
+    console.log('Final participation object:', participation);
+    return participation;
   }, [entries, user.id]);
 
   useEffect(() => {
