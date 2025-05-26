@@ -14,9 +14,16 @@ interface UserProfile {
   school_name?: string;
 }
 
+interface CanvasUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [canvasUser, setCanvasUser] = useState<CanvasUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +39,11 @@ const Dashboard = () => {
 
         if (error) throw error;
         setProfile(data);
+
+        // If we have Canvas credentials, test the connection to get user info
+        if (data.canvas_instance_url && data.canvas_access_token) {
+          await fetchCanvasUser(data.canvas_instance_url, data.canvas_access_token);
+        }
       } catch (error) {
         console.error('Error fetching profile:', error);
       } finally {
@@ -41,6 +53,28 @@ const Dashboard = () => {
 
     fetchProfile();
   }, [user]);
+
+  const fetchCanvasUser = async (canvasUrl: string, canvasToken: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('test-canvas-connection', {
+        body: {
+          canvasUrl: canvasUrl,
+          canvasToken: canvasToken,
+        },
+      });
+
+      if (error) {
+        console.error('Error fetching Canvas user:', error);
+        return;
+      }
+
+      if (data.success && data.user) {
+        setCanvasUser(data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching Canvas user:', error);
+    }
+  };
 
   const isCanvasConnected = profile?.canvas_instance_url && profile?.canvas_access_token;
 
@@ -67,7 +101,13 @@ const Dashboard = () => {
                       <p className="text-green-800 font-medium">
                         Connected to Canvas: {profile.canvas_instance_url}
                       </p>
-                      <p className="text-green-600 text-sm">Logged in as:</p>
+                      {canvasUser ? (
+                        <p className="text-green-600 text-sm">
+                          Logged in as: <strong>{canvasUser.name}</strong> ({canvasUser.email})
+                        </p>
+                      ) : (
+                        <p className="text-green-600 text-sm">Logged in as: Canvas User</p>
+                      )}
                     </div>
                   </div>
                 </div>
