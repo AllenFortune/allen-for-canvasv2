@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
@@ -62,24 +61,37 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string) => 
       console.log('Discussion entries received:', data);
       console.log('Number of entries:', data.entries?.length || 0);
       
-      // Add detailed logging for debugging
-      if (data.entries && data.entries.length > 0) {
-        console.log('First entry sample:', data.entries[0]);
-        console.log('Users in entries:', data.entries.map(entry => ({
+      // Process entries to normalize user data from Canvas API
+      const processedEntries = data.entries?.map((entry: any) => ({
+        ...entry,
+        user: {
+          id: entry.user_id,
+          name: entry.user?.display_name || entry.user_name || `User ${entry.user_id}`,
+          display_name: entry.user?.display_name || entry.user_name,
+          email: entry.user?.email,
+          avatar_url: entry.user?.avatar_image_url || entry.user?.avatar_url,
+          avatar_image_url: entry.user?.avatar_image_url,
+          sortable_name: entry.user?.sortable_name,
+          html_url: entry.user?.html_url,
+          pronouns: entry.user?.pronouns
+        }
+      })) || [];
+      
+      console.log('Processed entries:', processedEntries.length);
+      if (processedEntries.length > 0) {
+        console.log('First processed entry:', processedEntries[0]);
+        console.log('Users in processed entries:', processedEntries.map(entry => ({
           id: entry.user_id,
           name: entry.user?.name,
-          hasUser: !!entry.user
+          hasValidUser: !!entry.user?.name
         })));
-      } else {
-        console.warn('No discussion entries found');
       }
       
-      setEntries(data.entries || []);
+      setEntries(processedEntries);
     } catch (err) {
       console.error('Error fetching discussion entries:', err);
       setError(err.message || 'Failed to fetch discussion entries');
       
-      // Show user-friendly error message
       toast({
         title: "Error loading discussion entries",
         description: "Could not load student discussion posts. Please check your Canvas connection and try again.",

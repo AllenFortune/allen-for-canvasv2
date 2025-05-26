@@ -56,12 +56,18 @@ export interface DiscussionEntry {
   created_at: string;
   updated_at: string;
   message: string;
+  parent_id?: number | null;
+  user_name?: string;
   user: {
     id: number;
-    name: string;
-    email: string;
-    avatar_url: string | null;
-    sortable_name: string;
+    name?: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string | null;
+    avatar_image_url?: string | null;
+    sortable_name?: string;
+    html_url?: string;
+    pronouns?: string | null;
   };
   replies?: DiscussionEntry[];
   rating_sum?: number;
