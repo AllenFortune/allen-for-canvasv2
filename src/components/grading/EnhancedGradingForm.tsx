@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Save, Award, Sparkles } from 'lucide-react';
+import { Save, Award, Sparkles } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
 
@@ -32,7 +32,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   currentScore,
   currentSubmission
 }) => {
-  const { generateFeedback, isGenerating } = useAIFeedback();
+  const { generateComprehensiveFeedback, isGenerating } = useAIFeedback();
   const maxPoints = assignment?.points_possible || 100;
   const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
 
@@ -45,17 +45,49 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
     return 'text-red-600 bg-red-50 border-red-200';
   };
 
-  const handleAIFeedback = async () => {
+  const handleAIAssistedGrading = async () => {
     if (!currentSubmission || !assignment) return;
 
-    const aiFeedback = await generateFeedback(
+    const aiResult = await generateComprehensiveFeedback(
       currentSubmission,
       assignment,
       gradeInput
     );
 
-    if (aiFeedback) {
-      setCommentInput(aiFeedback);
+    if (aiResult) {
+      // Populate the grade if AI provided one
+      if (aiResult.grade !== null && aiResult.grade !== undefined) {
+        setGradeInput(aiResult.grade.toString());
+      }
+
+      // Create comprehensive feedback combining all AI insights
+      let comprehensiveFeedback = '';
+      
+      if (aiResult.summary) {
+        comprehensiveFeedback += `**Summary:**\n${aiResult.summary}\n\n`;
+      }
+
+      if (aiResult.strengths && aiResult.strengths.length > 0) {
+        comprehensiveFeedback += `**Strengths:**\n`;
+        aiResult.strengths.forEach((strength, index) => {
+          comprehensiveFeedback += `${index + 1}. ${strength}\n`;
+        });
+        comprehensiveFeedback += '\n';
+      }
+
+      if (aiResult.areasForImprovement && aiResult.areasForImprovement.length > 0) {
+        comprehensiveFeedback += `**Areas for Improvement:**\n`;
+        aiResult.areasForImprovement.forEach((area, index) => {
+          comprehensiveFeedback += `${index + 1}. ${area}\n`;
+        });
+        comprehensiveFeedback += '\n';
+      }
+
+      if (aiResult.feedback) {
+        comprehensiveFeedback += `**Detailed Feedback:**\n${aiResult.feedback}`;
+      }
+
+      setCommentInput(comprehensiveFeedback);
     }
   };
 
@@ -128,8 +160,8 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           <Textarea
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Write feedback for the student or use AI-assist to generate feedback..."
-            rows={5}
+            placeholder="Write feedback for the student or use AI-assisted grading to generate comprehensive feedback with grade suggestion..."
+            rows={8}
             className="resize-none"
           />
         </div>
@@ -139,18 +171,18 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           <Button 
             variant="outline" 
             className="w-full flex items-center gap-2"
-            onClick={handleAIFeedback}
+            onClick={handleAIAssistedGrading}
             disabled={isGenerating || !currentSubmission}
           >
             {isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                Generating Feedback...
+                Generating Grade & Feedback...
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                AI-Powered Feedback
+                AI-Assisted Grading
               </>
             )}
           </Button>
