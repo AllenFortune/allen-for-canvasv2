@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Assignment, Submission } from '@/types/grading';
@@ -27,28 +26,41 @@ export const useAIFeedback = () => {
 
     try {
       for (const attachment of submission.attachments) {
-        console.log('Processing attachment:', attachment.filename || attachment.display_name);
+        const fileName = attachment.filename || attachment.display_name;
+        console.log('Processing attachment:', fileName);
+        console.log('Attachment URL:', attachment.url);
+        console.log('Attachment type:', attachment['content-type']);
         
-        const { data, error } = await supabase.functions.invoke('process-document-content', {
-          body: {
-            fileUrl: attachment.url,
-            fileName: attachment.filename || attachment.display_name,
-            mimeType: attachment['content-type'] || ''
-          }
-        });
+        try {
+          const { data, error } = await supabase.functions.invoke('process-document-content', {
+            body: {
+              fileUrl: attachment.url,
+              fileName: fileName,
+              mimeType: attachment['content-type'] || ''
+            }
+          });
 
-        if (error) {
-          console.error('Error processing file:', error);
-          combinedContent += `\n[File: ${attachment.filename || attachment.display_name} - Processing failed]`;
-        } else if (data?.extractedText) {
-          combinedContent += `\n\n--- Content from ${attachment.filename || attachment.display_name} ---\n${data.extractedText}`;
+          if (error) {
+            console.error('Supabase function error:', error);
+            combinedContent += `\n[File: ${fileName} - Processing failed: ${error.message}]`;
+          } else if (data?.success && data?.extractedText) {
+            console.log('Successfully processed file:', fileName);
+            console.log('Extracted text length:', data.extractedText.length);
+            combinedContent += `\n\n--- Content from ${fileName} ---\n${data.extractedText}`;
+          } else {
+            console.error('No data returned or processing failed:', data);
+            combinedContent += `\n[File: ${fileName} - No content could be extracted]`;
+          }
+        } catch (fileError) {
+          console.error('Error processing individual file:', fileError);
+          combinedContent += `\n[File: ${fileName} - Processing error: ${fileError.message}]`;
         }
       }
     } catch (error) {
-      console.error('Error in file processing:', error);
+      console.error('Error in file processing loop:', error);
       toast({
-        title: "File Processing Warning",
-        description: "Some files couldn't be processed automatically. AI will grade based on available content.",
+        title: "File Processing Error",
+        description: "Some files couldn't be processed. AI will grade based on available content.",
         variant: "destructive",
       });
     } finally {
@@ -64,21 +76,30 @@ export const useAIFeedback = () => {
     // Start with text submission if available
     if (submission.body) {
       content += submission.body;
+      console.log('Added body content, length:', submission.body.length);
     }
 
     // Add URL submission context if available
     if (submission.url) {
       content += `\n\nWebsite submission: ${submission.url}`;
+      console.log('Added URL submission');
     }
 
     // Process file attachments
     const fileContent = await processSubmissionFiles(submission);
-    content += fileContent;
+    if (fileContent) {
+      content += fileContent;
+      console.log('Added file content, total length now:', content.length);
+    }
 
     // If no content found, provide context
     if (!content.trim()) {
-      content = 'No text content or processable files found in submission.';
+      content = 'No text content or processable files found in submission. Student may have submitted unsupported file types or empty content.';
+      console.log('No content found, using fallback message');
     }
+
+    console.log('Final submission content length:', content.length);
+    console.log('Content preview:', content.substring(0, 300));
 
     return content;
   };
