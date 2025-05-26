@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import AssignmentDetailsCard from './AssignmentDetailsCard';
+import GradingStatusCard from './GradingStatusCard';
 import SubmissionsList from './SubmissionsList';
 import StudentSubmissionView from './StudentSubmissionView';
 import GradingForm from './GradingForm';
@@ -49,6 +51,11 @@ const GradeAssignmentContent: React.FC<GradeAssignmentContentProps> = ({
         <AssignmentDetailsCard 
           assignment={assignment} 
           submissionsCount={submissions.length} 
+        />
+        
+        <GradingStatusCard 
+          submissions={submissions}
+          assignment={assignment}
         />
         
         <SubmissionsList

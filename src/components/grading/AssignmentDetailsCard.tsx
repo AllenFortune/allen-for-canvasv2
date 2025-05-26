@@ -1,13 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, FileText, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, FileText, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Assignment {
   id: number;
   name: string;
+  description: string;
   due_at: string | null;
   points_possible: number | null;
+  submission_types: string[];
 }
 
 interface AssignmentDetailsCardProps {
@@ -19,6 +23,8 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
   assignment, 
   submissionsCount 
 }) => {
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No due date';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -30,6 +36,27 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
     });
   };
 
+  const formatSubmissionTypes = (types: string[] | undefined) => {
+    if (!types || types.length === 0) return 'Not specified';
+    return types.map(type => {
+      switch (type) {
+        case 'online_text_entry': return 'Text Entry';
+        case 'online_upload': return 'File Upload';
+        case 'online_url': return 'URL';
+        case 'media_recording': return 'Media Recording';
+        default: return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      }
+    }).join(', ');
+  };
+
+  const stripHtmlTags = (html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  const hasDescription = assignment?.description && assignment.description.trim() !== '';
+
   return (
     <Card>
       <CardHeader>
@@ -37,8 +64,9 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <h3 className="font-semibold text-lg">{assignment?.name}</h3>
-          <div className="space-y-2 mt-2">
+          <h3 className="font-semibold text-lg mb-3">{assignment?.name}</h3>
+          
+          <div className="space-y-2">
             <div className="flex items-center text-sm text-gray-600">
               <Clock className="w-4 h-4 mr-2" />
               Due: {formatDate(assignment?.due_at)}
@@ -52,6 +80,39 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
               {submissionsCount} submissions
             </div>
           </div>
+
+          <div className="mt-3 pt-3 border-t">
+            <div className="text-sm">
+              <span className="font-medium text-gray-700">Submission Types: </span>
+              <span className="text-gray-600">{formatSubmissionTypes(assignment?.submission_types)}</span>
+            </div>
+          </div>
+
+          {hasDescription && (
+            <div className="mt-4">
+              <Collapsible open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="p-0 h-auto font-medium text-sm hover:bg-transparent">
+                    <span className="mr-2">Assignment Description</span>
+                    {isDescriptionOpen ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                    {assignment?.description ? (
+                      <div dangerouslySetInnerHTML={{ __html: assignment.description }} />
+                    ) : (
+                      stripHtmlTags(assignment?.description || '')
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
