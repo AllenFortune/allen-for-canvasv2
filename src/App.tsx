@@ -11,6 +11,9 @@ import Features from "./pages/Features";
 import About from "./pages/About";
 import Dashboard from "./pages/Dashboard";
 import CanvasSetup from "./pages/CanvasSetup";
+import Courses from "./pages/Courses";
+import Assignments from "./pages/Assignments";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +34,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/canvas-setup" element={<CanvasSetup />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
