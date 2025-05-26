@@ -141,8 +141,8 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
       return false;
     }
 
-    // Handle placeholder submissions
-    if (typeof submissionId === 'string' && submissionId.toString().startsWith('placeholder_')) {
+    // Handle placeholder submissions - check if it's a string that starts with 'placeholder_'
+    if (typeof submissionId === 'string' && submissionId.startsWith('placeholder_')) {
       toast({
         title: "Cannot Grade",
         description: "Cannot grade students who haven't submitted anything yet",
