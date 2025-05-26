@@ -9,6 +9,7 @@ import FeedbackInput from './FeedbackInput';
 import SubmissionIndicator from './SubmissionIndicator';
 import AIGradingSection from './AIGradingSection';
 import ActionButtons from './ActionButtons';
+import AIGradeReview from './AIGradeReview';
 
 interface EnhancedGradingFormProps {
   assignment: Assignment | null;
@@ -38,6 +39,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [aiGradeReview, setAiGradeReview] = useState('');
   const maxPoints = assignment?.points_possible || 100;
 
   const handleAIAssistedGrading = async () => {
@@ -57,6 +59,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
         setGradeInput(aiResult.grade.toString());
       }
       setCommentInput(aiResult.feedback || 'AI feedback could not be generated. Please try again.');
+      setAiGradeReview(aiResult.gradeReview || '');
     }
   };
 
@@ -79,6 +82,11 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
         <FeedbackInput
           commentInput={commentInput}
           setCommentInput={setCommentInput}
+        />
+
+        <AIGradeReview 
+          gradeReview={aiGradeReview}
+          isVisible={!!aiGradeReview}
         />
 
         <SubmissionIndicator currentSubmission={currentSubmission} />

@@ -7,6 +7,7 @@ import DiscussionGradingSection from './DiscussionGradingSection';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
 import { useStudentParticipation } from './StudentParticipationProcessor';
 import { buildDiscussionContent, createMockSubmission } from './DiscussionContentBuilder';
+import AIGradeReview from './AIGradeReview';
 
 interface DiscussionGradingFormProps {
   discussion: Discussion;
@@ -32,6 +33,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   const [gradeInput, setGradeInput] = useState('');
   const [feedbackInput, setFeedbackInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [aiGradeReview, setAiGradeReview] = useState('');
 
   // AI Grading state
   const [isSummativeAssessment, setIsSummativeAssessment] = useState(true);
@@ -71,6 +73,8 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
       setGradeInput('');
       setFeedbackInput('');
     }
+    // Clear AI grade review when switching users
+    setAiGradeReview('');
   }, [currentGrade, user.id]);
 
   const handleSaveGrade = async () => {
@@ -106,6 +110,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
         setGradeInput(result.grade.toString());
       }
       setFeedbackInput(result.feedback);
+      setAiGradeReview(result.gradeReview || '');
     }
   };
 
@@ -125,27 +130,34 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
         showContext={true}
       />
 
-      <DiscussionGradingSection
-        discussion={discussion}
-        gradeInput={gradeInput}
-        setGradeInput={setGradeInput}
-        feedbackInput={feedbackInput}
-        setFeedbackInput={setFeedbackInput}
-        currentGrade={currentGrade}
-        currentSubmission={mockSubmission}
-        isSummativeAssessment={isSummativeAssessment}
-        setIsSummativeAssessment={setIsSummativeAssessment}
-        useRubricForAI={useRubricForAI}
-        setUseRubricForAI={setUseRubricForAI}
-        useCustomPrompt={useCustomPrompt}
-        setUseCustomPrompt={setUseCustomPrompt}
-        customPrompt={customPrompt}
-        setCustomPrompt={setCustomPrompt}
-        onAIGrading={handleAIGrading}
-        onSaveGrade={handleSaveGrade}
-        isGenerating={isGenerating}
-        saving={saving}
-      />
+      <div className="space-y-4">
+        <DiscussionGradingSection
+          discussion={discussion}
+          gradeInput={gradeInput}
+          setGradeInput={setGradeInput}
+          feedbackInput={feedbackInput}
+          setFeedbackInput={setFeedbackInput}
+          currentGrade={currentGrade}
+          currentSubmission={mockSubmission}
+          isSummativeAssessment={isSummativeAssessment}
+          setIsSummativeAssessment={setIsSummativeAssessment}
+          useRubricForAI={useRubricForAI}
+          setUseRubricForAI={setUseRubricForAI}
+          useCustomPrompt={useCustomPrompt}
+          setUseCustomPrompt={setUseCustomPrompt}
+          customPrompt={customPrompt}
+          setCustomPrompt={setCustomPrompt}
+          onAIGrading={handleAIGrading}
+          onSaveGrade={handleSaveGrade}
+          isGenerating={isGenerating}
+          saving={saving}
+        />
+
+        <AIGradeReview 
+          gradeReview={aiGradeReview}
+          isVisible={!!aiGradeReview}
+        />
+      </div>
     </div>
   );
 };

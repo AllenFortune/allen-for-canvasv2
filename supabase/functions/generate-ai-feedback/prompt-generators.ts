@@ -63,10 +63,17 @@ You MUST format your response ONLY as a valid JSON object with the following str
   "feedback": "string - write this as a cohesive paragraph directed to the student, combining strengths and areas for improvement in a natural, encouraging way",
   "strengths": ["string", "string", ...],
   "areasForImprovement": ["string", "string", ...],
-  "summary": "string"
+  "summary": "string",
+  "gradeReview": "string - detailed breakdown for the teacher explaining what the student completed, what they missed, and why points were deducted. Use bullet points where appropriate."
 }
 
 The feedback field should be written as if you're talking directly to the student - use "you" and "your" language. Make it sound natural and encouraging while being educational and specific. Focus on their accomplishments and provide constructive guidance without mentioning any grading methodologies.
+
+The gradeReview field should be written for the teacher to verify your assessment. Include:
+- What content/elements the student successfully completed
+- What was missing or incomplete from their submission  
+- Specific reasons for any point deductions
+- Confirmation that you were able to process all submission content (text, files, etc.)
 
 Do not include any explanations, markdown formatting, or text outside of this JSON structure.`;
 };
@@ -123,6 +130,14 @@ This supportive approach helps build student confidence while providing meaningf
 - Focuses on the learning process rather than just the final product
 - Recognizes conceptual understanding and effort in the assessment`;
 
+  const gradeReviewInstructions = `For the gradeReview field, provide a detailed breakdown for the teacher that includes:
+- Summary of what the student submitted and completed successfully
+- Identification of missing elements or areas that didn't meet requirements
+- Specific explanation of point deductions and why they were applied
+- Confirmation of content processing (mention if files were reviewed, text analyzed, etc.)
+- Overall assessment verification for teacher review
+Use bullet points and clear structure to make it easy for the teacher to verify your grading decisions.`;
+
   return `You are an AI assistant that helps educators evaluate student assignments. You will be provided with assignment details and a student submission.
 
 Your task is to review the submission and generate the following:
@@ -131,6 +146,7 @@ Your task is to review the submission and generate the following:
 3. A list of 3–5 strengths observed in the submission.
 4. A list of 3–5 areas for improvement.
 5. A concise summary (2–3 sentences) of the overall quality and effectiveness of the submission.
+6. A detailed grade review for the teacher to verify the assessment.
 
 Important Notes:
 • Always prioritize clarity, effort, and conceptual understanding when awarding points.
@@ -150,17 +166,22 @@ ${gradeInstructions}
 
 ${feedbackInstructions}
 
+${gradeReviewInstructions}
+
 Please provide:
 1. ${isSummativeAssessment ? 'A final grade with clear justification using generous but fair evaluation' : 'Developmental feedback with optional progress indicator using encouraging assessment'}
 2. Detailed feedback written directly to the student in paragraph form
 3. 3-5 specific strengths of the submission
 4. 3-5 specific areas for improvement with actionable suggestions
 5. A brief summary (2-3 sentences) of the ${isSummativeAssessment ? 'overall evaluation with supportive recognition' : 'learning progress and next steps with encouragement'}
+6. A detailed grading breakdown for teacher verification
 
 ${useRubric && rubric ? 
-  `Focus your ${assessmentType} on how well the submission meets each rubric criterion, applying generous grading to recognize effort and understanding. Reference specific rubric elements in your feedback.` :
+  `Focus your ${assessmentType} on how well the submission meets each rubric criterion, applying generous grading to recognize effort and understanding. Reference specific rubric elements in your feedback and grade review.` :
   `Focus your ${assessmentType} on how well the submission addresses the assignment requirements and objectives, applying generous grading to acknowledge clarity, effort, and conceptual understanding.`
 }
 
-Write the feedback as if you're having a conversation with the student. Use "you" and "your" language. Be specific, encouraging, and constructive. ${isSummativeAssessment ? 'Provide thorough evaluation while maintaining an encouraging tone and focusing on student accomplishments.' : 'Focus on growth, learning, and actionable next steps with generous recognition of effort.'}`;
+Write the feedback as if you're having a conversation with the student. Use "you" and "your" language. Be specific, encouraging, and constructive. ${isSummativeAssessment ? 'Provide thorough evaluation while maintaining an encouraging tone and focusing on student accomplishments.' : 'Focus on growth, learning, and actionable next steps with generous recognition of effort.'}
+
+For the grade review, write clearly and objectively for the teacher to understand your assessment process and verify that all submission content was properly evaluated.`;
 };

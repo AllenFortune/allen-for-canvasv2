@@ -9,6 +9,7 @@ export interface AIGradingResponse {
   strengths: string[];
   areasForImprovement: string[];
   summary: string;
+  gradeReview: string;
 }
 
 export const useAIFeedback = () => {
@@ -169,7 +170,8 @@ export const useAIFeedback = () => {
           feedback: data.feedback || '',
           strengths: data.strengths || [],
           areasForImprovement: data.areasForImprovement || [],
-          summary: data.summary || ''
+          summary: data.summary || '',
+          gradeReview: data.gradeReview || ''
         };
       } else {
         throw new Error('No grading data received from AI');

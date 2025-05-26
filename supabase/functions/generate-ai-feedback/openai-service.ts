@@ -66,7 +66,8 @@ export const parseAIResponse = (aiResponseContent: string, isSummativeAssessment
       feedback: `I encountered an issue while generating your ${fallbackType}. Please try again, and I'll provide you with detailed ${isSummativeAssessment ? 'summative assessment with 10% leniency consideration' : 'formative guidance with encouraging assessment'} on your submission.`,
       strengths: ["Your submission was received and reviewed"],
       areasForImprovement: ["Please resubmit for detailed feedback"],
-      summary: `Technical issue occurred during ${assessmentType} generation with leniency buffer. Please try again for personalized comments.`
+      summary: `Technical issue occurred during ${assessmentType} generation with leniency buffer. Please try again for personalized comments.`,
+      gradeReview: "Technical error occurred while generating grade review. Please try the AI grading again to get detailed assessment breakdown for teacher verification."
     };
   }
 };
