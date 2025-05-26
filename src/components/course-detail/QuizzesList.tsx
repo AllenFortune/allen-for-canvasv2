@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,7 +13,6 @@ interface Quiz {
   time_limit: number | null;
   allowed_attempts: number | null;
   published: boolean;
-  needs_grading_count?: number;
 }
 
 interface QuizzesListProps {
@@ -93,7 +93,6 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
               <TableHead>Time Limit</TableHead>
               <TableHead>Attempts</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Needs Grading</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,13 +112,6 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
                   <Badge variant={quiz.published ? 'default' : 'secondary'}>
                     {quiz.published ? 'Published' : 'Unpublished'}
                   </Badge>
-                </TableCell>
-                <TableCell>
-                  {quiz.needs_grading_count && quiz.needs_grading_count > 0 ? (
-                    <Badge variant="destructive">{quiz.needs_grading_count}</Badge>
-                  ) : (
-                    <span className="text-gray-500">0</span>
-                  )}
                 </TableCell>
               </TableRow>
             ))}

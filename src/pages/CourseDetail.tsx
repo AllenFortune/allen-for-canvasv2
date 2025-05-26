@@ -165,10 +165,7 @@ const CourseDetail = () => {
     }
   };
 
-  const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0) +
-                            discussions.reduce((total, discussion) => total + (discussion.unread_count || 0), 0) +
-                            quizzes.reduce((total, quiz) => total + (quiz.needs_grading_count || 0), 0);
-  
+  const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
   const totalUnread = discussions.reduce((total, discussion) => total + discussion.unread_count, 0);
 
   if (loading) {
