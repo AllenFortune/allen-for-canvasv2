@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
+import { Discussion, DiscussionEntry, DiscussionGrade, DiscussionSubmission } from '@/types/grading';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
 import DiscussionPostsView from './DiscussionPostsView';
 import DiscussionGradingSection from './DiscussionGradingSection';
@@ -58,10 +58,10 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   };
 
   const handleAIGrading = async () => {
-    // Create a mock submission object from discussion entries
+    // Create a discussion submission object with proper user data handling
     const combinedContent = entries.map(entry => entry.message).join('\n\n');
     
-    const mockSubmission = {
+    const mockSubmission: DiscussionSubmission = {
       id: user.id,
       user_id: user.id,
       assignment_id: discussion.assignment_id || 0,
@@ -93,7 +93,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
     };
 
     const result = await generateComprehensiveFeedback(
-      mockSubmission,
+      mockSubmission as any, // Type assertion for compatibility with the hook
       mockAssignment,
       currentGrade?.grade || undefined,
       useRubricForAI,
