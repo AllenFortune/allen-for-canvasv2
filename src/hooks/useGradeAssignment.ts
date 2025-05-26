@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -131,7 +130,7 @@ export const useGradeAssignment = (courseId: string | undefined, assignmentId: s
     }
   };
 
-  const saveGrade = async (submissionId: number, grade: string, comment: string) => {
+  const saveGrade = async (submissionId: number | string, grade: string, comment: string) => {
     if (!courseId || !assignmentId) {
       toast({
         title: "Error",
