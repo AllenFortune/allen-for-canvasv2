@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { Calendar, Users, MessageSquare, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Calendar, Users, MessageSquare, BarChart3, ArrowLeft } from 'lucide-react';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import DiscussionGradingStatusCard from './DiscussionGradingStatusCard';
 
@@ -17,6 +19,8 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
   entries,
   grades
 }) => {
+  const navigate = useNavigate();
+
   if (!discussion) {
     return (
       <div className="bg-white border-b">
@@ -72,6 +76,30 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
   return (
     <div className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Breadcrumb and Navigation */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          <button 
+            onClick={() => navigate(`/courses/${courseId}`)}
+            className="hover:text-gray-700 transition-colors"
+          >
+            Course
+          </button>
+          <span>/</span>
+          <span>Grade Discussion</span>
+        </div>
+
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigate(`/courses/${courseId}`)}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Course
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
             <div>
