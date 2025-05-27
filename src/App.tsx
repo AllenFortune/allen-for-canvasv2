@@ -19,6 +19,7 @@ import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AILiteracy from "./pages/AILiteracy";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/ai-literacy" element={<AILiteracy />} />
+            <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
