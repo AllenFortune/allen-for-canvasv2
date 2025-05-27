@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -116,9 +117,9 @@ const Dashboard = () => {
             {/* Dashboard Cards */}
             <div className="grid md:grid-cols-3 gap-6">
               {/* Courses Card */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Courses</h3>
-                <p className="text-gray-600 mb-6">Manage your Canvas courses</p>
+                <p className="text-gray-600 mb-6 flex-grow">Manage your Canvas courses</p>
                 <Link to="/courses">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">
                     View Courses <ArrowRight className="w-4 h-4 ml-2" />
@@ -127,9 +128,9 @@ const Dashboard = () => {
               </div>
               
               {/* Needs Grading Card */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Needs Grading</h3>
-                <p className="text-gray-600 mb-6">View all assignments that need grading</p>
+                <p className="text-gray-600 mb-6 flex-grow">View all assignments that need grading</p>
                 <Link to="/assignments">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" disabled={!isCanvasConnected}>
                     View Assignments <ArrowRight className="w-4 h-4 ml-2" />
@@ -138,9 +139,9 @@ const Dashboard = () => {
               </div>
               
               {/* Settings Card */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Settings</h3>
-                <p className="text-gray-600 mb-6">Manage your account and Canvas integration</p>
+                <p className="text-gray-600 mb-6 flex-grow">Manage your account and Canvas integration</p>
                 <Link to="/settings">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">
                     View Settings <ArrowRight className="w-4 h-4 ml-2" />
