@@ -54,11 +54,9 @@ const ResourceCategories = () => {
                   </div>
                 ))}
               </div>
-              <Link to={category.link}>
-                <Button variant="outline" className="w-full">
-                  Explore {category.title}
-                </Button>
-              </Link>
+              <Button variant="outline" className="w-full">
+                Coming Fall 2025
+              </Button>
             </CardContent>
           </Card>
         ))}
