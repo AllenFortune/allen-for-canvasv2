@@ -10,9 +10,7 @@ const Footer = () => {
               </div>
               <span className="text-xl font-bold">A.L.L.E.N.</span>
             </div>
-            <p className="text-gray-400">
-              AI Learning Led Evaluation & Navigation for Canvas
-            </p>
+            <p className="text-gray-400">AI Learning Led Evaluation &amp; Navigation</p>
           </div>
           
           <div>
