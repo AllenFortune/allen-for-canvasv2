@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -188,7 +187,6 @@ const AILiteracy = () => {
                       <div className="font-semibold text-gray-900 mb-1">
                         "Building AI Literacy: A Practical Approach"
                       </div>
-                      <div className="text-sm text-gray-600">January 15, 2025 • 2:00 PM EST</div>
                     </div>
                     <Button className="w-full bg-indigo-600 hover:bg-indigo-700 mt-auto">
                       Register for Webinar
