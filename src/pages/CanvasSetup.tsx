@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,9 +7,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ExternalLink, CheckCircle, User, Info } from 'lucide-react';
 import Header from '@/components/Header';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import CanvasDisclaimer from '@/components/canvas-setup/CanvasDisclaimer';
+import CanvasConnectionStatus from '@/components/canvas-setup/CanvasConnectionStatus';
+import CanvasTokenInstructions from '@/components/canvas-setup/CanvasTokenInstructions';
+import CanvasConnectionTest from '@/components/canvas-setup/CanvasConnectionTest';
 
 interface CanvasUser {
   id: number;
@@ -50,7 +54,7 @@ const CanvasSetup = () => {
           setApiToken(data.canvas_access_token);
           // Test existing connection
           if (data.canvas_instance_url && data.canvas_access_token) {
-            testCanvasConnection(data.canvas_instance_url, data.canvas_access_token, false);
+            testCanvasConnection(data.canvas_instance_url, data.canvas_access_token);
           }
         }
       } catch (error) {
@@ -61,33 +65,20 @@ const CanvasSetup = () => {
     loadCanvasSettings();
   }, [user]);
 
-  const testCanvasConnection = async (testUrl?: string, testToken?: string, showToast = true) => {
+  const testCanvasConnection = async (testUrl?: string, testToken?: string) => {
     const urlToTest = testUrl || canvasUrl;
     const tokenToTest = testToken || apiToken;
 
-    if (!urlToTest || !tokenToTest) {
-      if (showToast) {
-        toast({
-          title: 'Missing Information',
-          description: 'Please enter both Canvas URL and API token to test the connection.',
-          variant: 'destructive',
-        });
-      }
-      return;
-    }
+    if (!urlToTest || !tokenToTest) return;
 
     setTestLoading(true);
     try {
-      // Clean URL - remove trailing slash and ensure proper format
       let cleanUrl = urlToTest.trim();
       if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
         cleanUrl = `https://${cleanUrl}`;
       }
       cleanUrl = cleanUrl.replace(/\/$/, '');
       
-      console.log(`Testing Canvas connection through edge function`);
-
-      // Call our Supabase Edge Function instead of making direct API call
       const { data, error } = await supabase.functions.invoke('test-canvas-connection', {
         body: {
           canvasUrl: cleanUrl,
@@ -95,41 +86,20 @@ const CanvasSetup = () => {
         },
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to test Canvas connection');
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Canvas connection test failed');
-      }
+      if (error) throw new Error(error.message || 'Failed to test Canvas connection');
+      if (!data.success) throw new Error(data.error || 'Canvas connection test failed');
 
       setConnectionStatus({
         connected: true,
         user: data.user,
       });
 
-      // Update the URL state with the cleaned version
       if (testUrl !== cleanUrl) {
         setCanvasUrl(cleanUrl);
-      }
-
-      if (showToast) {
-        toast({
-          title: 'Connection Successful!',
-          description: `Connected to Canvas as ${data.user.name}`,
-        });
       }
     } catch (error) {
       console.error('Canvas connection test failed:', error);
       setConnectionStatus({ connected: false });
-      
-      if (showToast) {
-        toast({
-          title: 'Connection Failed',
-          description: error instanceof Error ? error.message : 'Unable to connect to Canvas. Please check your URL and API token.',
-          variant: 'destructive',
-        });
-      }
     } finally {
       setTestLoading(false);
     }
@@ -201,19 +171,7 @@ const CanvasSetup = () => {
                 <p className="text-gray-600">Connect your Canvas account to enable AI-assisted grading</p>
               </div>
 
-              {/* Canvas Disclaimer */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-3">
-                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-800 mb-1">Third-Party Integration Notice</h4>
-                    <p className="text-sm text-blue-700">
-                      A.L.L.E.N. is an independent application that integrates with Canvas through official APIs. 
-                      We are not affiliated with or endorsed by Instructure, Inc. or Canvas LMS.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <CanvasDisclaimer />
 
               <div className="space-y-6">
                 <div>
@@ -252,50 +210,12 @@ const CanvasSetup = () => {
                   </p>
                 </div>
 
-                {/* Connection Status */}
-                {connectionStatus.connected && connectionStatus.user && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <div>
-                        <h4 className="text-sm font-medium text-green-800">Connected to Canvas</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <User className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-green-700">
-                            Logged in as: <strong>{connectionStatus.user.name}</strong>
-                          </span>
-                        </div>
-                        <p className="text-sm text-green-600 mt-1">{canvasUrl}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <CanvasConnectionStatus 
+                  connectionStatus={connectionStatus} 
+                  canvasUrl={canvasUrl} 
+                />
 
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">How to generate a Canvas API token:</h3>
-                  <ol className="text-sm text-gray-600 space-y-2">
-                    <li>1. Log in to your Canvas account</li>
-                    <li>2. Click on your profile picture in the top right corner</li>
-                    <li>3. Select "Settings" from the dropdown menu</li>
-                    <li>4. Scroll down to the "Approved Integrations" section</li>
-                    <li>5. Click the "+ New Access Token" button</li>
-                    <li>6. Enter <strong>A.L.L.E.N. Grading Assistant</strong> as the Purpose</li>
-                    <li>7. Optionally set an expiration date (we recommend at least 1 year)</li>
-                    <li>8. Click "Generate Token"</li>
-                    <li>9. Copy the generated token and paste it in the field above</li>
-                  </ol>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => window.open(`${canvasUrl}/profile/settings`, '_blank')}
-                    disabled={!canvasUrl}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open Canvas Settings
-                  </Button>
-                </div>
+                <CanvasTokenInstructions canvasUrl={canvasUrl} />
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-6">
                   <Button
@@ -305,14 +225,14 @@ const CanvasSetup = () => {
                   >
                     Skip for now
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => testCanvasConnection()}
-                    disabled={testLoading || !canvasUrl || !apiToken}
-                    className="sm:order-2"
-                  >
-                    {testLoading ? 'Testing...' : 'Test Connection'}
-                  </Button>
+                  <CanvasConnectionTest
+                    canvasUrl={canvasUrl}
+                    apiToken={apiToken}
+                    testLoading={testLoading}
+                    setTestLoading={setTestLoading}
+                    setConnectionStatus={setConnectionStatus}
+                    setCanvasUrl={setCanvasUrl}
+                  />
                   <Button
                     onClick={handleSave}
                     disabled={loading || !canvasUrl || !apiToken || !connectionStatus.connected}
