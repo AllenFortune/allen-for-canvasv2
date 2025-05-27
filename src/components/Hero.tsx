@@ -12,8 +12,8 @@ const Hero = () => {
           AI Learning Led Evaluation & Navigation
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-          Transform your Canvas grading experience with intelligent AI assistance. Grade faster, 
-          provide better feedback, and focus on what matters most - teaching.
+          Transform your Canvas classroom with AI literacy integration. Grade smarter, teach students 
+          to collaborate with AI effectively, and prepare them for an AI-enhanced future.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -28,15 +28,30 @@ const Hero = () => {
             variant="outline" 
             size="lg" 
             className="px-8 py-3"
-            onClick={() => navigate("/pricing")}
+            onClick={() => navigate("/ai-literacy")}
           >
-            View Pricing
+            Explore AI Literacy
           </Button>
         </div>
         
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-500 text-sm mb-4">
           No credit card required • 10 free submissions
         </p>
+        
+        <div className="flex justify-center items-center space-x-8 text-sm text-gray-600 mb-12">
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+            AI-Enhanced Grading
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+            Student AI Literacy
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+            Teacher Resources
+          </div>
+        </div>
 
         <div className="mt-16 bg-white rounded-lg shadow-xl p-8 max-w-4xl mx-auto">
           <div className="aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
@@ -44,8 +59,8 @@ const Hero = () => {
               <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-white text-2xl font-bold">AI</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-700">AI-Powered Grading Demo</h3>
-              <p className="text-gray-500 mt-2">See A.L.L.E.N. in action</p>
+              <h3 className="text-lg font-semibold text-gray-700">AI-Powered Learning Demo</h3>
+              <p className="text-gray-500 mt-2">See A.L.L.E.N.'s AI literacy tools in action</p>
             </div>
           </div>
         </div>

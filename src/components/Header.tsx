@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,6 +48,9 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-8">
           <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors">
             Home
+          </Link>
+          <Link to="/ai-literacy" className="text-gray-600 hover:text-gray-900 transition-colors">
+            AI Literacy
           </Link>
           <Link to="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">
             Pricing

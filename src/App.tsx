@@ -18,6 +18,7 @@ import GradeDiscussion from "./pages/GradeDiscussion";
 import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import AILiteracy from "./pages/AILiteracy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/courses/:courseId/discussions/:discussionId/grade" element={<GradeDiscussion />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/ai-literacy" element={<AILiteracy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
