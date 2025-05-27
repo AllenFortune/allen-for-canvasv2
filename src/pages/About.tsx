@@ -1,17 +1,23 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AboutHero from "@/components/about/AboutHero";
+import NotAnAutoGrader from "@/components/about/NotAnAutoGrader";
+import TeacherControl from "@/components/about/TeacherControl";
+import GradingBias from "@/components/about/GradingBias";
+import AboutFAQ from "@/components/about/AboutFAQ";
+import TeacherBenefits from "@/components/about/TeacherBenefits";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="py-20">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">About A.L.L.E.N.</h1>
-          <p className="text-xl text-gray-600">Coming soon - about page</p>
-        </div>
-      </div>
+      <AboutHero />
+      <NotAnAutoGrader />
+      <TeacherControl />
+      <GradingBias />
+      <AboutFAQ />
+      <TeacherBenefits />
       <Footer />
     </div>
   );
