@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -145,17 +146,17 @@ const AILiteracy = () => {
               </h2>
               <div className="grid md:grid-cols-2 gap-8">
                 {/* Newsletter Signup */}
-                <Card className="bg-indigo-50 border-indigo-200">
-                  <CardContent className="p-8">
+                <Card className="bg-indigo-50 border-indigo-200 flex flex-col h-full">
+                  <CardContent className="p-8 flex flex-col h-full">
                     <div className="flex items-center mb-4">
                       <Mail className="w-8 h-8 text-indigo-600 mr-3" />
                       <h3 className="text-xl font-bold text-gray-900">Newsletter Signup</h3>
                     </div>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-gray-600 mb-6 flex-grow">
                       Get the latest updates on AI literacy developments, new features, and best practices 
                       delivered straight to your inbox.
                     </p>
-                    <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+                    <form onSubmit={handleNewsletterSubmit} className="space-y-4 mt-auto">
                       <Input
                         type="email"
                         placeholder="Enter your email address"
@@ -172,13 +173,13 @@ const AILiteracy = () => {
                 </Card>
 
                 {/* Webinar Registration */}
-                <Card className="bg-indigo-50 border-indigo-200">
-                  <CardContent className="p-8">
+                <Card className="bg-indigo-50 border-indigo-200 flex flex-col h-full">
+                  <CardContent className="p-8 flex flex-col h-full">
                     <div className="flex items-center mb-4">
                       <Calendar className="w-8 h-8 text-indigo-600 mr-3" />
                       <h3 className="text-xl font-bold text-gray-900">Upcoming Webinars</h3>
                     </div>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-gray-600 mb-4 flex-grow">
                       Join our free sessions on AI literacy in education. Learn from experts and 
                       connect with fellow educators.
                     </p>
@@ -189,7 +190,7 @@ const AILiteracy = () => {
                       </div>
                       <div className="text-sm text-gray-600">January 15, 2025 • 2:00 PM EST</div>
                     </div>
-                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 mt-auto">
                       Register for Webinar
                     </Button>
                   </CardContent>
