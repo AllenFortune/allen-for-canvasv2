@@ -127,6 +127,18 @@ const ArticleContent = ({ onBack }: ArticleContentProps) => {
             <p className="text-gray-700 leading-relaxed mb-4">
               When teaching photosynthesis, rather than asking AI to simply explain the process, have students use the ALLEN D.I.V.E.R. framework:
             </p>
+
+            <div className="my-8 text-center">
+              <img 
+                src="/lovable-uploads/d644e2ea-e597-4168-bff4-35ee20a31995.png" 
+                alt="ALLEN D.I.V.E.R. Framework for AI-Enhanced Assignments showing the five steps: Discovery, Interaction & Collaboration, Verification, Editing & Iteration, and Reflection"
+                className="mx-auto rounded-lg shadow-lg max-w-full h-auto"
+              />
+              <p className="text-sm text-gray-600 mt-2 italic">
+                The ALLEN D.I.V.E.R. Framework for AI-Enhanced Assignments
+              </p>
+            </div>
+
             <ul className="list-disc pl-6 mb-6 space-y-2">
               <li><strong>Discovery:</strong> "Ask AI to generate five surprising facts about photosynthesis. What stands out to you? What would you like to learn more about?"</li>
               <li><strong>Interaction:</strong> Compare AI-generated explanations with partners to identify differences and similarities</li>

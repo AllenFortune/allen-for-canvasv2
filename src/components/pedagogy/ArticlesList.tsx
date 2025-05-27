@@ -14,13 +14,6 @@ const ArticlesList = () => {
       comingSoon: true
     },
     {
-      title: "The ALLEN D.I.V.E.R. Framework: A Complete Guide",
-      excerpt: "Deep dive into our signature framework for integrating AI into classroom learning experiences.",
-      category: "Teaching Frameworks",
-      readTime: "10 min read",
-      comingSoon: true
-    },
-    {
       title: "Building Digital Citizenship in the AI Era",
       excerpt: "Preparing students to be responsible digital citizens and critical consumers of AI-generated content.",
       category: "Classroom Management",

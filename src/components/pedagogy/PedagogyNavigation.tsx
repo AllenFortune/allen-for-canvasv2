@@ -14,8 +14,8 @@ const PedagogyNavigation = () => {
     },
     {
       icon: Lightbulb,
-      name: "AI Implementation",
-      count: 0,
+      name: "Teaching Frameworks",
+      count: 1,
       color: "bg-green-100 text-green-600"
     },
     {
@@ -86,12 +86,12 @@ const PedagogyNavigation = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center">
-            <div className="text-2xl font-bold text-indigo-600 mb-1">1</div>
-            <div className="text-sm text-gray-600">Articles Read</div>
+            <div className="text-2xl font-bold text-indigo-600 mb-1">2</div>
+            <div className="text-sm text-gray-600">Articles Available</div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-              <div className="bg-indigo-600 h-2 rounded-full" style={{width: '25%'}}></div>
+              <div className="bg-indigo-600 h-2 rounded-full" style={{width: '50%'}}></div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">25% Complete</div>
+            <div className="text-xs text-gray-500 mt-1">2 of 4 planned articles ready</div>
           </div>
         </CardContent>
       </Card>
