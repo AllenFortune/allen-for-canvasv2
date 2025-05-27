@@ -69,34 +69,6 @@ const AILiteracy = () => {
               </p>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid md:grid-cols-4 gap-6 mb-12">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">50+</div>
-                  <div className="text-sm text-gray-600">Research Articles</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">25+</div>
-                  <div className="text-sm text-gray-600">Assignment Templates</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">12</div>
-                  <div className="text-sm text-gray-600">Ethics Modules</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">100+</div>
-                  <div className="text-sm text-gray-600">Success Stories</div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Featured Resources */}
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Resources</h2>
