@@ -19,6 +19,7 @@ import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AILiteracy from "./pages/AILiteracy";
+import AIPedagogyHub from "./pages/AIPedagogyHub";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/ai-literacy" element={<AILiteracy />} />
+            <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
