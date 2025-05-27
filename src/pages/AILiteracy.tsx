@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, Shield, Lightbulb, FileText, Video, Award } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { BookOpen, Users, Shield, Lightbulb, FileText, Video, Award, Mail, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AILiteracy = () => {
+  const [email, setEmail] = useState('');
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle newsletter signup logic here
+    console.log('Newsletter signup:', email);
+    setEmail('');
+    // You can add toast notification here
+  };
+
   const resourceCategories = [{
     title: "AI Pedagogy Hub",
     icon: BookOpen,
@@ -51,6 +62,7 @@ const AILiteracy = () => {
     icon: Award,
     description: "Become a certified AI-literate educator with our comprehensive program"
   }];
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -94,7 +106,7 @@ const AILiteracy = () => {
             </div>
 
             {/* Resource Categories */}
-            <div>
+            <div className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore by Category</h2>
               <div className="grid md:grid-cols-2 gap-8">
                 {resourceCategories.map((category, index) => (
@@ -126,27 +138,63 @@ const AILiteracy = () => {
               </div>
             </div>
 
-            {/* Call to Action */}
-            <div className="mt-12 text-center">
-              <Card className="bg-indigo-50 border-indigo-200">
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    Ready to Transform Your Teaching?
-                  </h3>
-                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                    Join thousands of educators who are already integrating AI literacy into their 
-                    Canvas classrooms. Start with our quick setup guide and see immediate results.
-                  </p>
-                  <div className="flex gap-4 justify-center">
-                    <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
-                      Start Quick Setup
+            {/* Community Building Elements */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                Stay Connected with AI Literacy Community
+              </h2>
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Newsletter Signup */}
+                <Card className="bg-indigo-50 border-indigo-200">
+                  <CardContent className="p-8">
+                    <div className="flex items-center mb-4">
+                      <Mail className="w-8 h-8 text-indigo-600 mr-3" />
+                      <h3 className="text-xl font-bold text-gray-900">Newsletter Signup</h3>
+                    </div>
+                    <p className="text-gray-600 mb-6">
+                      Get the latest updates on AI literacy developments, new features, and best practices 
+                      delivered straight to your inbox.
+                    </p>
+                    <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+                      <Input
+                        type="email"
+                        placeholder="Enter your email address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full"
+                      />
+                      <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
+                        Subscribe to Newsletter
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* Webinar Registration */}
+                <Card className="bg-indigo-50 border-indigo-200">
+                  <CardContent className="p-8">
+                    <div className="flex items-center mb-4">
+                      <Calendar className="w-8 h-8 text-indigo-600 mr-3" />
+                      <h3 className="text-xl font-bold text-gray-900">Upcoming Webinars</h3>
+                    </div>
+                    <p className="text-gray-600 mb-4">
+                      Join our free sessions on AI literacy in education. Learn from experts and 
+                      connect with fellow educators.
+                    </p>
+                    <div className="bg-white p-4 rounded-lg mb-4 border border-indigo-100">
+                      <div className="text-sm font-medium text-indigo-600 mb-1">Next Session</div>
+                      <div className="font-semibold text-gray-900 mb-1">
+                        "Building AI Literacy: A Practical Approach"
+                      </div>
+                      <div className="text-sm text-gray-600">January 15, 2025 • 2:00 PM EST</div>
+                    </div>
+                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                      Register for Webinar
                     </Button>
-                    <Button variant="outline" size="lg">
-                      Schedule Demo
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
