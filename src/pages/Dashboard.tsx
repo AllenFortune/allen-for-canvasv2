@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -127,17 +126,6 @@ const Dashboard = () => {
                 </Link>
               </div>
               
-              {/* Settings Card */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Settings</h3>
-                <p className="text-gray-600 mb-6">Manage your account and Canvas integration</p>
-                <Link to="/settings">
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">
-                    View Settings <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-              
               {/* Needs Grading Card */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Needs Grading</h3>
@@ -145,6 +133,17 @@ const Dashboard = () => {
                 <Link to="/assignments">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" disabled={!isCanvasConnected}>
                     View Assignments <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Settings Card */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Settings</h3>
+                <p className="text-gray-600 mb-6">Manage your account and Canvas integration</p>
+                <Link to="/settings">
+                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">
+                    View Settings <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
