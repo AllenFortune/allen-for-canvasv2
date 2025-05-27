@@ -151,6 +151,34 @@ const Settings = () => {
                       <p className="text-sm text-gray-600">10 graded submissions remaining</p>
                     </div>
                     
+                    {/* Recommended Upgrade */}
+                    <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-900">Recommended Upgrade</h3>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Best Value
+                        </span>
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Lite Plan</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Get 25x more graded submissions per month plus email support.
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-2xl font-bold text-gray-900">$8.99</span>
+                            <span className="text-gray-500 line-through">$9.99</span>
+                            <span className="text-green-600 text-sm">10% off</span>
+                          </div>
+                          <p className="text-sm text-gray-600">250 graded submissions/month</p>
+                          <p className="text-xs text-gray-500">vs. your current 10 submissions</p>
+                        </div>
+                        <Button className="bg-blue-600 hover:bg-blue-700">
+                          Upgrade Now
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Add-on Pack */}
                     <div className="border rounded-lg p-4 bg-gray-50">
                       <h3 className="font-semibold text-gray-900 mb-2">Add-on Pack</h3>
