@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,98 +5,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { 
-  CheckCircle, 
-  Clock, 
-  Shield, 
-  BarChart3, 
-  BookOpen, 
-  Users, 
-  Lightbulb,
-  GraduationCap,
-  FileText,
-  User
-} from 'lucide-react';
-
+import { CheckCircle, Clock, Shield, BarChart3, BookOpen, Users, Lightbulb, GraduationCap, FileText, User } from 'lucide-react';
 const Features = () => {
   const navigate = useNavigate();
-
-  const currentFeatures = [
-    {
-      icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
-      title: "AI-Enhanced Grading",
-      description: "Intelligent assignment and discussion grading with rubric integration. Save 60% of your grading time while maintaining quality feedback.",
-      features: ["Assignment grading automation", "Discussion post evaluation", "Rubric-based assessment", "Consistent feedback generation"]
-    },
-    {
-      icon: <FileText className="w-8 h-8 text-indigo-600" />,
-      title: "Canvas Integration",
-      description: "Seamless connection with your Canvas LMS for streamlined workflow and automatic grade passback.",
-      features: ["Secure API connection", "Real-time submission sync", "Automatic grade passback", "Course management"]
-    },
-    {
-      icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
-      title: "Teacher Dashboard",
-      description: "Comprehensive overview of your courses, assignments, and grading progress in one centralized location.",
-      features: ["Assignment overview", "Course filtering", "Progress tracking", "Quick grading access"]
-    },
-    {
-      icon: <Shield className="w-8 h-8 text-indigo-600" />,
-      title: "Security & Privacy",
-      description: "Enterprise-grade security with encrypted data handling and no permanent storage of student work.",
-      features: ["Data encryption", "Secure authentication", "Privacy protection", "Temporary data handling"]
-    }
-  ];
-
-  const futureFeatures = [
-    {
-      icon: <User className="w-8 h-8 text-indigo-600" />,
-      title: "Student AI Literacy Dashboard",
-      description: "Help students develop AI literacy alongside content mastery with comprehensive tracking and reflection tools.",
-      features: [
-        "AI Usage Tracking with improvement suggestions",
-        "Reflection Prompts for critical thinking about AI interactions", 
-        "AI Ethics Badges for gamified responsible AI learning",
-        "Peer Collaboration Tools for sharing AI-assisted work"
-      ]
-    },
-    {
-      icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
-      title: "Advanced Grading for AI-Integrated Work",
-      description: "Enhanced grading capabilities specifically designed to evaluate AI-assisted submissions effectively.",
-      features: [
-        "AI Collaboration Assessment evaluating how well students worked WITH AI",
-        "Process Documentation tools for showing thinking processes",
-        "Iterative Feedback Loops for multi-stage assignment grading",
-        "Metacognitive Assessment rubrics for AI-assisted learning evaluation"
-      ]
-    },
-    {
-      icon: <GraduationCap className="w-8 h-8 text-indigo-600" />,
-      title: "Professional Development Platform",
-      description: "Comprehensive support for teachers in their AI literacy journey with structured learning paths.",
-      features: [
-        "Microlearning Modules on AI integration techniques",
-        "Virtual Workshops with live AI literacy sessions",
-        "Teacher Community forums for sharing successes and challenges",
-        "Certification Pathways for becoming an 'AI-Literate Educator'"
-      ]
-    },
-    {
-      icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
-      title: "Analytics & Insights Enhancement",
-      description: "Deep insights into AI-enhanced learning with comprehensive analytics and growth tracking.",
-      features: [
-        "Learning Style Analysis with AI-powered insights",
-        "AI Tool Effectiveness Metrics for different learning objectives",
-        "Class AI Readiness Assessment for current literacy levels",
-        "Growth Tracking for monitoring AI collaboration skill development"
-      ]
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+  const currentFeatures = [{
+    icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
+    title: "AI-Enhanced Grading",
+    description: "Intelligent assignment and discussion grading with rubric integration. Save 60% of your grading time while maintaining quality feedback.",
+    features: ["Assignment grading automation", "Discussion post evaluation", "Rubric-based assessment", "Consistent feedback generation"]
+  }, {
+    icon: <FileText className="w-8 h-8 text-indigo-600" />,
+    title: "Canvas Integration",
+    description: "Seamless connection with your Canvas LMS for streamlined workflow and automatic grade passback.",
+    features: ["Secure API connection", "Real-time submission sync", "Automatic grade passback", "Course management"]
+  }, {
+    icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
+    title: "Teacher Dashboard",
+    description: "Comprehensive overview of your courses, assignments, and grading progress in one centralized location.",
+    features: ["Assignment overview", "Course filtering", "Progress tracking", "Quick grading access"]
+  }, {
+    icon: <Shield className="w-8 h-8 text-indigo-600" />,
+    title: "Security & Privacy",
+    description: "Enterprise-grade security with encrypted data handling and no permanent storage of student work.",
+    features: ["Data encryption", "Secure authentication", "Privacy protection", "Temporary data handling"]
+  }];
+  const futureFeatures = [{
+    icon: <User className="w-8 h-8 text-indigo-600" />,
+    title: "Student AI Literacy Dashboard",
+    description: "Help students develop AI literacy alongside content mastery with comprehensive tracking and reflection tools.",
+    features: ["AI Usage Tracking with improvement suggestions", "Reflection Prompts for critical thinking about AI interactions", "AI Ethics Badges for gamified responsible AI learning", "Peer Collaboration Tools for sharing AI-assisted work"]
+  }, {
+    icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
+    title: "Advanced Grading for AI-Integrated Work",
+    description: "Enhanced grading capabilities specifically designed to evaluate AI-assisted submissions effectively.",
+    features: ["AI Collaboration Assessment evaluating how well students worked WITH AI", "Process Documentation tools for showing thinking processes", "Iterative Feedback Loops for multi-stage assignment grading", "Metacognitive Assessment rubrics for AI-assisted learning evaluation"]
+  }, {
+    icon: <GraduationCap className="w-8 h-8 text-indigo-600" />,
+    title: "Professional Development Platform",
+    description: "Comprehensive support for teachers in their AI literacy journey with structured learning paths.",
+    features: ["Microlearning Modules on AI integration techniques", "Virtual Workshops with live AI literacy sessions", "Teacher Community forums for sharing successes and challenges", "Certification Pathways for becoming an 'AI-Literate Educator'"]
+  }, {
+    icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
+    title: "Analytics & Insights Enhancement",
+    description: "Deep insights into AI-enhanced learning with comprehensive analytics and growth tracking.",
+    features: ["Learning Style Analysis with AI-powered insights", "AI Tool Effectiveness Metrics for different learning objectives", "Class AI Readiness Assessment for current literacy levels", "Growth Tracking for monitoring AI collaboration skill development"]
+  }];
+  return <div className="min-h-screen bg-gray-50">
       <Header />
       
       {/* Hero Section */}
@@ -111,18 +64,10 @@ const Features = () => {
             From current AI-powered grading to upcoming AI literacy tools.
           </p>
           <div className="flex justify-center space-x-4">
-            <Button 
-              size="lg" 
-              className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={() => navigate("/canvas-setup")}
-            >
+            <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate("/canvas-setup")}>
               Start Free Trial
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => navigate("/ai-literacy")}
-            >
+            <Button variant="outline" size="lg" onClick={() => navigate("/ai-literacy")}>
               Explore AI Literacy
             </Button>
           </div>
@@ -145,8 +90,7 @@ const Features = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {currentFeatures.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow h-full">
+            {currentFeatures.map((feature, index) => <Card key={index} className="hover:shadow-lg transition-shadow h-full">
                 <CardHeader>
                   <div className="flex items-center mb-4">
                     {feature.icon}
@@ -156,16 +100,13 @@ const Features = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {feature.features.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center text-sm text-gray-700">
+                    {feature.features.map((item, itemIndex) => <li key={itemIndex} className="flex items-center text-sm text-gray-700">
                         <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                         {item}
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -186,8 +127,7 @@ const Features = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {futureFeatures.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow h-full border-2 border-indigo-100">
+            {futureFeatures.map((feature, index) => <Card key={index} className="hover:shadow-lg transition-shadow h-full border-2 border-indigo-100">
                 <CardHeader>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
@@ -202,16 +142,13 @@ const Features = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {feature.features.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center text-sm text-gray-700">
+                    {feature.features.map((item, itemIndex) => <li key={itemIndex} className="flex items-center text-sm text-gray-700">
                         <div className="w-2 h-2 bg-indigo-600 rounded-full mr-3"></div>
                         {item}
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -226,19 +163,10 @@ const Features = () => {
             Join educators who are already saving time with AI-enhanced grading while preparing students for the future.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-indigo-600 hover:bg-gray-100"
-              onClick={() => navigate("/canvas-setup")}
-            >
+            <Button size="lg" className="bg-white text-indigo-600 hover:bg-gray-100" onClick={() => navigate("/canvas-setup")}>
               Start Free Trial
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-white text-white hover:bg-white hover:text-indigo-600"
-              onClick={() => navigate("/pricing")}
-            >
+            <Button variant="outline" size="lg" onClick={() => navigate("/pricing")} className="border-white hover:bg-white text-indigo-600">
               View Pricing
             </Button>
           </div>
@@ -249,8 +177,6 @@ const Features = () => {
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Features;
