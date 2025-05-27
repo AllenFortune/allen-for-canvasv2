@@ -224,8 +224,8 @@ const Terms = () => {
                 If you have any questions, concerns, or requests regarding these Terms, please contact us:
               </p>
               <div className="bg-gray-50 p-6 rounded-lg">
-                <p className="text-gray-700"><strong>Email:</strong> legal@allen-ai.com</p>
-                <p className="text-gray-700"><strong>Support:</strong> support@allen-ai.com</p>
+                <p className="text-gray-700"><strong>Email:</strong> support@allengradeassist.com</p>
+                <p className="text-gray-700"><strong>Support:</strong> support@allengradeassist.com</p>
                 <p className="text-gray-700"><strong>Response Time:</strong> We will respond to inquiries within 2 business days</p>
               </div>
             </section>
@@ -293,7 +293,7 @@ const Terms = () => {
                   For any questions regarding this Fulfillment Policy, please contact us at:
                 </p>
                 <p className="text-gray-700 mt-2">
-                  <strong>Email:</strong> support@allen-ai.com
+                  <strong>Email:</strong> support@allengradeassist.com
                 </p>
               </div>
 
