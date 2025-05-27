@@ -17,10 +17,12 @@ const AboutHero = () => {
         
         <div className="bg-white rounded-lg shadow-xl p-8 max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-            <div className="w-48 h-48 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <div className="w-32 h-32 bg-indigo-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">T</span>
-              </div>
+            <div className="w-48 h-48 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img 
+                src="/lovable-uploads/d644e2ea-e597-4168-bff4-35ee20a31995.png" 
+                alt="Teacher and creator of A.L.L.E.N." 
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div className="text-center md:text-left">
               <h3 className="text-2xl font-semibold text-gray-900 mb-4">
