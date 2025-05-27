@@ -44,8 +44,16 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>© 2025 A.L.L.E.N. All rights reserved.</p>
+        <div className="border-t border-gray-800 mt-8 pt-8 space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-400">
+              A.L.L.E.N. is not affiliated with, endorsed by, or sponsored by Instructure, Inc. or Canvas LMS. 
+              Canvas is a trademark of Instructure, Inc. This is an independent third-party application that integrates with Canvas through public APIs.
+            </p>
+          </div>
+          <div className="text-center text-gray-400">
+            <p>© 2025 A.L.L.E.N. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </footer>

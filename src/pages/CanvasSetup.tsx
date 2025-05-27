@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ExternalLink, CheckCircle, User } from 'lucide-react';
+import { ExternalLink, CheckCircle, User, Info } from 'lucide-react';
 import Header from '@/components/Header';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -200,6 +199,20 @@ const CanvasSetup = () => {
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Set Up Canvas Integration</h1>
                 <p className="text-gray-600">Connect your Canvas account to enable AI-assisted grading</p>
+              </div>
+
+              {/* Canvas Disclaimer */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800 mb-1">Third-Party Integration Notice</h4>
+                    <p className="text-sm text-blue-700">
+                      A.L.L.E.N. is an independent application that integrates with Canvas through official APIs. 
+                      We are not affiliated with or endorsed by Instructure, Inc. or Canvas LMS.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-6">
