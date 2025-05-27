@@ -4,10 +4,10 @@ import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, CreditCard, Settings as SettingsIcon, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import ProfileCard from '@/components/settings/ProfileCard';
+import CanvasIntegrationCard from '@/components/settings/CanvasIntegrationCard';
+import SubscriptionCard from '@/components/settings/SubscriptionCard';
+import AccountActionsCard from '@/components/settings/AccountActionsCard';
 
 interface UserProfile {
   canvas_instance_url?: string;
@@ -65,162 +65,10 @@ const Settings = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Profile Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="w-5 h-5 mr-2" />
-                    Profile Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="animate-pulse space-y-4">
-                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Full Name</label>
-                        <p className="text-gray-900">{profile?.full_name || user?.email}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Email</label>
-                        <p className="text-gray-900">{user?.email}</p>
-                      </div>
-                      {profile?.school_name && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">School</label>
-                          <p className="text-gray-900">{profile.school_name}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Canvas Integration Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <SettingsIcon className="w-5 h-5 mr-2" />
-                    Canvas Integration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {profile?.canvas_instance_url ? (
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Connected Canvas Instance</label>
-                        <p className="text-gray-900">{profile.canvas_instance_url}</p>
-                        <div className="mt-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Connected
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-gray-600">No Canvas instance connected</p>
-                      </div>
-                    )}
-                    <Link to="/canvas-setup">
-                      <Button variant="outline">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        {profile?.canvas_instance_url ? 'Update' : 'Setup'} Canvas Integration
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Subscription Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Subscription & Credits
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Current Plan</label>
-                      <p className="text-gray-900">Free Trial</p>
-                      <p className="text-sm text-gray-600">10 graded submissions remaining</p>
-                    </div>
-                    
-                    {/* Recommended Upgrade */}
-                    <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900">Recommended Upgrade</h3>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Best Value
-                        </span>
-                      </div>
-                      <h4 className="text-lg font-bold text-gray-900 mb-2">Lite Plan</h4>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Get 25x more graded submissions per month plus email support.
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-2xl font-bold text-gray-900">$8.99</span>
-                            <span className="text-gray-500 line-through">$9.99</span>
-                            <span className="text-green-600 text-sm">10% off</span>
-                          </div>
-                          <p className="text-sm text-gray-600">250 graded submissions/month</p>
-                          <p className="text-xs text-gray-500">vs. your current 10 submissions</p>
-                        </div>
-                        <Button className="bg-blue-600 hover:bg-blue-700">
-                          Upgrade Now
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Add-on Pack */}
-                    <div className="border rounded-lg p-4 bg-gray-50">
-                      <h3 className="font-semibold text-gray-900 mb-2">Add-on Pack</h3>
-                      <p className="text-sm text-gray-600 mb-3">Need more graded submissions? Add them to any plan.</p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-2xl font-bold text-gray-900">$4.94</span>
-                          <span className="text-gray-500 line-through ml-2">$5.49</span>
-                          <span className="text-green-600 text-sm ml-2">10% off</span>
-                          <p className="text-sm text-gray-600">100 additional graded submissions</p>
-                        </div>
-                        <Button className="bg-gray-900 hover:bg-gray-800">
-                          Add to Your Plan
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="pt-4">
-                      <Link to="/pricing">
-                        <Button variant="outline" className="mr-4">
-                          View All Plans
-                        </Button>
-                      </Link>
-                      <Button variant="outline">
-                        Billing History
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Account Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="destructive" onClick={handleSignOut}>
-                    Sign Out
-                  </Button>
-                </CardContent>
-              </Card>
+              <ProfileCard loading={loading} profile={profile} user={user} />
+              <CanvasIntegrationCard profile={profile} />
+              <SubscriptionCard />
+              <AccountActionsCard onSignOut={handleSignOut} />
             </div>
           </div>
         </div>
