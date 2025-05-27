@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -6,65 +5,52 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Users, Shield, Lightbulb, FileText, Video, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 const AILiteracy = () => {
-  const resourceCategories = [
-    {
-      title: "AI Pedagogy Hub",
-      icon: BookOpen,
-      description: "Research-backed articles on effective AI integration in learning",
-      items: ["Cognitive Load Theory & AI", "Scaffolding with AI Tools", "Assessment in AI-Enhanced Learning"],
-      link: "/ai-literacy/pedagogy"
-    },
-    {
-      title: "Assignment Design Templates",
-      icon: FileText,
-      description: "Pre-built assignment frameworks that encourage productive AI use",
-      items: ["AI-Assisted Research Projects", "Critical Thinking with AI", "Creative Writing Collaborations"],
-      link: "/ai-literacy/templates"
-    },
-    {
-      title: "AI Ethics Curriculum",
-      icon: Shield,
-      description: "Modules on responsible AI use, bias awareness, and critical thinking",
-      items: ["Understanding AI Bias", "Academic Integrity in AI Era", "Privacy & Data Ethics"],
-      link: "/ai-literacy/ethics"
-    },
-    {
-      title: "Best Practices Library",
-      icon: Lightbulb,
-      description: "Case studies from successful AI-integrated classrooms",
-      items: ["Elementary AI Integration", "High School Success Stories", "University Case Studies"],
-      link: "/ai-literacy/best-practices"
-    }
-  ];
-
-  const featuredResources = [
-    {
-      title: "Getting Started with AI in Education",
-      type: "Video Series",
-      duration: "45 min",
-      icon: Video,
-      description: "A comprehensive introduction to integrating AI tools in your Canvas classroom"
-    },
-    {
-      title: "AI Literacy Assessment Rubric",
-      type: "Download",
-      format: "PDF",
-      icon: FileText,
-      description: "Ready-to-use rubric for evaluating student AI collaboration skills"
-    },
-    {
-      title: "Educator AI Certification",
-      type: "Course",
-      duration: "4 weeks",
-      icon: Award,
-      description: "Become a certified AI-literate educator with our comprehensive program"
-    }
-  ];
-
-  return (
-    <ProtectedRoute>
+  const resourceCategories = [{
+    title: "AI Pedagogy Hub",
+    icon: BookOpen,
+    description: "Research-backed articles on effective AI integration in learning",
+    items: ["Cognitive Load Theory & AI", "Scaffolding with AI Tools", "Assessment in AI-Enhanced Learning"],
+    link: "/ai-literacy/pedagogy"
+  }, {
+    title: "Assignment Design Templates",
+    icon: FileText,
+    description: "Pre-built assignment frameworks that encourage productive AI use",
+    items: ["AI-Assisted Research Projects", "Critical Thinking with AI", "Creative Writing Collaborations"],
+    link: "/ai-literacy/templates"
+  }, {
+    title: "AI Ethics Curriculum",
+    icon: Shield,
+    description: "Modules on responsible AI use, bias awareness, and critical thinking",
+    items: ["Understanding AI Bias", "Academic Integrity in AI Era", "Privacy & Data Ethics"],
+    link: "/ai-literacy/ethics"
+  }, {
+    title: "Best Practices Library",
+    icon: Lightbulb,
+    description: "Case studies from successful AI-integrated classrooms",
+    items: ["Elementary AI Integration", "High School Success Stories", "University Case Studies"],
+    link: "/ai-literacy/best-practices"
+  }];
+  const featuredResources = [{
+    title: "Getting Started with AI in Education",
+    type: "Video Series",
+    duration: "45 min",
+    icon: Video,
+    description: "A comprehensive introduction to integrating AI tools in your Canvas classroom"
+  }, {
+    title: "AI Literacy Assessment Rubric",
+    type: "Download",
+    format: "PDF",
+    icon: FileText,
+    description: "Ready-to-use rubric for evaluating student AI collaboration skills"
+  }, {
+    title: "Educator AI Certification",
+    type: "Course",
+    duration: "4 weeks",
+    icon: Award,
+    description: "Become a certified AI-literate educator with our comprehensive program"
+  }];
+  return <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="py-20">
@@ -113,27 +99,21 @@ const AILiteracy = () => {
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Resources</h2>
               <div className="grid md:grid-cols-3 gap-6">
-                {featuredResources.map((resource, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                {featuredResources.map((resource, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-center mb-2">
                         <resource.icon className="w-6 h-6 text-indigo-600 mr-2" />
                         <span className="text-sm font-medium text-indigo-600">{resource.type}</span>
-                        {resource.duration && (
-                          <span className="text-sm text-gray-500 ml-auto">{resource.duration}</span>
-                        )}
-                        {resource.format && (
-                          <span className="text-sm text-gray-500 ml-auto">{resource.format}</span>
-                        )}
+                        {resource.duration && <span className="text-sm text-gray-500 ml-auto">{resource.duration}</span>}
+                        {resource.format && <span className="text-sm text-gray-500 ml-auto">{resource.format}</span>}
                       </div>
                       <CardTitle className="text-lg">{resource.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-600 mb-4">{resource.description}</p>
-                      <Button className="w-full">Access Resource</Button>
+                      <Button className="w-full">Coming Soon</Button>
                     </CardContent>
-                  </Card>
-                ))}
+                  </Card>)}
               </div>
             </div>
 
@@ -141,8 +121,7 @@ const AILiteracy = () => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore by Category</h2>
               <div className="grid md:grid-cols-2 gap-8">
-                {resourceCategories.map((category, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                {resourceCategories.map((category, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-center mb-2">
                         <category.icon className="w-8 h-8 text-indigo-600 mr-3" />
@@ -152,12 +131,10 @@ const AILiteracy = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 mb-4">
-                        {category.items.map((item, itemIndex) => (
-                          <div key={itemIndex} className="flex items-center text-sm text-gray-700">
+                        {category.items.map((item, itemIndex) => <div key={itemIndex} className="flex items-center text-sm text-gray-700">
                             <div className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></div>
                             {item}
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       <Link to={category.link}>
                         <Button variant="outline" className="w-full">
@@ -165,8 +142,7 @@ const AILiteracy = () => {
                         </Button>
                       </Link>
                     </CardContent>
-                  </Card>
-                ))}
+                  </Card>)}
               </div>
             </div>
 
@@ -195,8 +171,6 @@ const AILiteracy = () => {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
-  );
+    </ProtectedRoute>;
 };
-
 export default AILiteracy;
