@@ -29,8 +29,8 @@ const Pricing = () => {
     },
     {
       name: "Lite Plan",
-      monthlyPrice: 8.99,
-      yearlyPrice: 89.90,
+      monthlyPrice: 9.99,
+      yearlyPrice: 99.90,
       description: "For individual educators",
       tagline: "Ideal for teachers with a moderate grading workload.",
       features: [
@@ -45,8 +45,8 @@ const Pricing = () => {
     },
     {
       name: "Core Plan",
-      monthlyPrice: 17.99,
-      yearlyPrice: 179.90,
+      monthlyPrice: 19.99,
+      yearlyPrice: 199.90,
       description: "For dedicated educators",
       tagline: "Perfect for educators with multiple classes and regular grading needs.",
       features: [
@@ -62,8 +62,8 @@ const Pricing = () => {
     },
     {
       name: "Full-Time Plan", 
-      monthlyPrice: 53.99,
-      yearlyPrice: 539.90,
+      monthlyPrice: 69.99,
+      yearlyPrice: 699.90,
       description: "Designed for educators with heavy grading responsibilities.",
       features: [
         "2,000 graded submissions per month",
@@ -76,8 +76,8 @@ const Pricing = () => {
     },
     {
       name: "Super Plan",
-      monthlyPrice: 89.99,
-      yearlyPrice: 899.90,
+      monthlyPrice: 99.99,
+      yearlyPrice: 999.90,
       description: "Our most comprehensive plan for educators with extensive grading needs.",
       features: [
         "3,000 graded submissions per month",
