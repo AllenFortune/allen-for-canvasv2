@@ -30,9 +30,7 @@ const Pricing = () => {
     {
       name: "Lite Plan",
       monthlyPrice: 8.99,
-      originalMonthlyPrice: 9.99,
       yearlyPrice: 89.90,
-      originalYearlyPrice: 119.88,
       description: "For individual educators",
       tagline: "Ideal for teachers with a moderate grading workload.",
       features: [
@@ -48,9 +46,7 @@ const Pricing = () => {
     {
       name: "Core Plan",
       monthlyPrice: 17.99,
-      originalMonthlyPrice: 19.99,
       yearlyPrice: 179.90,
-      originalYearlyPrice: 239.88,
       description: "For dedicated educators",
       tagline: "Perfect for educators with multiple classes and regular grading needs.",
       features: [
@@ -67,9 +63,7 @@ const Pricing = () => {
     {
       name: "Full-Time Plan", 
       monthlyPrice: 53.99,
-      originalMonthlyPrice: 59.99,
       yearlyPrice: 539.90,
-      originalYearlyPrice: 719.88,
       description: "Designed for educators with heavy grading responsibilities.",
       features: [
         "2,000 graded submissions per month",
@@ -83,9 +77,7 @@ const Pricing = () => {
     {
       name: "Super Plan",
       monthlyPrice: 89.99,
-      originalMonthlyPrice: 99.99,
       yearlyPrice: 899.90,
-      originalYearlyPrice: 1199.88,
       description: "Our most comprehensive plan for educators with extensive grading needs.",
       features: [
         "3,000 graded submissions per month",
@@ -119,13 +111,6 @@ const Pricing = () => {
     
     const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     return `$${price.toFixed(2)}`;
-  };
-
-  const getOriginalPrice = (plan: any) => {
-    if (plan.monthlyPrice === 0) return null;
-    
-    const originalPrice = isYearly ? plan.originalYearlyPrice : plan.originalMonthlyPrice;
-    return originalPrice ? `$${originalPrice.toFixed(2)}` : null;
   };
 
   const getPeriod = () => {
@@ -192,9 +177,6 @@ const Pricing = () => {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline mb-2">
                     <span className="text-4xl font-bold text-gray-900">{getDisplayPrice(plan)}</span>
-                    {getOriginalPrice(plan) && (
-                      <span className="text-lg text-gray-500 line-through ml-2">{getOriginalPrice(plan)}</span>
-                    )}
                     <span className="text-gray-600 ml-1">{getPeriod()}</span>
                   </div>
                   {getSavings(plan) && (
@@ -235,9 +217,6 @@ const Pricing = () => {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline mb-2">
                     <span className="text-4xl font-bold text-gray-900">{getDisplayPrice(plan)}</span>
-                    {getOriginalPrice(plan) && (
-                      <span className="text-lg text-gray-500 line-through ml-2">{getOriginalPrice(plan)}</span>
-                    )}
                     <span className="text-gray-600 ml-1">{getPeriod()}</span>
                   </div>
                   {getSavings(plan) && (
