@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Submission } from '@/types/grading';
 import { toast } from '@/hooks/use-toast';
 import { useCanvasCredentials } from './useCanvasCredentials';
+import { useSubscription } from './useSubscription';
 
 export const useGradeSaving = () => {
   const { getCanvasCredentials } = useCanvasCredentials();
+  const { incrementUsage } = useSubscription();
 
   const saveGrade = async (
     submissionId: number | string,
@@ -33,6 +35,12 @@ export const useGradeSaving = () => {
         variant: "destructive",
       });
       return false;
+    }
+
+    // Check usage limits before proceeding
+    const canProceed = await incrementUsage();
+    if (!canProceed) {
+      return false; // Toast message already shown in incrementUsage
     }
 
     // Find the submission to get the user_id

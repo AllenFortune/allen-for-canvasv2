@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,9 +5,13 @@ import { Switch } from "@/components/ui/switch";
 import { Check, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { createCheckout, subscription } = useSubscription();
   const [isYearly, setIsYearly] = useState(false);
 
   const plans = [
@@ -127,6 +130,24 @@ const Pricing = () => {
     return `Save $${savings.toFixed(2)}`;
   };
 
+  const handlePlanSelection = (plan: any) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    if (plan.name === "Free Trial") {
+      navigate("/canvas-setup");
+      return;
+    }
+
+    createCheckout(plan.name, plan.monthlyPrice, plan.yearlyPrice, isYearly);
+  };
+
+  const isCurrentPlan = (planName: string) => {
+    return subscription?.subscription_tier === planName;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -164,11 +185,23 @@ const Pricing = () => {
 
           <div className="grid lg:grid-cols-3 gap-8 mb-12">
             {plans.slice(0, 3).map((plan, index) => (
-              <div key={index} className={`bg-white rounded-lg shadow-sm border ${plan.popular ? 'border-indigo-200 relative ring-2 ring-indigo-100' : 'border-gray-200'} p-8`}>
+              <div key={index} className={`bg-white rounded-lg shadow-sm border ${
+                plan.popular ? 'border-indigo-200 relative ring-2 ring-indigo-100' : 
+                isCurrentPlan(plan.name) ? 'border-green-200 ring-2 ring-green-100' : 
+                'border-gray-200'
+              } p-8`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium">
                       Most Popular
+                    </span>
+                  </div>
+                )}
+                
+                {isCurrentPlan(plan.name) && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium">
+                      Current Plan
                     </span>
                   </div>
                 )}
@@ -201,10 +234,15 @@ const Pricing = () => {
                 </div>
 
                 <Button 
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                  onClick={() => navigate("/canvas-setup")}
+                  className={`w-full ${
+                    isCurrentPlan(plan.name) 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-gray-900 hover:bg-gray-800'
+                  } text-white`}
+                  onClick={() => handlePlanSelection(plan)}
+                  disabled={isCurrentPlan(plan.name)}
                 >
-                  {plan.buttonText}
+                  {isCurrentPlan(plan.name) ? 'Current Plan' : plan.buttonText}
                 </Button>
               </div>
             ))}
@@ -212,7 +250,17 @@ const Pricing = () => {
 
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {plans.slice(3).map((plan, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div key={index} className={`bg-white rounded-lg shadow-sm border ${
+                isCurrentPlan(plan.name) ? 'border-green-200 ring-2 ring-green-100' : 'border-gray-200'
+              } p-8`}>
+                {isCurrentPlan(plan.name) && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium">
+                      Current Plan
+                    </span>
+                  </div>
+                )}
+                
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline mb-2">
@@ -237,10 +285,15 @@ const Pricing = () => {
                 </ul>
 
                 <Button 
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                  onClick={() => navigate("/canvas-setup")}
+                  className={`w-full ${
+                    isCurrentPlan(plan.name) 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-gray-900 hover:bg-gray-800'
+                  } text-white`}
+                  onClick={() => handlePlanSelection(plan)}
+                  disabled={isCurrentPlan(plan.name)}
                 >
-                  {plan.buttonText}
+                  {isCurrentPlan(plan.name) ? 'Current Plan' : plan.buttonText}
                 </Button>
               </div>
             ))}
