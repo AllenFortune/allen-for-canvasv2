@@ -2,17 +2,20 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Check, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [isYearly, setIsYearly] = useState(false);
 
   const plans = [
     {
       name: "Free Trial",
-      price: "$0.00",
-      period: "/month",
+      monthlyPrice: 0,
+      yearlyPrice: 0,
       description: "Try before you buy",
       tagline: "Perfect for testing out our platform with a small batch of assignments.",
       features: [
@@ -26,9 +29,10 @@ const Pricing = () => {
     },
     {
       name: "Lite Plan",
-      price: "$8.99",
-      originalPrice: "$9.99",
-      period: "/month",
+      monthlyPrice: 8.99,
+      originalMonthlyPrice: 9.99,
+      yearlyPrice: 89.90,
+      originalYearlyPrice: 119.88,
       description: "For individual educators",
       tagline: "Ideal for teachers with a moderate grading workload.",
       features: [
@@ -43,9 +47,10 @@ const Pricing = () => {
     },
     {
       name: "Core Plan",
-      price: "$17.99",
-      originalPrice: "$19.99", 
-      period: "/month",
+      monthlyPrice: 17.99,
+      originalMonthlyPrice: 19.99,
+      yearlyPrice: 179.90,
+      originalYearlyPrice: 239.88,
       description: "For dedicated educators",
       tagline: "Perfect for educators with multiple classes and regular grading needs.",
       features: [
@@ -61,9 +66,10 @@ const Pricing = () => {
     },
     {
       name: "Full-Time Plan", 
-      price: "$53.99",
-      originalPrice: "$59.99",
-      period: "/month",
+      monthlyPrice: 53.99,
+      originalMonthlyPrice: 59.99,
+      yearlyPrice: 539.90,
+      originalYearlyPrice: 719.88,
       description: "Designed for educators with heavy grading responsibilities.",
       features: [
         "2,000 graded submissions per month",
@@ -76,9 +82,10 @@ const Pricing = () => {
     },
     {
       name: "Super Plan",
-      price: "$89.99", 
-      originalPrice: "$99.99",
-      period: "/month",
+      monthlyPrice: 89.99,
+      originalMonthlyPrice: 99.99,
+      yearlyPrice: 899.90,
+      originalYearlyPrice: 1199.88,
       description: "Our most comprehensive plan for educators with extensive grading needs.",
       features: [
         "3,000 graded submissions per month",
@@ -91,6 +98,50 @@ const Pricing = () => {
     }
   ];
 
+  const institutionalPlan = {
+    name: "Institutional Plan",
+    description: "For schools, districts, and large organizations",
+    tagline: "Comprehensive solution for educational institutions with multiple educators.",
+    features: [
+      "Unlimited graded submissions",
+      "Multiple teacher accounts",
+      "Admin dashboard & analytics",
+      "White-label option",
+      "Training & onboarding",
+      "Dedicated account manager",
+      "Custom integrations",
+      "Priority support & SLA"
+    ]
+  };
+
+  const getDisplayPrice = (plan: any) => {
+    if (plan.monthlyPrice === 0) return "$0.00";
+    
+    const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+    return `$${price.toFixed(2)}`;
+  };
+
+  const getOriginalPrice = (plan: any) => {
+    if (plan.monthlyPrice === 0) return null;
+    
+    const originalPrice = isYearly ? plan.originalYearlyPrice : plan.originalMonthlyPrice;
+    return originalPrice ? `$${originalPrice.toFixed(2)}` : null;
+  };
+
+  const getPeriod = () => {
+    return isYearly ? "/year" : "/month";
+  };
+
+  const getSavings = (plan: any) => {
+    if (!isYearly || plan.monthlyPrice === 0) return null;
+    
+    const monthlyCost = plan.monthlyPrice * 12;
+    const yearlyCost = plan.yearlyPrice;
+    const savings = monthlyCost - yearlyCost;
+    
+    return `Save $${savings.toFixed(2)}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -101,14 +152,34 @@ const Pricing = () => {
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Choose Your Plan
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 mb-8">
               Find the perfect plan for your grading needs
             </p>
+            
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-2">
+              <span className={`text-sm font-medium ${!isYearly ? 'text-gray-900' : 'text-gray-500'}`}>
+                Monthly
+              </span>
+              <Switch
+                checked={isYearly}
+                onCheckedChange={setIsYearly}
+                className="data-[state=checked]:bg-indigo-600"
+              />
+              <span className={`text-sm font-medium ${isYearly ? 'text-gray-900' : 'text-gray-500'}`}>
+                Yearly
+              </span>
+            </div>
+            {isYearly && (
+              <p className="text-sm text-green-600 font-medium">
+                Save 2 months with yearly billing! 🎉
+              </p>
+            )}
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8 mb-12">
             {plans.slice(0, 3).map((plan, index) => (
-              <div key={index} className={`bg-white rounded-lg shadow-sm border ${plan.popular ? 'border-indigo-200 relative' : 'border-gray-200'} p-8`}>
+              <div key={index} className={`bg-white rounded-lg shadow-sm border ${plan.popular ? 'border-indigo-200 relative ring-2 ring-indigo-100' : 'border-gray-200'} p-8`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium">
@@ -120,12 +191,17 @@ const Pricing = () => {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline mb-2">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    {plan.originalPrice && (
-                      <span className="text-lg text-gray-500 line-through ml-2">{plan.originalPrice}</span>
+                    <span className="text-4xl font-bold text-gray-900">{getDisplayPrice(plan)}</span>
+                    {getOriginalPrice(plan) && (
+                      <span className="text-lg text-gray-500 line-through ml-2">{getOriginalPrice(plan)}</span>
                     )}
-                    <span className="text-gray-600 ml-1">{plan.period}</span>
+                    <span className="text-gray-600 ml-1">{getPeriod()}</span>
                   </div>
+                  {getSavings(plan) && (
+                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
+                      {getSavings(plan)}
+                    </div>
+                  )}
                   <p className="text-gray-600 mb-4">{plan.description}</p>
                   <p className="text-sm text-gray-500">{plan.tagline}</p>
                 </div>
@@ -152,18 +228,23 @@ const Pricing = () => {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {plans.slice(3).map((plan, index) => (
               <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <div className="flex items-baseline mb-2">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    {plan.originalPrice && (
-                      <span className="text-lg text-gray-500 line-through ml-2">{plan.originalPrice}</span>
+                    <span className="text-4xl font-bold text-gray-900">{getDisplayPrice(plan)}</span>
+                    {getOriginalPrice(plan) && (
+                      <span className="text-lg text-gray-500 line-through ml-2">{getOriginalPrice(plan)}</span>
                     )}
-                    <span className="text-gray-600 ml-1">{plan.period}</span>
+                    <span className="text-gray-600 ml-1">{getPeriod()}</span>
                   </div>
+                  {getSavings(plan) && (
+                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
+                      {getSavings(plan)}
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500">{plan.description}</p>
                 </div>
 
@@ -184,6 +265,44 @@ const Pricing = () => {
                 </Button>
               </div>
             ))}
+          </div>
+
+          {/* Institutional Plan */}
+          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border-2 border-indigo-200 p-8 text-center">
+            <div className="max-w-4xl mx-auto">
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 mb-4">
+                For Institutions
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">{institutionalPlan.name}</h3>
+              <p className="text-xl text-gray-600 mb-4">{institutionalPlan.description}</p>
+              <p className="text-gray-600 mb-8">{institutionalPlan.tagline}</p>
+              
+              <div className="grid md:grid-cols-2 gap-6 mb-8 text-left">
+                {institutionalPlan.features.map((feature, index) => (
+                  <div key={index} className="flex items-center">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">{feature}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-2">Custom Pricing</div>
+                <p className="text-gray-600 mb-6">
+                  Tailored solutions for your institution's needs and budget
+                </p>
+                <Button 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 text-lg"
+                  onClick={() => window.location.href = 'mailto:sales@allen-ai.com?subject=Institutional Plan Inquiry'}
+                >
+                  <Mail className="w-5 h-5 mr-2" />
+                  Contact for Pricing
+                </Button>
+                <p className="text-sm text-gray-500 mt-3">
+                  Get a custom quote within 24 hours
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
