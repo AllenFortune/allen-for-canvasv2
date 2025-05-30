@@ -58,6 +58,8 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
   const [submissionAnswers, setSubmissionAnswers] = useState<{[submissionId: number]: SubmissionAnswer[]}>({});
   const [loadingAnswers, setLoadingAnswers] = useState<{[submissionId: number]: boolean}>({});
+  const [answersErrors, setAnswersErrors] = useState<{[submissionId: number]: string}>({});
+  const [fetchAttempts, setFetchAttempts] = useState<{[submissionId: number]: number}>({});
 
   const fetchQuizData = async () => {
     if (!courseId || !quizId || !session?.access_token) {
@@ -112,18 +114,28 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     }
   };
 
-  const fetchSubmissionAnswers = async (submissionId: number) => {
+  const fetchSubmissionAnswers = async (submissionId: number, forceRefresh: boolean = false) => {
     if (!courseId || !quizId || !session?.access_token) {
       console.error('Missing required data for fetching submission answers');
       return null;
     }
 
-    // Return cached answers if already loaded
-    if (submissionAnswers[submissionId]) {
+    // Return cached answers if already loaded and not forcing refresh
+    if (!forceRefresh && submissionAnswers[submissionId]) {
       return submissionAnswers[submissionId];
     }
 
+    // Check if we've already failed too many times
+    const attempts = fetchAttempts[submissionId] || 0;
+    const maxAttempts = 3;
+    
+    if (attempts >= maxAttempts && !forceRefresh) {
+      console.log(`Max attempts reached for submission ${submissionId}`);
+      return null;
+    }
+
     setLoadingAnswers(prev => ({ ...prev, [submissionId]: true }));
+    setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
 
     try {
       const { data, error } = await supabase.functions.invoke(
@@ -137,15 +149,19 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
       );
 
       if (error) {
-        console.error('Error fetching submission answers:', error);
-        return null;
+        throw new Error(error.message || 'Failed to fetch submission answers');
       }
 
       const answers = data.answers || [];
       setSubmissionAnswers(prev => ({ ...prev, [submissionId]: answers }));
+      setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
+      setFetchAttempts(prev => ({ ...prev, [submissionId]: 0 })); // Reset attempts on success
       return answers;
     } catch (error) {
       console.error('Error fetching submission answers:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch answers';
+      setAnswersErrors(prev => ({ ...prev, [submissionId]: errorMessage }));
+      setFetchAttempts(prev => ({ ...prev, [submissionId]: attempts + 1 }));
       return null;
     } finally {
       setLoadingAnswers(prev => ({ ...prev, [submissionId]: false }));
@@ -201,6 +217,11 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     fetchQuizData();
   };
 
+  const retryAnswersFetch = (submissionId: number) => {
+    console.log('Retrying answers fetch for submission:', submissionId);
+    fetchSubmissionAnswers(submissionId, true);
+  };
+
   useEffect(() => {
     fetchQuizData();
   }, [courseId, quizId, session?.access_token]);
@@ -211,11 +232,14 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     submissions,
     submissionAnswers,
     loadingAnswers,
+    answersErrors,
+    fetchAttempts,
     loading,
     error,
     gradeQuestion,
     fetchSubmissionAnswers,
     retryFetch,
+    retryAnswersFetch,
     setSubmissions
   };
 };

@@ -1,10 +1,10 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, User, Loader2 } from 'lucide-react';
+import { FileText, User, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface QuizQuestion {
   id: number;
@@ -41,7 +41,9 @@ interface QuizSubmissionViewProps {
   onQuestionSelect: (questionId: number) => void;
   submissionAnswers?: SubmissionAnswer[];
   loadingAnswers?: boolean;
+  answersError?: string;
   onFetchAnswers: (submissionId: number) => void;
+  onRetryAnswers?: (submissionId: number) => void;
 }
 
 const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
@@ -51,14 +53,19 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   onQuestionSelect,
   submissionAnswers = [],
   loadingAnswers = false,
-  onFetchAnswers
+  answersError = '',
+  onFetchAnswers,
+  onRetryAnswers
 }) => {
-  // Fetch answers when submission changes
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+
+  // Fetch answers when submission changes, but only once
   useEffect(() => {
-    if (submission && !submissionAnswers.length && !loadingAnswers) {
+    if (submission && !submissionAnswers.length && !loadingAnswers && !hasAttemptedFetch && !answersError) {
+      setHasAttemptedFetch(true);
       onFetchAnswers(submission.id);
     }
-  }, [submission.id, submissionAnswers.length, loadingAnswers, onFetchAnswers]);
+  }, [submission.id]); // Only depend on submission.id
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not available';
@@ -112,6 +119,15 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
     return <p className="whitespace-pre-wrap">{answer.answer}</p>;
   };
 
+  const handleRetryAnswers = () => {
+    setHasAttemptedFetch(false);
+    if (onRetryAnswers) {
+      onRetryAnswers(submission.id);
+    } else {
+      onFetchAnswers(submission.id);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Submission Info */}
@@ -150,9 +166,30 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
             <FileText className="w-5 h-5" />
             Questions Requiring Manual Grading ({questions.length})
             {loadingAnswers && <Loader2 className="w-4 h-4 animate-spin" />}
+            {answersError && <AlertCircle className="w-4 h-4 text-red-500" />}
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {answersError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700 font-medium">Failed to load student answers</p>
+                  <p className="text-xs text-red-600">{answersError}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryAnswers}
+                  className="text-red-700 border-red-300"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Retry
+                </Button>
+              </div>
+            </div>
+          )}
+
           {questions.length === 0 ? (
             <p className="text-gray-600 text-center py-4">
               No questions require manual grading for this quiz.
@@ -182,12 +219,12 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
                           <Badge variant="secondary" className="text-xs">
                             {question.points_possible} pts
                           </Badge>
-                          {answer && (
+                          {!answersError && (
                             <Badge 
-                              variant={answer.answer ? "default" : "destructive"} 
+                              variant={answer?.answer ? "default" : "destructive"} 
                               className="text-xs"
                             >
-                              {answer.answer ? "Answered" : "No Answer"}
+                              {answer?.answer ? "Answered" : "No Answer"}
                             </Badge>
                           )}
                         </div>
@@ -248,6 +285,21 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    ) : answersError ? (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          Unable to load student answer. You can still grade this question based on other information available.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRetryAnswers}
+                          className="mt-2 text-yellow-700 border-yellow-300"
+                        >
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Try Again
+                        </Button>
                       </div>
                     ) : (
                       <div className="p-3 bg-gray-50 rounded-lg">

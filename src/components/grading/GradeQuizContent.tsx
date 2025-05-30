@@ -53,7 +53,9 @@ interface GradeQuizContentProps {
   setSubmissions: React.Dispatch<React.SetStateAction<QuizSubmission[]>>;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};
+  answersErrors: {[submissionId: number]: string};
   fetchSubmissionAnswers: (submissionId: number) => Promise<SubmissionAnswer[] | null>;
+  retryAnswersFetch: (submissionId: number) => void;
 }
 
 const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
@@ -64,7 +66,9 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   setSubmissions,
   submissionAnswers,
   loadingAnswers,
-  fetchSubmissionAnswers
+  answersErrors,
+  fetchSubmissionAnswers,
+  retryAnswersFetch
 }) => {
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
@@ -125,6 +129,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   const selectedQuestion = manualGradingQuestions.find(q => q.id === selectedQuestionId);
   const currentSubmissionAnswers = submissionAnswers[currentSubmission.id] || [];
   const isLoadingCurrentAnswers = loadingAnswers[currentSubmission.id] || false;
+  const currentAnswersError = answersErrors[currentSubmission.id] || '';
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
@@ -147,7 +152,9 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
             onQuestionSelect={setSelectedQuestionId}
             submissionAnswers={currentSubmissionAnswers}
             loadingAnswers={isLoadingCurrentAnswers}
+            answersError={currentAnswersError}
             onFetchAnswers={fetchSubmissionAnswers}
+            onRetryAnswers={retryAnswersFetch}
           />
         </div>
 
