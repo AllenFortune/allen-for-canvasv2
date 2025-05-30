@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,6 +135,9 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     );
   }
 
+  // Find the selected question
+  const selectedQuestion = selectedQuestionId ? questions.find(q => q.id === selectedQuestionId) : null;
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -236,24 +238,11 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
 
         {/* Right Panel - Grading Form */}
         <div className="lg:col-span-1">
-          {selectedQuestionId && (
+          {selectedQuestion && (
             <QuizGradingForm
               submission={selectedSubmission}
-              questionId={selectedQuestionId}
-              questions={questions}
-              onGrade={gradeQuestion}
-              onNext={() => {
-                const currentIndex = questions.findIndex(q => q.id === selectedQuestionId);
-                if (currentIndex < questions.length - 1) {
-                  setSelectedQuestionId(questions[currentIndex + 1].id);
-                }
-              }}
-              onPrev={() => {
-                const currentIndex = questions.findIndex(q => q.id === selectedQuestionId);
-                if (currentIndex > 0) {
-                  setSelectedQuestionId(questions[currentIndex - 1].id);
-                }
-              }}
+              question={selectedQuestion}
+              gradeQuestion={gradeQuestion}
             />
           )}
         </div>

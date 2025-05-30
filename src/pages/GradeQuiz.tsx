@@ -37,6 +37,11 @@ const GradeQuiz = () => {
     return <LoadingDisplay />;
   }
 
+  // Create a wrapper function to match the expected signature
+  const handleSetSubmissions = (newSubmissions: any[]) => {
+    setSubmissions(newSubmissions);
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -60,7 +65,7 @@ const GradeQuiz = () => {
             questions={questions}
             submissions={submissions}
             gradeQuestion={gradeQuestion}
-            setSubmissions={setSubmissions}
+            setSubmissions={handleSetSubmissions}
             submissionAnswers={submissionAnswers}
             loadingAnswers={loadingAnswers}
             answersErrors={answersErrors}
