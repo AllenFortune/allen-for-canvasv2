@@ -7,6 +7,8 @@ export interface Quiz {
   time_limit: number;
   allowed_attempts: number;
   quiz_type: string;
+  assignment_id?: number;
+  is_assignment_based?: boolean;
 }
 
 export interface QuizQuestion {

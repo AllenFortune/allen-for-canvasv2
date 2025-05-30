@@ -11,7 +11,7 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
   const [answersErrors, setAnswersErrors] = useState<{[submissionId: number]: string}>({});
   const [fetchAttempts, setFetchAttempts] = useState<{[submissionId: number]: number}>({});
 
-  const fetchSubmissionAnswers = async (submissionId: number, forceRefresh: boolean = false) => {
+  const fetchSubmissionAnswers = async (submissionId: number, userId?: number, forceRefresh: boolean = false) => {
     if (!courseId || !quizId || !session?.access_token) {
       console.error('Missing required data for fetching submission answers');
       return null;
@@ -32,15 +32,22 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
       return null;
     }
 
-    console.log(`Fetching answers for submission ${submissionId}, attempt ${attempts + 1}`);
+    console.log(`Fetching answers for submission ${submissionId}, user ${userId}, attempt ${attempts + 1}`);
     setLoadingAnswers(prev => ({ ...prev, [submissionId]: true }));
     setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
 
     try {
+      const requestBody: any = { courseId, quizId, submissionId };
+      
+      // Include userId if provided (required for assignment-based quizzes)
+      if (userId) {
+        requestBody.userId = userId;
+      }
+
       const { data, error } = await supabase.functions.invoke(
         'get-canvas-quiz-submission-answers',
         {
-          body: { courseId, quizId, submissionId },
+          body: requestBody,
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -59,6 +66,15 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
       console.log(`Processed ${answers.length} answers for submission ${submissionId}:`, answers);
       console.log(`Debug info:`, debugInfo);
       
+      // Log specific information about answer sources
+      if (debugInfo.answers_source) {
+        console.log(`Answers retrieved from: ${debugInfo.answers_source}`);
+      }
+      
+      if (debugInfo.is_assignment_based_quiz) {
+        console.log(`Quiz is assignment-based (New Quizzes), assignment ID: ${debugInfo.assignment_id}`);
+      }
+      
       // Log answers with content for debugging
       const answersWithContent = answers.filter((a: SubmissionAnswer) => 
         a.answer !== null && 
@@ -70,7 +86,7 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
       console.log(`Found ${answersWithContent.length}/${answers.length} answers with actual content`);
       
       if (answersWithContent.length === 0 && answers.length > 0) {
-        console.warn('All answers are empty - this may indicate a Canvas API extraction issue');
+        console.warn('All answers are empty - this may indicate a Canvas API extraction issue or the quiz may be assignment-based requiring userId');
       }
       
       setSubmissionAnswers(prev => ({ ...prev, [submissionId]: answers }));
@@ -89,6 +105,8 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
         enhancedErrorMessage = 'Access denied. Please check your Canvas permissions for this quiz.';
       } else if (errorMessage.includes('Canvas credentials')) {
         enhancedErrorMessage = 'Canvas credentials not configured. Please check your Canvas integration settings.';
+      } else if (!userId && errorMessage.includes('assignment')) {
+        enhancedErrorMessage = 'This appears to be a New Quizzes assignment. User ID is required to fetch answers.';
       }
       
       setAnswersErrors(prev => ({ ...prev, [submissionId]: enhancedErrorMessage }));
@@ -99,12 +117,12 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
     }
   };
 
-  const retryAnswersFetch = (submissionId: number) => {
-    console.log('Retrying answers fetch for submission:', submissionId);
+  const retryAnswersFetch = (submissionId: number, userId?: number) => {
+    console.log('Retrying answers fetch for submission:', submissionId, 'user:', userId);
     // Clear any existing error and reset attempts for forced retry
     setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
     setFetchAttempts(prev => ({ ...prev, [submissionId]: 0 }));
-    fetchSubmissionAnswers(submissionId, true);
+    fetchSubmissionAnswers(submissionId, userId, true);
   };
 
   return {

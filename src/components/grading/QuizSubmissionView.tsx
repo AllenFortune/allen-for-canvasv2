@@ -18,6 +18,7 @@ interface QuizSubmission {
   started_at: string | null;
   finished_at: string | null;
   workflow_state: string;
+  user_id: number;
   user: {
     name: string;
     sortable_name: string;
@@ -32,6 +33,13 @@ interface SubmissionAnswer {
   points: number | null;
 }
 
+interface Quiz {
+  id: number;
+  title: string;
+  is_assignment_based?: boolean;
+  assignment_id?: number;
+}
+
 interface QuizSubmissionViewProps {
   submission: QuizSubmission;
   questions: QuizQuestion[];
@@ -40,9 +48,10 @@ interface QuizSubmissionViewProps {
   submissionAnswers?: SubmissionAnswer[];
   loadingAnswers?: boolean;
   answersError?: string;
-  onFetchAnswers: (submissionId: number) => void;
-  onRetryAnswers?: (submissionId: number) => void;
+  onFetchAnswers: (submissionId: number, userId?: number) => void;
+  onRetryAnswers?: (submissionId: number, userId?: number) => void;
   manualGradingQuestions?: QuizQuestion[];
+  quiz?: Quiz;
 }
 
 const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
@@ -55,7 +64,8 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   answersError = '',
   onFetchAnswers,
   onRetryAnswers,
-  manualGradingQuestions = []
+  manualGradingQuestions = [],
+  quiz
 }) => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
@@ -63,16 +73,29 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   useEffect(() => {
     if (submission && !submissionAnswers.length && !loadingAnswers && !hasAttemptedFetch && !answersError) {
       setHasAttemptedFetch(true);
-      onFetchAnswers(submission.id);
+      
+      // For assignment-based quizzes (New Quizzes), pass the user_id
+      const shouldPassUserId = quiz?.is_assignment_based || quiz?.assignment_id;
+      const userId = shouldPassUserId ? submission.user_id : undefined;
+      
+      console.log(`Fetching answers for submission ${submission.id}, quiz assignment-based: ${shouldPassUserId}, user ID: ${userId}`);
+      onFetchAnswers(submission.id, userId);
     }
-  }, [submission.id, submissionAnswers.length, loadingAnswers, hasAttemptedFetch, answersError, onFetchAnswers]);
+  }, [submission.id, submissionAnswers.length, loadingAnswers, hasAttemptedFetch, answersError, onFetchAnswers, quiz?.is_assignment_based, quiz?.assignment_id, submission.user_id]);
 
   const handleRetryAnswers = () => {
     setHasAttemptedFetch(false);
+    
+    // For assignment-based quizzes (New Quizzes), pass the user_id
+    const shouldPassUserId = quiz?.is_assignment_based || quiz?.assignment_id;
+    const userId = shouldPassUserId ? submission.user_id : undefined;
+    
+    console.log(`Retrying answers for submission ${submission.id}, quiz assignment-based: ${shouldPassUserId}, user ID: ${userId}`);
+    
     if (onRetryAnswers) {
-      onRetryAnswers(submission.id);
+      onRetryAnswers(submission.id, userId);
     } else {
-      onFetchAnswers(submission.id);
+      onFetchAnswers(submission.id, userId);
     }
   };
 

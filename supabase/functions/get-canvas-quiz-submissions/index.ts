@@ -68,7 +68,7 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // First, fetch the quiz details
+    // First, fetch the quiz details with assignment information
     const quizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}`;
     console.log(`Fetching quiz details from: ${quizUrl}`);
 
@@ -100,6 +100,11 @@ serve(async (req) => {
 
     const quizData = await quizResponse.json();
     console.log(`Successfully fetched quiz details: ${quizData.title}`);
+    console.log(`Quiz type: ${quizData.quiz_type}, Assignment ID: ${quizData.assignment_id}`);
+    
+    // Determine if this is an assignment-based quiz (New Quizzes)
+    const isAssignmentBasedQuiz = !!quizData.assignment_id;
+    console.log(`Quiz is ${isAssignmentBasedQuiz ? 'assignment-based (New Quizzes)' : 'classic Canvas quiz'}`);
     
     // Then, fetch quiz submissions from Canvas API
     const submissionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions?per_page=100&include[]=submission&include[]=quiz&include[]=user`;
@@ -157,7 +162,7 @@ serve(async (req) => {
       }
     }));
 
-    // Return both quiz details and submissions
+    // Return both quiz details and submissions with quiz type information
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -169,7 +174,9 @@ serve(async (req) => {
           points_possible: quizData.points_possible,
           time_limit: quizData.time_limit,
           allowed_attempts: quizData.allowed_attempts,
-          quiz_type: quizData.quiz_type
+          quiz_type: quizData.quiz_type,
+          assignment_id: quizData.assignment_id,
+          is_assignment_based: isAssignmentBasedQuiz
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
