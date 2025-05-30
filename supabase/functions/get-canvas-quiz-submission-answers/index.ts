@@ -100,6 +100,7 @@ serve(async (req) => {
 
     const submissionData = await submissionResponse.json();
     console.log(`Successfully fetched submission data from Canvas`);
+    console.log(`Submission data structure:`, JSON.stringify(submissionData, null, 2));
 
     // Now try to get the detailed question answers using the quiz_submissions endpoint
     const questionsUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
@@ -117,35 +118,103 @@ serve(async (req) => {
     let questions = [];
     if (questionsResponse.ok) {
       const questionsData = await questionsResponse.json();
-      questions = questionsData.quiz_submission_questions || [];
-      console.log(`Successfully fetched ${questions.length} question answers from Canvas`);
+      console.log(`Raw questions response:`, JSON.stringify(questionsData, null, 2));
+      
+      const rawQuestions = questionsData.quiz_submission_questions || [];
+      console.log(`Found ${rawQuestions.length} raw questions from Canvas`);
+      
+      // Process each question to extract answer data properly
+      questions = rawQuestions.map((questionData: any) => {
+        console.log(`Processing question ${questionData.id}:`, JSON.stringify(questionData, null, 2));
+        
+        let answer = null;
+        
+        // Extract answer from multiple possible locations
+        if (questionData.answer !== undefined && questionData.answer !== null) {
+          answer = questionData.answer;
+          console.log(`Found answer in 'answer' field for question ${questionData.id}:`, answer);
+        } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
+          // Handle submitted_answers array format
+          const submittedAnswer = questionData.submitted_answers[0];
+          if (submittedAnswer) {
+            answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
+            console.log(`Found answer in submitted_answers for question ${questionData.id}:`, answer);
+          }
+        } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
+          answer = questionData.user_answer;
+          console.log(`Found answer in 'user_answer' field for question ${questionData.id}:`, answer);
+        }
+        
+        const processedQuestion = {
+          id: questionData.id,
+          question_id: questionData.question_id || questionData.id,
+          answer: answer,
+          correct: questionData.correct,
+          points: questionData.points,
+          question_name: questionData.question_name,
+          question_text: questionData.question_text
+        };
+        
+        console.log(`Processed question ${questionData.id} final result:`, JSON.stringify(processedQuestion, null, 2));
+        return processedQuestion;
+      });
+      
+      console.log(`Successfully processed ${questions.length} question answers from Canvas`);
     } else {
-      console.log(`Could not fetch question details, using submission history instead`);
+      console.log(`Could not fetch question details (${questionsResponse.status}), using submission history instead`);
       
       // Fallback: try to extract answers from submission history
       if (submissionData.quiz_submission?.submission_history) {
+        console.log(`Processing submission history:`, JSON.stringify(submissionData.quiz_submission.submission_history, null, 2));
+        
         const latestAttempt = submissionData.quiz_submission.submission_history[0];
         if (latestAttempt?.submission_data) {
-          questions = latestAttempt.submission_data.map((item: any) => ({
-            id: item.question_id,
-            question_id: item.question_id,
-            answer: item.answer || item.text || null,
-            correct: item.correct,
-            points: item.points,
-            question_name: item.question_name,
-            question_text: item.question_text
-          }));
+          console.log(`Processing submission_data:`, JSON.stringify(latestAttempt.submission_data, null, 2));
+          
+          questions = latestAttempt.submission_data.map((item: any) => {
+            console.log(`Processing submission data item:`, JSON.stringify(item, null, 2));
+            
+            let answer = null;
+            
+            // Try multiple fields where answer might be stored
+            if (item.answer !== undefined && item.answer !== null) {
+              answer = item.answer;
+            } else if (item.text !== undefined && item.text !== null) {
+              answer = item.text;
+            } else if (item.answer_text !== undefined && item.answer_text !== null) {
+              answer = item.answer_text;
+            }
+            
+            const processedItem = {
+              id: item.question_id,
+              question_id: item.question_id,
+              answer: answer,
+              correct: item.correct,
+              points: item.points,
+              question_name: item.question_name,
+              question_text: item.question_text
+            };
+            
+            console.log(`Processed submission data item result:`, JSON.stringify(processedItem, null, 2));
+            return processedItem;
+          });
           console.log(`Extracted ${questions.length} answers from submission history`);
         }
       }
     }
+
+    console.log(`Final questions array being returned:`, JSON.stringify(questions, null, 2));
 
     return new Response(
       JSON.stringify({ 
         success: true,
         submission_id: submissionId,
         answers: questions,
-        submission_data: submissionData.quiz_submission
+        submission_data: submissionData.quiz_submission,
+        debug_info: {
+          total_answers_found: questions.length,
+          questions_with_content: questions.filter(q => q.answer !== null && q.answer !== undefined && q.answer !== '').length
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

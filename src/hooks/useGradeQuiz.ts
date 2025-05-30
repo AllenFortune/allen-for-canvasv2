@@ -122,6 +122,7 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
 
     // Return cached answers if already loaded and not forcing refresh
     if (!forceRefresh && submissionAnswers[submissionId]) {
+      console.log(`Returning cached answers for submission ${submissionId}:`, submissionAnswers[submissionId]);
       return submissionAnswers[submissionId];
     }
 
@@ -134,6 +135,7 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
       return null;
     }
 
+    console.log(`Fetching answers for submission ${submissionId}, attempt ${attempts + 1}`);
     setLoadingAnswers(prev => ({ ...prev, [submissionId]: true }));
     setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
 
@@ -152,7 +154,11 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
         throw new Error(error.message || 'Failed to fetch submission answers');
       }
 
+      console.log(`Raw response from edge function for submission ${submissionId}:`, data);
+
       const answers = data.answers || [];
+      console.log(`Processed ${answers.length} answers for submission ${submissionId}:`, answers);
+      
       setSubmissionAnswers(prev => ({ ...prev, [submissionId]: answers }));
       setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
       setFetchAttempts(prev => ({ ...prev, [submissionId]: 0 })); // Reset attempts on success

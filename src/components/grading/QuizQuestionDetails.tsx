@@ -47,13 +47,24 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
   };
 
   const renderAnswerContent = (answer: SubmissionAnswer | undefined) => {
+    // Debug logging to track answer data
+    console.log('Rendering answer content for:', {
+      answer,
+      hasAnswer: !!answer,
+      answerValue: answer?.answer,
+      answerType: typeof answer?.answer,
+      isEmpty: isContentEffectivelyEmpty(answer?.answer)
+    });
+
     // Check if the answer object exists and if its content is effectively empty
     if (!answer || isContentEffectivelyEmpty(answer.answer)) {
+      console.log('No answer provided - answer is null, undefined, or effectively empty');
       return <p className="text-gray-500 italic">No answer provided</p>;
     }
 
     // Handle different answer formats
     if (Array.isArray(answer.answer)) {
+      console.log('Rendering array answer:', answer.answer);
       return (
         <div className="space-y-2">
           {answer.answer.map((item, index) => (
@@ -67,6 +78,7 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
 
     // Handle object answers (common in Canvas for complex question types)
     if (typeof answer.answer === 'object' && answer.answer !== null) {
+      console.log('Rendering object answer:', answer.answer);
       // Try to extract meaningful content from object answers
       const answerObj = answer.answer as any;
       
@@ -103,6 +115,7 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
 
     // If it's a string and not effectively empty, render as HTML or plain text
     if (typeof answer.answer === 'string') {
+      console.log('Rendering string answer:', answer.answer);
       // Check if the answer contains HTML (simple check for '<' character)
       if (answer.answer.includes('<')) {
         return (
@@ -115,6 +128,7 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
       return <p className="whitespace-pre-wrap">{answer.answer}</p>;
     }
 
+    console.log('Invalid answer format detected:', typeof answer.answer, answer.answer);
     return <p className="text-gray-500 italic">Invalid answer format</p>;
   };
 
@@ -124,6 +138,15 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
 
   const selectedQuestion = questions.find(q => q.id === selectedQuestionId);
   const answer = getAnswerForQuestion(selectedQuestionId);
+  
+  // Debug logging
+  console.log('QuizQuestionDetails render:', {
+    selectedQuestionId,
+    selectedQuestion,
+    answer,
+    submissionAnswers,
+    totalAnswers: submissionAnswers.length
+  });
   
   if (!selectedQuestion) return null;
 
@@ -152,6 +175,23 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
               />
             </div>
           </div>
+
+          {/* Debug Info - Temporary */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium text-sm text-gray-700 mb-2">Debug Info:</h4>
+              <div className="text-xs bg-gray-100 p-2 rounded">
+                <p>Total answers loaded: {submissionAnswers.length}</p>
+                <p>Answer found for this question: {answer ? 'Yes' : 'No'}</p>
+                {answer && (
+                  <>
+                    <p>Answer type: {typeof answer.answer}</p>
+                    <p>Answer value: {JSON.stringify(answer.answer)}</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Student Answer */}
           <div className="border-t pt-4">
