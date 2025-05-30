@@ -1,0 +1,88 @@
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import type { Quiz, QuizQuestion, QuizSubmission } from '@/types/quizGrading';
+
+export const useQuizData = (courseId: string | undefined, quizId: string | undefined) => {
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+
+  const fetchQuizData = async () => {
+    if (!courseId || !quizId || !session?.access_token) {
+      setError('Missing course ID, quiz ID, or authentication');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Fetching quiz data for:', { courseId, quizId });
+
+      // Fetch quiz submissions
+      const { data: submissionsData, error: submissionsError } = await supabase.functions.invoke(
+        'get-canvas-quiz-submissions',
+        {
+          body: { courseId, quizId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (submissionsError) {
+        throw new Error(`Failed to fetch submissions: ${submissionsError.message}`);
+      }
+
+      // Fetch quiz questions
+      const { data: questionsData, error: questionsError } = await supabase.functions.invoke(
+        'get-canvas-quiz-questions',
+        {
+          body: { courseId, quizId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (questionsError) {
+        throw new Error(`Failed to fetch questions: ${questionsError.message}`);
+      }
+
+      console.log('Quiz data fetched successfully');
+      setSubmissions(submissionsData.submissions || []);
+      setQuiz(submissionsData.quiz || null);
+      setQuestions(questionsData.questions || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching quiz data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch quiz data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const retryFetch = () => {
+    console.log('Retrying quiz data fetch...');
+    setError(null);
+    setLoading(true);
+    fetchQuizData();
+  };
+
+  useEffect(() => {
+    fetchQuizData();
+  }, [courseId, quizId, session?.access_token]);
+
+  return {
+    quiz,
+    questions,
+    submissions,
+    loading,
+    error,
+    retryFetch,
+    setSubmissions
+  };
+};
