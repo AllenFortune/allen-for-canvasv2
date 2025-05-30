@@ -68,11 +68,11 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Fetch detailed answers for the specific submission
-    const answersUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions`;
-    console.log(`Fetching submission answers from: ${answersUrl}`);
+    // Try the more comprehensive quiz submissions endpoint first
+    const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission_history&include[]=user&include[]=quiz`;
+    console.log(`Fetching submission details from: ${submissionUrl}`);
 
-    const answersResponse = await fetch(answersUrl, {
+    const submissionResponse = await fetch(submissionUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
@@ -81,31 +81,71 @@ serve(async (req) => {
       },
     });
 
-    if (!answersResponse.ok) {
-      const errorText = await answersResponse.text();
-      console.error(`Canvas API error fetching submission answers: ${answersResponse.status} - ${errorText}`);
+    if (!submissionResponse.ok) {
+      const errorText = await submissionResponse.text();
+      console.error(`Canvas API error fetching submission: ${submissionResponse.status} - ${errorText}`);
       
-      let errorMessage = `Canvas API returned ${answersResponse.status}: ${answersResponse.statusText}`;
-      if (answersResponse.status === 401) {
+      let errorMessage = `Canvas API returned ${submissionResponse.status}: ${submissionResponse.statusText}`;
+      if (submissionResponse.status === 401) {
         errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
-      } else if (answersResponse.status === 404) {
-        errorMessage = 'Submission answers not found or access denied.';
+      } else if (submissionResponse.status === 404) {
+        errorMessage = 'Quiz submission not found or access denied.';
       }
 
       return new Response(
         JSON.stringify({ error: errorMessage }),
-        { status: answersResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: submissionResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const answersData = await answersResponse.json();
-    console.log(`Successfully fetched ${answersData.quiz_submission_questions?.length || 0} submission answers from Canvas`);
+    const submissionData = await submissionResponse.json();
+    console.log(`Successfully fetched submission data from Canvas`);
+
+    // Now try to get the detailed question answers using the quiz_submissions endpoint
+    const questionsUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
+    console.log(`Fetching submission questions from: ${questionsUrl}`);
+
+    const questionsResponse = await fetch(questionsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    let questions = [];
+    if (questionsResponse.ok) {
+      const questionsData = await questionsResponse.json();
+      questions = questionsData.quiz_submission_questions || [];
+      console.log(`Successfully fetched ${questions.length} question answers from Canvas`);
+    } else {
+      console.log(`Could not fetch question details, using submission history instead`);
+      
+      // Fallback: try to extract answers from submission history
+      if (submissionData.quiz_submission?.submission_history) {
+        const latestAttempt = submissionData.quiz_submission.submission_history[0];
+        if (latestAttempt?.submission_data) {
+          questions = latestAttempt.submission_data.map((item: any) => ({
+            id: item.question_id,
+            question_id: item.question_id,
+            answer: item.answer || item.text || null,
+            correct: item.correct,
+            points: item.points,
+            question_name: item.question_name,
+            question_text: item.question_text
+          }));
+          console.log(`Extracted ${questions.length} answers from submission history`);
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true,
         submission_id: submissionId,
-        answers: answersData.quiz_submission_questions || []
+        answers: questions,
+        submission_data: submissionData.quiz_submission
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

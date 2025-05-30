@@ -21,6 +21,8 @@ interface SubmissionAnswer {
   answer: string | string[] | null;
   correct: boolean | null;
   points: number | null;
+  question_name?: string;
+  question_text?: string;
 }
 
 interface QuizQuestionDetailsProps {
@@ -50,14 +52,51 @@ const QuizQuestionDetails: React.FC<QuizQuestionDetailsProps> = ({
       return <p className="text-gray-500 italic">No answer provided</p>;
     }
 
+    // Handle different answer formats
     if (Array.isArray(answer.answer)) {
       return (
         <div className="space-y-2">
           {answer.answer.map((item, index) => (
             <div key={index} className="p-2 bg-gray-50 rounded">
-              {item}
+              {typeof item === 'string' ? item : JSON.stringify(item)}
             </div>
           ))}
+        </div>
+      );
+    }
+
+    // Handle object answers (common in Canvas for complex question types)
+    if (typeof answer.answer === 'object' && answer.answer !== null) {
+      // Try to extract meaningful content from object answers
+      const answerObj = answer.answer as any;
+      
+      if (answerObj.text) {
+        return <div className="whitespace-pre-wrap">{answerObj.text}</div>;
+      }
+      
+      if (answerObj.answer_text) {
+        return <div className="whitespace-pre-wrap">{answerObj.answer_text}</div>;
+      }
+      
+      // For fill-in-the-blank questions
+      if (answerObj.answers && Array.isArray(answerObj.answers)) {
+        return (
+          <div className="space-y-2">
+            {answerObj.answers.map((item: any, index: number) => (
+              <div key={index} className="p-2 bg-gray-50 rounded">
+                <strong>Blank {index + 1}:</strong> {item.text || item.answer_text || 'No answer'}
+              </div>
+            ))}
+          </div>
+        );
+      }
+      
+      // Fallback: display the object as formatted JSON
+      return (
+        <div className="p-2 bg-gray-50 rounded">
+          <pre className="text-sm whitespace-pre-wrap">
+            {JSON.stringify(answerObj, null, 2)}
+          </pre>
         </div>
       );
     }
