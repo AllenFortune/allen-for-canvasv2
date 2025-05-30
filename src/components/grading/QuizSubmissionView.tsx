@@ -59,13 +59,13 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
 }) => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
-  // Fetch answers when submission changes, but only once
+  // Fetch answers when submission changes, but only once per submission load
   useEffect(() => {
     if (submission && !submissionAnswers.length && !loadingAnswers && !hasAttemptedFetch && !answersError) {
       setHasAttemptedFetch(true);
       onFetchAnswers(submission.id);
     }
-  }, [submission.id]); // Only depend on submission.id
+  }, [submission.id, submissionAnswers.length, loadingAnswers, hasAttemptedFetch, answersError, onFetchAnswers]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not available';
@@ -81,7 +81,7 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
       case 'file_upload_question':
         return 'File Upload';
       default:
-        return type.replace('_', ' ');
+        return type.replace(/_/g, ' ');
     }
   };
 
@@ -89,8 +89,27 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
     return submissionAnswers.find(answer => answer.question_id === questionId);
   };
 
+  // Helper function to strip HTML tags and check for meaningful content
+  const isContentEffectivelyEmpty = (content: string | string[] | null | undefined): boolean => {
+    if (content === null || content === undefined) return true;
+
+    if (Array.isArray(content)) {
+      // If it's an array, check if all items are effectively empty
+      return content.every(item => isContentEffectivelyEmpty(item));
+    }
+
+    if (typeof content === 'string') {
+      // Strip HTML tags and trim whitespace
+      const strippedContent = content.replace(/<[^>]*>/g, '').trim();
+      return strippedContent.length === 0;
+    }
+
+    return false; // For other types, consider it not empty
+  };
+
   const renderAnswerContent = (answer: SubmissionAnswer | undefined) => {
-    if (!answer || !answer.answer) {
+    // Check if the answer object exists and if its content is effectively empty
+    if (!answer || isContentEffectivelyEmpty(answer.answer)) {
       return <p className="text-gray-500 italic">No answer provided</p>;
     }
 
@@ -106,17 +125,21 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
       );
     }
 
-    // Check if the answer contains HTML
-    if (typeof answer.answer === 'string' && answer.answer.includes('<')) {
-      return (
-        <div 
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: answer.answer }}
-        />
-      );
+    // If it's a string and not effectively empty, render as HTML or plain text
+    if (typeof answer.answer === 'string') {
+      // Check if the answer contains HTML (simple check for '<' character)
+      if (answer.answer.includes('<')) {
+        return (
+          <div 
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: answer.answer }}
+          />
+        );
+      }
+      return <p className="whitespace-pre-wrap">{answer.answer}</p>;
     }
 
-    return <p className="whitespace-pre-wrap">{answer.answer}</p>;
+    return <p className="text-gray-500 italic">Invalid answer format</p>;
   };
 
   const handleRetryAnswers = () => {
@@ -221,10 +244,10 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
                           </Badge>
                           {!answersError && (
                             <Badge 
-                              variant={answer?.answer ? "default" : "destructive"} 
+                              variant={isContentEffectivelyEmpty(answer?.answer) ? "destructive" : "default"} 
                               className="text-xs"
                             >
-                              {answer?.answer ? "Answered" : "No Answer"}
+                              {isContentEffectivelyEmpty(answer?.answer) ? "No Answer" : "Answered"}
                             </Badge>
                           )}
                         </div>
