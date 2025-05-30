@@ -68,12 +68,11 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Fetch quiz submissions from Canvas API
-    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions?per_page=100&include[]=submission&include[]=quiz&include[]=user`;
-    
-    console.log(`Making request to Canvas API: ${canvasUrl}`);
+    // First, fetch the quiz details
+    const quizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}`;
+    console.log(`Fetching quiz details from: ${quizUrl}`);
 
-    const response = await fetch(canvasUrl, {
+    const quizResponse = await fetch(quizUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
@@ -82,24 +81,58 @@ serve(async (req) => {
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Canvas API error: ${response.status} - ${errorText}`);
+    if (!quizResponse.ok) {
+      const errorText = await quizResponse.text();
+      console.error(`Canvas API error fetching quiz: ${quizResponse.status} - ${errorText}`);
       
-      let errorMessage = `Canvas API returned ${response.status}: ${response.statusText}`;
-      if (response.status === 401) {
+      let errorMessage = `Canvas API returned ${quizResponse.status}: ${quizResponse.statusText}`;
+      if (quizResponse.status === 401) {
         errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
-      } else if (response.status === 404) {
+      } else if (quizResponse.status === 404) {
         errorMessage = 'Quiz not found or access denied.';
       }
 
       return new Response(
         JSON.stringify({ error: errorMessage }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: quizResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const submissionsData = await response.json();
+    const quizData = await quizResponse.json();
+    console.log(`Successfully fetched quiz details: ${quizData.title}`);
+    
+    // Then, fetch quiz submissions from Canvas API
+    const submissionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions?per_page=100&include[]=submission&include[]=quiz&include[]=user`;
+    
+    console.log(`Making request to Canvas API: ${submissionsUrl}`);
+
+    const submissionsResponse = await fetch(submissionsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!submissionsResponse.ok) {
+      const errorText = await submissionsResponse.text();
+      console.error(`Canvas API error fetching submissions: ${submissionsResponse.status} - ${errorText}`);
+      
+      let errorMessage = `Canvas API returned ${submissionsResponse.status}: ${submissionsResponse.statusText}`;
+      if (submissionsResponse.status === 401) {
+        errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
+      } else if (submissionsResponse.status === 404) {
+        errorMessage = 'Quiz submissions not found or access denied.';
+      }
+
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
+        { status: submissionsResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const submissionsData = await submissionsResponse.json();
     
     console.log(`Successfully fetched ${submissionsData.quiz_submissions?.length || 0} quiz submissions from Canvas`);
 
@@ -124,11 +157,20 @@ serve(async (req) => {
       }
     }));
 
+    // Return both quiz details and submissions
     return new Response(
       JSON.stringify({ 
         success: true,
         submissions: transformedSubmissions,
-        quiz: submissionsData.quiz
+        quiz: {
+          id: quizData.id,
+          title: quizData.title,
+          description: quizData.description,
+          points_possible: quizData.points_possible,
+          time_limit: quizData.time_limit,
+          allowed_attempts: quizData.allowed_attempts,
+          quiz_type: quizData.quiz_type
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
