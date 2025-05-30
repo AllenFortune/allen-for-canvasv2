@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,9 @@ interface QuizzesListProps {
 }
 
 const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) => {
+  const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId: string }>();
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No due date';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -47,6 +52,15 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
       </Badge>
     );
   };
+
+  const handleGradeClick = (quizId: number) => {
+    navigate(`/courses/${courseId}/quizzes/${quizId}/grade`);
+  };
+
+  // Filter quizzes that might need grading (assignments and graded surveys)
+  const gradeableQuizzes = quizzes.filter(quiz => 
+    quiz.quiz_type === 'assignment' || quiz.quiz_type === 'graded_survey'
+  );
 
   if (quizzesLoading) {
     return (
@@ -81,6 +95,11 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
     <Card>
       <CardHeader>
         <CardTitle>Quizzes ({quizzes.length})</CardTitle>
+        {gradeableQuizzes.length > 0 && (
+          <p className="text-sm text-gray-600">
+            {gradeableQuizzes.length} quiz{gradeableQuizzes.length !== 1 ? 'es' : ''} may require grading
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -93,6 +112,7 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
               <TableHead>Time Limit</TableHead>
               <TableHead>Attempts</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,6 +132,17 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
                   <Badge variant={quiz.published ? 'default' : 'secondary'}>
                     {quiz.published ? 'Published' : 'Unpublished'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {(quiz.quiz_type === 'assignment' || quiz.quiz_type === 'graded_survey') && quiz.published && (
+                    <Button 
+                      size="sm"
+                      className="bg-gray-900 hover:bg-gray-800 text-white"
+                      onClick={() => handleGradeClick(quiz.id)}
+                    >
+                      Grade
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

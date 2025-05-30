@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import GradeAssignment from "./pages/GradeAssignment";
 import GradeDiscussion from "./pages/GradeDiscussion";
+import GradeQuiz from "./pages/GradeQuiz";
 import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -46,6 +48,7 @@ const App = () => (
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/courses/:courseId/assignments/:assignmentId/grade" element={<GradeAssignment />} />
             <Route path="/courses/:courseId/discussions/:discussionId/grade" element={<GradeDiscussion />} />
+            <Route path="/courses/:courseId/quizzes/:quizId/grade" element={<GradeQuiz />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/ai-literacy" element={<AILiteracy />} />

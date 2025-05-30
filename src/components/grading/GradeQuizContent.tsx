@@ -1,0 +1,121 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import QuizGradingForm from './QuizGradingForm';
+import QuizStudentNavigation from './QuizStudentNavigation';
+import QuizSubmissionView from './QuizSubmissionView';
+
+interface Quiz {
+  id: number;
+  title: string;
+  points_possible: number;
+}
+
+interface QuizQuestion {
+  id: number;
+  question_type: string;
+  question_text: string;
+  points_possible: number;
+  question_name: string;
+}
+
+interface QuizSubmission {
+  id: number;
+  user_id: number;
+  attempt: number;
+  score: number | null;
+  workflow_state: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    sortable_name: string;
+  };
+}
+
+interface GradeQuizContentProps {
+  quiz: Quiz | null;
+  questions: QuizQuestion[];
+  submissions: QuizSubmission[];
+  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  setSubmissions: (submissions: QuizSubmission[]) => void;
+}
+
+const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
+  quiz,
+  questions,
+  submissions,
+  gradeQuestion,
+  setSubmissions
+}) => {
+  const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
+
+  if (!quiz || submissions.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-600 text-center">
+              {!quiz ? 'Loading quiz data...' : 'No submissions found for this quiz.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const currentSubmission = submissions[currentSubmissionIndex];
+  const manualGradingQuestions = questions.filter(q => 
+    q.question_type === 'essay_question' || 
+    q.question_type === 'fill_in_multiple_blanks_question' ||
+    q.question_type === 'file_upload_question'
+  );
+
+  // Set default selected question if none selected
+  React.useEffect(() => {
+    if (!selectedQuestionId && manualGradingQuestions.length > 0) {
+      setSelectedQuestionId(manualGradingQuestions[0].id);
+    }
+  }, [selectedQuestionId, manualGradingQuestions]);
+
+  const selectedQuestion = manualGradingQuestions.find(q => q.id === selectedQuestionId);
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Student Navigation */}
+        <div className="lg:col-span-1">
+          <QuizStudentNavigation
+            submissions={submissions}
+            currentIndex={currentSubmissionIndex}
+            onStudentSelect={setCurrentSubmissionIndex}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          <QuizSubmissionView
+            submission={currentSubmission}
+            questions={manualGradingQuestions}
+            selectedQuestionId={selectedQuestionId}
+            onQuestionSelect={setSelectedQuestionId}
+          />
+        </div>
+
+        {/* Grading Form */}
+        <div className="lg:col-span-1">
+          {selectedQuestion && (
+            <QuizGradingForm
+              submission={currentSubmission}
+              question={selectedQuestion}
+              gradeQuestion={gradeQuestion}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GradeQuizContent;

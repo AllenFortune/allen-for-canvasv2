@@ -1,0 +1,146 @@
+
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
+    const { courseId, quizId } = body;
+    
+    if (!courseId || !quizId) {
+      return new Response(
+        JSON.stringify({ error: 'Course ID and Quiz ID are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Fetching quiz submissions for course ${courseId}, quiz ${quizId}, user: ${user.email}`);
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('canvas_instance_url, canvas_access_token')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      return new Response(
+        JSON.stringify({ error: 'Canvas credentials not configured' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { canvas_instance_url, canvas_access_token } = profile;
+    
+    // Fetch quiz submissions from Canvas API
+    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions?per_page=100&include[]=submission&include[]=quiz&include[]=user`;
+    
+    console.log(`Making request to Canvas API: ${canvasUrl}`);
+
+    const response = await fetch(canvasUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Canvas API error: ${response.status} - ${errorText}`);
+      
+      let errorMessage = `Canvas API returned ${response.status}: ${response.statusText}`;
+      if (response.status === 401) {
+        errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
+      } else if (response.status === 404) {
+        errorMessage = 'Quiz not found or access denied.';
+      }
+
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const submissionsData = await response.json();
+    
+    console.log(`Successfully fetched ${submissionsData.quiz_submissions?.length || 0} quiz submissions from Canvas`);
+
+    // Transform the data to match our expected format
+    const transformedSubmissions = (submissionsData.quiz_submissions || []).map((submission: any) => ({
+      id: submission.id,
+      user_id: submission.user_id,
+      quiz_id: submission.quiz_id,
+      started_at: submission.started_at,
+      finished_at: submission.finished_at,
+      end_at: submission.end_at,
+      attempt: submission.attempt,
+      score: submission.score,
+      kept_score: submission.kept_score,
+      quiz_points_possible: submission.quiz_points_possible,
+      workflow_state: submission.workflow_state,
+      user: submissionsData.users?.find((u: any) => u.id === submission.user_id) || {
+        id: submission.user_id,
+        name: 'Unknown User',
+        email: '',
+        sortable_name: 'Unknown User'
+      }
+    }));
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        submissions: transformedSubmissions,
+        quiz: submissionsData.quiz
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in get-canvas-quiz-submissions function:', error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch quiz submissions from Canvas' 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
