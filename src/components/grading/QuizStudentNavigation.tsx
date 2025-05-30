@@ -42,6 +42,11 @@ const QuizStudentNavigation: React.FC<QuizStudentNavigationProps> = ({
     }
   };
 
+  // Create sorted submissions with original indices preserved
+  const sortedSubmissionsWithIndex = submissions
+    .map((submission, originalIndex) => ({ submission, originalIndex }))
+    .sort((a, b) => a.submission.user.sortable_name.localeCompare(b.submission.user.sortable_name));
+
   return (
     <Card className="sticky top-6">
       <CardHeader>
@@ -52,12 +57,12 @@ const QuizStudentNavigation: React.FC<QuizStudentNavigationProps> = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="max-h-96 overflow-y-auto">
-          {submissions.map((submission, index) => (
+          {sortedSubmissionsWithIndex.map(({ submission, originalIndex }) => (
             <Button
               key={submission.id}
-              variant={index === currentIndex ? "secondary" : "ghost"}
+              variant={originalIndex === currentIndex ? "secondary" : "ghost"}
               className="w-full justify-between p-4 h-auto rounded-none border-b last:border-b-0"
-              onClick={() => onStudentSelect(index)}
+              onClick={() => onStudentSelect(originalIndex)}
             >
               <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
                 <span className="font-medium text-sm truncate w-full text-left">
@@ -72,7 +77,7 @@ const QuizStudentNavigation: React.FC<QuizStudentNavigationProps> = ({
                   )}
                 </div>
               </div>
-              {index === currentIndex && (
+              {originalIndex === currentIndex && (
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               )}
             </Button>
