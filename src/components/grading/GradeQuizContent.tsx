@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import QuizGradingForm from './QuizGradingForm';
 import QuizStudentNavigation from './QuizStudentNavigation';
@@ -55,7 +55,30 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
-  if (!quiz || submissions.length === 0) {
+  // Memoize the filtered questions to prevent infinite loops
+  const manualGradingQuestions = useMemo(() => {
+    if (!Array.isArray(questions)) return [];
+    
+    return questions.filter(q => 
+      q?.question_type === 'essay_question' || 
+      q?.question_type === 'fill_in_multiple_blanks_question' ||
+      q?.question_type === 'file_upload_question'
+    );
+  }, [questions]);
+
+  // Set default selected question when manual grading questions change
+  React.useEffect(() => {
+    if (!selectedQuestionId && manualGradingQuestions.length > 0) {
+      setSelectedQuestionId(manualGradingQuestions[0].id);
+    }
+  }, [selectedQuestionId, manualGradingQuestions]);
+
+  // Defensive check for submissions array
+  const safeSubmissions = useMemo(() => {
+    return Array.isArray(submissions) ? submissions : [];
+  }, [submissions]);
+
+  if (!quiz || safeSubmissions.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Card>
@@ -69,19 +92,21 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     );
   }
 
-  const currentSubmission = submissions[currentSubmissionIndex];
-  const manualGradingQuestions = questions.filter(q => 
-    q.question_type === 'essay_question' || 
-    q.question_type === 'fill_in_multiple_blanks_question' ||
-    q.question_type === 'file_upload_question'
-  );
-
-  // Set default selected question if none selected
-  React.useEffect(() => {
-    if (!selectedQuestionId && manualGradingQuestions.length > 0) {
-      setSelectedQuestionId(manualGradingQuestions[0].id);
-    }
-  }, [selectedQuestionId, manualGradingQuestions]);
+  // Safe access to current submission with bounds checking
+  const currentSubmission = safeSubmissions[currentSubmissionIndex];
+  if (!currentSubmission) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-600 text-center">
+              No valid submission found.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const selectedQuestion = manualGradingQuestions.find(q => q.id === selectedQuestionId);
 
@@ -91,7 +116,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
         {/* Student Navigation */}
         <div className="lg:col-span-1">
           <QuizStudentNavigation
-            submissions={submissions}
+            submissions={safeSubmissions}
             currentIndex={currentSubmissionIndex}
             onStudentSelect={setCurrentSubmissionIndex}
           />
