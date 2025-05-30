@@ -37,12 +37,23 @@ interface QuizSubmission {
   };
 }
 
+interface SubmissionAnswer {
+  id: number;
+  question_id: number;
+  answer: string | string[] | null;
+  correct: boolean | null;
+  points: number | null;
+}
+
 interface GradeQuizContentProps {
   quiz: Quiz | null;
   questions: QuizQuestion[];
   submissions: QuizSubmission[];
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
   setSubmissions: React.Dispatch<React.SetStateAction<QuizSubmission[]>>;
+  submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
+  loadingAnswers: {[submissionId: number]: boolean};
+  fetchSubmissionAnswers: (submissionId: number) => Promise<SubmissionAnswer[] | null>;
 }
 
 const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
@@ -50,7 +61,10 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   questions,
   submissions,
   gradeQuestion,
-  setSubmissions
+  setSubmissions,
+  submissionAnswers,
+  loadingAnswers,
+  fetchSubmissionAnswers
 }) => {
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
@@ -109,6 +123,8 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   }
 
   const selectedQuestion = manualGradingQuestions.find(q => q.id === selectedQuestionId);
+  const currentSubmissionAnswers = submissionAnswers[currentSubmission.id] || [];
+  const isLoadingCurrentAnswers = loadingAnswers[currentSubmission.id] || false;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
@@ -129,6 +145,9 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
             questions={manualGradingQuestions}
             selectedQuestionId={selectedQuestionId}
             onQuestionSelect={setSelectedQuestionId}
+            submissionAnswers={currentSubmissionAnswers}
+            loadingAnswers={isLoadingCurrentAnswers}
+            onFetchAnswers={fetchSubmissionAnswers}
           />
         </div>
 

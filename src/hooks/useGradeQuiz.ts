@@ -41,6 +41,14 @@ interface QuizSubmission {
   };
 }
 
+interface SubmissionAnswer {
+  id: number;
+  question_id: number;
+  answer: string | string[] | null;
+  correct: boolean | null;
+  points: number | null;
+}
+
 export const useGradeQuiz = (courseId: string | undefined, quizId: string | undefined) => {
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -48,6 +56,8 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+  const [submissionAnswers, setSubmissionAnswers] = useState<{[submissionId: number]: SubmissionAnswer[]}>({});
+  const [loadingAnswers, setLoadingAnswers] = useState<{[submissionId: number]: boolean}>({});
 
   const fetchQuizData = async () => {
     if (!courseId || !quizId || !session?.access_token) {
@@ -99,6 +109,46 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
       setError(err instanceof Error ? err.message : 'Failed to fetch quiz data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubmissionAnswers = async (submissionId: number) => {
+    if (!courseId || !quizId || !session?.access_token) {
+      console.error('Missing required data for fetching submission answers');
+      return null;
+    }
+
+    // Return cached answers if already loaded
+    if (submissionAnswers[submissionId]) {
+      return submissionAnswers[submissionId];
+    }
+
+    setLoadingAnswers(prev => ({ ...prev, [submissionId]: true }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'get-canvas-quiz-submission-answers',
+        {
+          body: { courseId, quizId, submissionId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (error) {
+        console.error('Error fetching submission answers:', error);
+        return null;
+      }
+
+      const answers = data.answers || [];
+      setSubmissionAnswers(prev => ({ ...prev, [submissionId]: answers }));
+      return answers;
+    } catch (error) {
+      console.error('Error fetching submission answers:', error);
+      return null;
+    } finally {
+      setLoadingAnswers(prev => ({ ...prev, [submissionId]: false }));
     }
   };
 
@@ -159,9 +209,12 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     quiz,
     questions,
     submissions,
+    submissionAnswers,
+    loadingAnswers,
     loading,
     error,
     gradeQuestion,
+    fetchSubmissionAnswers,
     retryFetch,
     setSubmissions
   };

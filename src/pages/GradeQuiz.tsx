@@ -17,9 +17,12 @@ const GradeQuiz = () => {
     quiz,
     questions,
     submissions,
+    submissionAnswers,
+    loadingAnswers,
     loading,
     error,
     gradeQuestion,
+    fetchSubmissionAnswers,
     retryFetch,
     setSubmissions
   } = useGradeQuiz(courseId, quizId);
@@ -56,6 +59,9 @@ const GradeQuiz = () => {
             submissions={submissions}
             gradeQuestion={gradeQuestion}
             setSubmissions={setSubmissions}
+            submissionAnswers={submissionAnswers}
+            loadingAnswers={loadingAnswers}
+            fetchSubmissionAnswers={fetchSubmissionAnswers}
           />
         </div>
       </div>
