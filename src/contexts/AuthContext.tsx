@@ -44,6 +44,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const sendWelcomeEmail = async (email: string, fullName: string) => {
+    try {
+      console.log('Sending welcome email to:', email);
+      await supabase.functions.invoke('send-welcome-email', {
+        body: { email, fullName }
+      });
+      console.log('Welcome email sent successfully');
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      // Don't throw the error - we don't want to block signup if email fails
+    }
+  };
+
   useEffect(() => {
     console.log('Setting up auth state listener');
     
@@ -103,6 +116,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Sign up error:', error);
     } else {
       console.log('Sign up successful');
+      // Send welcome email after successful signup
+      setTimeout(() => {
+        sendWelcomeEmail(email, fullName);
+      }, 1000); // Small delay to ensure user is created
     }
     
     return { error };
