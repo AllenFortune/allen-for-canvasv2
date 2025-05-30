@@ -22,9 +22,13 @@ interface QuizQuestion {
 interface QuizSubmission {
   id: number;
   user_id: number;
+  quiz_id: number;
   attempt: number;
   score: number | null;
+  kept_score: number | null;
   workflow_state: string;
+  started_at: string | null;
+  finished_at: string | null;
   user: {
     id: number;
     name: string;
@@ -38,7 +42,7 @@ interface GradeQuizContentProps {
   questions: QuizQuestion[];
   submissions: QuizSubmission[];
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
-  setSubmissions: (submissions: QuizSubmission[]) => void;
+  setSubmissions: React.Dispatch<React.SetStateAction<QuizSubmission[]>>;
 }
 
 const GradeQuizContent: React.FC<GradeQuizContentProps> = ({

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Clock, User } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 
 interface QuizQuestion {
   id: number;
