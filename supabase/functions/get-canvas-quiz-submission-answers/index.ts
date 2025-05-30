@@ -68,9 +68,9 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // Try the more comprehensive quiz submissions endpoint first
-    const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission_history&include[]=user&include[]=quiz`;
-    console.log(`Fetching submission details from: ${submissionUrl}`);
+    // Strategy 1: Try the comprehensive quiz submission endpoint with all includes
+    const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission&include[]=quiz&include[]=user&include[]=submission_questions&include[]=submission_history`;
+    console.log(`Fetching comprehensive submission details from: ${submissionUrl}`);
 
     const submissionResponse = await fetch(submissionUrl, {
       method: 'GET',
@@ -100,52 +100,32 @@ serve(async (req) => {
 
     const submissionData = await submissionResponse.json();
     console.log(`Successfully fetched submission data from Canvas`);
-    console.log(`Submission data structure:`, JSON.stringify(submissionData, null, 2));
-
-    // Now try to get the detailed question answers using the quiz_submissions endpoint
-    const questionsUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
-    console.log(`Fetching submission questions from: ${questionsUrl}`);
-
-    const questionsResponse = await fetch(questionsUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${canvas_access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
+    console.log(`Full submission response structure:`, JSON.stringify(submissionData, null, 2));
 
     let questions = [];
-    if (questionsResponse.ok) {
-      const questionsData = await questionsResponse.json();
-      console.log(`Raw questions response:`, JSON.stringify(questionsData, null, 2));
+
+    // Strategy 2: Extract from submission_questions if available (preferred method)
+    if (submissionData.submission_questions && Array.isArray(submissionData.submission_questions)) {
+      console.log(`Processing ${submissionData.submission_questions.length} submission_questions`);
       
-      const rawQuestions = questionsData.quiz_submission_questions || [];
-      console.log(`Found ${rawQuestions.length} raw questions from Canvas`);
-      
-      // Process each question to extract answer data properly
-      questions = rawQuestions.map((questionData: any) => {
-        console.log(`Processing question ${questionData.id}:`, JSON.stringify(questionData, null, 2));
+      questions = submissionData.submission_questions.map((questionData: any) => {
+        console.log(`Processing submission question ${questionData.id}:`, JSON.stringify(questionData, null, 2));
         
         let answer = null;
         
-        // Extract answer from multiple possible locations
-        if (questionData.answer !== undefined && questionData.answer !== null) {
+        // Extract answer based on question type and Canvas response format
+        if (questionData.answer !== undefined && questionData.answer !== null && questionData.answer !== '') {
           answer = questionData.answer;
           console.log(`Found answer in 'answer' field for question ${questionData.id}:`, answer);
-        } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
-          // Handle submitted_answers array format
-          const submittedAnswer = questionData.submitted_answers[0];
-          if (submittedAnswer) {
-            answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
-            console.log(`Found answer in submitted_answers for question ${questionData.id}:`, answer);
-          }
-        } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
-          answer = questionData.user_answer;
-          console.log(`Found answer in 'user_answer' field for question ${questionData.id}:`, answer);
+        } else if (questionData.student_answer !== undefined && questionData.student_answer !== null && questionData.student_answer !== '') {
+          answer = questionData.student_answer;
+          console.log(`Found answer in 'student_answer' field for question ${questionData.id}:`, answer);
+        } else if (questionData.text !== undefined && questionData.text !== null && questionData.text !== '') {
+          answer = questionData.text;
+          console.log(`Found answer in 'text' field for question ${questionData.id}:`, answer);
         }
         
-        const processedQuestion = {
+        return {
           id: questionData.id,
           question_id: questionData.question_id || questionData.id,
           answer: answer,
@@ -154,38 +134,89 @@ serve(async (req) => {
           question_name: questionData.question_name,
           question_text: questionData.question_text
         };
-        
-        console.log(`Processed question ${questionData.id} final result:`, JSON.stringify(processedQuestion, null, 2));
-        return processedQuestion;
       });
+    }
+
+    // Strategy 3: Try the dedicated quiz submission questions endpoint
+    if (questions.length === 0 || questions.every(q => q.answer === null)) {
+      const questionsUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
+      console.log(`Trying dedicated questions endpoint: ${questionsUrl}`);
+
+      const questionsResponse = await fetch(questionsUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (questionsResponse.ok) {
+        const questionsData = await questionsResponse.json();
+        console.log(`Questions endpoint response:`, JSON.stringify(questionsData, null, 2));
+        
+        const rawQuestions = questionsData.quiz_submission_questions || [];
+        console.log(`Found ${rawQuestions.length} questions from dedicated endpoint`);
+        
+        questions = rawQuestions.map((questionData: any) => {
+          console.log(`Processing dedicated endpoint question ${questionData.id}:`, JSON.stringify(questionData, null, 2));
+          
+          let answer = null;
+          
+          // More comprehensive answer extraction for different question types
+          if (questionData.answer !== undefined && questionData.answer !== null) {
+            answer = questionData.answer;
+          } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
+            answer = questionData.user_answer;
+          } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
+            // Handle submitted_answers array format
+            const submittedAnswer = questionData.submitted_answers[0];
+            if (submittedAnswer) {
+              answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
+            }
+          }
+          
+          return {
+            id: questionData.id,
+            question_id: questionData.question_id || questionData.id,
+            answer: answer,
+            correct: questionData.correct,
+            points: questionData.points,
+            question_name: questionData.question_name,
+            question_text: questionData.question_text
+          };
+        });
+      }
+    }
+
+    // Strategy 4: Extract from submission history as final fallback
+    if (questions.length === 0 || questions.every(q => q.answer === null)) {
+      console.log(`Falling back to submission history extraction`);
       
-      console.log(`Successfully processed ${questions.length} question answers from Canvas`);
-    } else {
-      console.log(`Could not fetch question details (${questionsResponse.status}), using submission history instead`);
-      
-      // Fallback: try to extract answers from submission history
       if (submissionData.quiz_submission?.submission_history) {
         console.log(`Processing submission history:`, JSON.stringify(submissionData.quiz_submission.submission_history, null, 2));
         
         const latestAttempt = submissionData.quiz_submission.submission_history[0];
         if (latestAttempt?.submission_data) {
-          console.log(`Processing submission_data:`, JSON.stringify(latestAttempt.submission_data, null, 2));
+          console.log(`Processing submission_data from history:`, JSON.stringify(latestAttempt.submission_data, null, 2));
           
           questions = latestAttempt.submission_data.map((item: any) => {
             console.log(`Processing submission data item:`, JSON.stringify(item, null, 2));
             
             let answer = null;
             
-            // Try multiple fields where answer might be stored
+            // Try multiple fields where answer might be stored in submission history
             if (item.answer !== undefined && item.answer !== null) {
               answer = item.answer;
             } else if (item.text !== undefined && item.text !== null) {
               answer = item.text;
             } else if (item.answer_text !== undefined && item.answer_text !== null) {
               answer = item.answer_text;
+            } else if (item.response !== undefined && item.response !== null) {
+              answer = item.response;
             }
             
-            const processedItem = {
+            return {
               id: item.question_id,
               question_id: item.question_id,
               answer: answer,
@@ -194,16 +225,60 @@ serve(async (req) => {
               question_name: item.question_name,
               question_text: item.question_text
             };
-            
-            console.log(`Processed submission data item result:`, JSON.stringify(processedItem, null, 2));
-            return processedItem;
           });
-          console.log(`Extracted ${questions.length} answers from submission history`);
         }
       }
     }
 
-    console.log(`Final questions array being returned:`, JSON.stringify(questions, null, 2));
+    // Strategy 5: Try alternative submission endpoint if still no answers
+    if (questions.length === 0 || questions.every(q => q.answer === null)) {
+      console.log(`Trying alternative submission endpoint with quiz_submission_attempts`);
+      
+      const altSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/attempts/1`;
+      console.log(`Alternative endpoint: ${altSubmissionUrl}`);
+      
+      try {
+        const altResponse = await fetch(altSubmissionUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (altResponse.ok) {
+          const altData = await altResponse.json();
+          console.log(`Alternative endpoint response:`, JSON.stringify(altData, null, 2));
+          
+          if (altData.quiz_submission_questions) {
+            questions = altData.quiz_submission_questions.map((q: any) => ({
+              id: q.id,
+              question_id: q.question_id || q.id,
+              answer: q.answer || q.user_answer || q.text || null,
+              correct: q.correct,
+              points: q.points,
+              question_name: q.question_name,
+              question_text: q.question_text
+            }));
+          }
+        }
+      } catch (error) {
+        console.log(`Alternative endpoint failed:`, error.message);
+      }
+    }
+
+    // Final processing and validation
+    console.log(`Final questions array (${questions.length} questions):`, JSON.stringify(questions, null, 2));
+    
+    const answersWithContent = questions.filter(q => 
+      q.answer !== null && 
+      q.answer !== undefined && 
+      q.answer !== '' && 
+      (typeof q.answer !== 'string' || q.answer.trim() !== '')
+    );
+    
+    console.log(`Questions with actual content: ${answersWithContent.length}/${questions.length}`);
 
     return new Response(
       JSON.stringify({ 
@@ -213,7 +288,14 @@ serve(async (req) => {
         submission_data: submissionData.quiz_submission,
         debug_info: {
           total_answers_found: questions.length,
-          questions_with_content: questions.filter(q => q.answer !== null && q.answer !== undefined && q.answer !== '').length
+          questions_with_content: answersWithContent.length,
+          strategies_used: [
+            'submission_questions',
+            'quiz_submission_questions_endpoint', 
+            'submission_history',
+            'alternative_attempts_endpoint'
+          ],
+          canvas_response_keys: Object.keys(submissionData)
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

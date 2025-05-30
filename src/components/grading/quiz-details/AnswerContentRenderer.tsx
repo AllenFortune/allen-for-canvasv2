@@ -48,6 +48,19 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
     );
   };
 
+  const cleanHtmlContent = (htmlString: string) => {
+    // Remove HTML tags but preserve line breaks and basic formatting
+    return htmlString
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+  };
+
   if (!answer || isContentEffectivelyEmpty(answer.answer)) {
     return (
       <div className="p-3 bg-gray-50 rounded-lg border-l-4 border-l-gray-300">
@@ -56,7 +69,7 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
     );
   }
 
-  // Handle array answers
+  // Handle array answers (for multiple answer questions)
   if (Array.isArray(answer.answer)) {
     return (
       <div className="p-3 bg-gray-50 rounded-lg">
@@ -72,22 +85,28 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
     );
   }
 
-  // Handle object answers
+  // Handle object answers (complex question types)
   if (typeof answer.answer === 'object' && answer.answer !== null) {
     const answerObj = answer.answer as any;
     
     let contentToRender = null;
     
     if (answerObj.text) {
-      contentToRender = <div className="whitespace-pre-wrap">{answerObj.text}</div>;
+      const isHtml = answerObj.text.includes('<');
+      contentToRender = isHtml ? 
+        <div className="whitespace-pre-wrap">{cleanHtmlContent(answerObj.text)}</div> :
+        <div className="whitespace-pre-wrap">{answerObj.text}</div>;
     } else if (answerObj.answer_text) {
-      contentToRender = <div className="whitespace-pre-wrap">{answerObj.answer_text}</div>;
+      const isHtml = answerObj.answer_text.includes('<');
+      contentToRender = isHtml ? 
+        <div className="whitespace-pre-wrap">{cleanHtmlContent(answerObj.answer_text)}</div> :
+        <div className="whitespace-pre-wrap">{answerObj.answer_text}</div>;
     } else if (answerObj.answers && Array.isArray(answerObj.answers)) {
       contentToRender = (
         <div className="space-y-2">
           {answerObj.answers.map((item: any, index: number) => (
             <div key={index} className="p-2 bg-white rounded border">
-              <strong>Blank {index + 1}:</strong> {item.text || item.answer_text || 'No answer'}
+              <strong>Blank {index + 1}:</strong> {item.text || item.answer_text || item.answer || 'No answer'}
             </div>
           ))}
         </div>
@@ -110,17 +129,16 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
     );
   }
 
-  // Handle string answers
+  // Handle string answers (most common case)
   if (typeof answer.answer === 'string') {
     const isHtml = answer.answer.includes('<');
     
     return (
       <div className="p-3 bg-gray-50 rounded-lg">
         {isHtml ? (
-          <div 
-            className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: answer.answer }}
-          />
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+            {cleanHtmlContent(answer.answer)}
+          </div>
         ) : (
           <p className="whitespace-pre-wrap">{answer.answer}</p>
         )}

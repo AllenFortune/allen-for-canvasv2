@@ -54,7 +54,24 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
       console.log(`Raw response from edge function for submission ${submissionId}:`, data);
 
       const answers = data.answers || [];
+      const debugInfo = data.debug_info || {};
+      
       console.log(`Processed ${answers.length} answers for submission ${submissionId}:`, answers);
+      console.log(`Debug info:`, debugInfo);
+      
+      // Log answers with content for debugging
+      const answersWithContent = answers.filter((a: SubmissionAnswer) => 
+        a.answer !== null && 
+        a.answer !== undefined && 
+        a.answer !== '' &&
+        (typeof a.answer !== 'string' || a.answer.trim() !== '')
+      );
+      
+      console.log(`Found ${answersWithContent.length}/${answers.length} answers with actual content`);
+      
+      if (answersWithContent.length === 0 && answers.length > 0) {
+        console.warn('All answers are empty - this may indicate a Canvas API extraction issue');
+      }
       
       setSubmissionAnswers(prev => ({ ...prev, [submissionId]: answers }));
       setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
@@ -63,7 +80,18 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
     } catch (error) {
       console.error('Error fetching submission answers:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch answers';
-      setAnswersErrors(prev => ({ ...prev, [submissionId]: errorMessage }));
+      
+      // Provide more specific error guidance
+      let enhancedErrorMessage = errorMessage;
+      if (errorMessage.includes('404')) {
+        enhancedErrorMessage = 'Quiz submission not found. The student may not have submitted this quiz yet.';
+      } else if (errorMessage.includes('403')) {
+        enhancedErrorMessage = 'Access denied. Please check your Canvas permissions for this quiz.';
+      } else if (errorMessage.includes('Canvas credentials')) {
+        enhancedErrorMessage = 'Canvas credentials not configured. Please check your Canvas integration settings.';
+      }
+      
+      setAnswersErrors(prev => ({ ...prev, [submissionId]: enhancedErrorMessage }));
       setFetchAttempts(prev => ({ ...prev, [submissionId]: attempts + 1 }));
       return null;
     } finally {
@@ -73,6 +101,9 @@ export const useSubmissionAnswers = (courseId: string | undefined, quizId: strin
 
   const retryAnswersFetch = (submissionId: number) => {
     console.log('Retrying answers fetch for submission:', submissionId);
+    // Clear any existing error and reset attempts for forced retry
+    setAnswersErrors(prev => ({ ...prev, [submissionId]: '' }));
+    setFetchAttempts(prev => ({ ...prev, [submissionId]: 0 }));
     fetchSubmissionAnswers(submissionId, true);
   };
 
