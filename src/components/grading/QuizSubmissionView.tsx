@@ -42,6 +42,7 @@ interface QuizSubmissionViewProps {
   answersError?: string;
   onFetchAnswers: (submissionId: number) => void;
   onRetryAnswers?: (submissionId: number) => void;
+  manualGradingQuestions?: QuizQuestion[];
 }
 
 const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
@@ -53,7 +54,8 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   loadingAnswers = false,
   answersError = '',
   onFetchAnswers,
-  onRetryAnswers
+  onRetryAnswers,
+  manualGradingQuestions = []
 }) => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
@@ -86,6 +88,7 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
         loadingAnswers={loadingAnswers}
         answersError={answersError}
         onRetryAnswers={handleRetryAnswers}
+        manualGradingQuestions={manualGradingQuestions}
       />
 
       <QuizQuestionDetails

@@ -1,6 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FileText } from 'lucide-react';
 import QuizGradingForm from './QuizGradingForm';
 import QuizStudentNavigation from './QuizStudentNavigation';
 import QuizSubmissionView from './QuizSubmissionView';
@@ -73,23 +76,26 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
-  // Memoize the filtered questions to prevent infinite loops
+  // Show ALL questions instead of filtering
+  const allQuestions = useMemo(() => {
+    return Array.isArray(questions) ? questions : [];
+  }, [questions]);
+
+  // Get manual grading questions for quick navigation
   const manualGradingQuestions = useMemo(() => {
-    if (!Array.isArray(questions)) return [];
-    
-    return questions.filter(q => 
+    return allQuestions.filter(q => 
       q?.question_type === 'essay_question' || 
       q?.question_type === 'fill_in_multiple_blanks_question' ||
       q?.question_type === 'file_upload_question'
     );
-  }, [questions]);
+  }, [allQuestions]);
 
-  // Set default selected question when manual grading questions change
+  // Set default selected question when questions change
   React.useEffect(() => {
-    if (!selectedQuestionId && manualGradingQuestions.length > 0) {
-      setSelectedQuestionId(manualGradingQuestions[0].id);
+    if (!selectedQuestionId && allQuestions.length > 0) {
+      setSelectedQuestionId(allQuestions[0].id);
     }
-  }, [selectedQuestionId, manualGradingQuestions]);
+  }, [selectedQuestionId, allQuestions]);
 
   // Defensive check for submissions array
   const safeSubmissions = useMemo(() => {
@@ -126,13 +132,52 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     );
   }
 
-  const selectedQuestion = manualGradingQuestions.find(q => q.id === selectedQuestionId);
+  const selectedQuestion = allQuestions.find(q => q.id === selectedQuestionId);
   const currentSubmissionAnswers = submissionAnswers[currentSubmission.id] || [];
   const isLoadingCurrentAnswers = loadingAnswers[currentSubmission.id] || false;
   const currentAnswersError = answersErrors[currentSubmission.id] || '';
 
+  const jumpToFirstEssay = () => {
+    if (manualGradingQuestions.length > 0) {
+      setSelectedQuestionId(manualGradingQuestions[0].id);
+    }
+  };
+
+  const isManualGradingQuestion = (questionType: string) => {
+    return questionType === 'essay_question' || 
+           questionType === 'fill_in_multiple_blanks_question' ||
+           questionType === 'file_upload_question';
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* Quick navigation to essay questions */}
+      {manualGradingQuestions.length > 0 && (
+        <div className="mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm font-medium">Manual Grading Required</span>
+                  <Badge variant="secondary">
+                    {manualGradingQuestions.length} essay question{manualGradingQuestions.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={jumpToFirstEssay}
+                  className="text-xs"
+                >
+                  Jump to Essays
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Student Navigation */}
         <div className="lg:col-span-1">
@@ -147,7 +192,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
         <div className="lg:col-span-2 space-y-6">
           <QuizSubmissionView
             submission={currentSubmission}
-            questions={manualGradingQuestions}
+            questions={allQuestions}
             selectedQuestionId={selectedQuestionId}
             onQuestionSelect={setSelectedQuestionId}
             submissionAnswers={currentSubmissionAnswers}
@@ -155,12 +200,13 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
             answersError={currentAnswersError}
             onFetchAnswers={fetchSubmissionAnswers}
             onRetryAnswers={retryAnswersFetch}
+            manualGradingQuestions={manualGradingQuestions}
           />
         </div>
 
-        {/* Grading Form */}
+        {/* Grading Form - Only show for manual grading questions */}
         <div className="lg:col-span-1">
-          {selectedQuestion && (
+          {selectedQuestion && isManualGradingQuestion(selectedQuestion.question_type) && (
             <QuizGradingForm
               submission={currentSubmission}
               question={selectedQuestion}
