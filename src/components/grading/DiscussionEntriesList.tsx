@@ -35,6 +35,21 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return <Badge variant="outline" className="text-gray-500">Not Graded</Badge>;
   };
 
+  const getMaxPoints = () => {
+    // First check if discussion has points_possible directly
+    if (discussion.points_possible && discussion.points_possible > 0) {
+      return discussion.points_possible;
+    }
+    
+    // Then check if the linked assignment has points_possible
+    if (discussion.assignment?.points_possible && discussion.assignment.points_possible > 0) {
+      return discussion.assignment.points_possible;
+    }
+    
+    // Return null if no valid points found (ungraded discussion)
+    return null;
+  };
+
   const filterUsers = () => {
     if (activeTab === 'all') {
       return users;
@@ -64,6 +79,8 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     }
     return user.name;
   };
+
+  const maxPoints = getMaxPoints();
 
   return (
     <Card>
@@ -117,7 +134,7 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
                         {getGradeStatusBadge(userEntry.user.id)}
                         {grade && grade.score !== null && (
                           <span className="text-xs text-gray-500">
-                            {grade.score}/{discussion.points_possible || '?'}
+                            {grade.score}/{maxPoints !== null ? maxPoints : 'Ungraded'}
                           </span>
                         )}
                         <span className="text-xs text-gray-500">
