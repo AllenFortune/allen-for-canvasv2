@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ArticleContent from './ArticleContent';
 import DiverFrameworkArticle from './DiverFrameworkArticle';
+import AssessmentArticle from './AssessmentArticle';
 
 const FeaturedArticle = () => {
   const [showFullArticle, setShowFullArticle] = useState<string | null>(null);
@@ -30,6 +31,16 @@ const FeaturedArticle = () => {
       category: "Teaching Frameworks",
       tags: ["D.I.V.E.R. Framework", "Best Practices", "AI Integration"],
       featured: true
+    },
+    {
+      id: 'assessment-ai',
+      title: "Rethinking Assessment in the Age of AI: From Product to Process",
+      excerpt: "In an era where artificial intelligence can generate essays, solve complex problems, and even simulate human conversation, traditional assessment methods are facing unprecedented challenges. The ease with which students can utilize AI tools to produce polished assignments calls into question the efficacy of evaluating solely the final product.",
+      readTime: "12 min read",
+      author: "A.L.L.E.N. Educational Team",
+      category: "Assessment & Feedback",
+      tags: ["AI Integration", "Assessment Methods", "Process Evaluation", "Academic Integrity"],
+      featured: true
     }
   ];
 
@@ -39,6 +50,10 @@ const FeaturedArticle = () => {
 
   if (showFullArticle === 'diver-framework') {
     return <DiverFrameworkArticle onBack={() => setShowFullArticle(null)} />;
+  }
+
+  if (showFullArticle === 'assessment-ai') {
+    return <AssessmentArticle onBack={() => setShowFullArticle(null)} />;
   }
 
   return (
