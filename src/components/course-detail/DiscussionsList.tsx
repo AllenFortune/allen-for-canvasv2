@@ -66,7 +66,6 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
     }
 
     const needsGrading = discussion.needs_grading_count || 0;
-    const graded = discussion.graded_count || 0;
 
     if (needsGrading > 0) {
       return (
@@ -137,9 +136,6 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
                     <span>Posted: {formatDate(discussion.posted_at)}</span>
                     <span className="capitalize">{discussion.discussion_type || 'Discussion'}</span>
                     {getGradingStatusText(discussion)}
-                    {discussion.is_assignment && (
-                      <span className="text-blue-600 font-medium">Graded</span>
-                    )}
                   </div>
                 </div>
                 {discussion.is_assignment && (
