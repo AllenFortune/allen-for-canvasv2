@@ -55,22 +55,6 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return null;
   };
 
-  const filterUsers = () => {
-    if (activeTab === 'all') {
-      return users;
-    } else if (activeTab === 'graded') {
-      return users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null));
-    } else if (activeTab === 'ungraded') {
-      return users.filter(u => !grades.find(g => g.user_id === u.user.id && g.grade !== null));
-    }
-    return users;
-  };
-
-  const filteredUsers = filterUsers();
-
-  const gradedCount = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null)).length;
-  const ungradedCount = users.length - gradedCount;
-
   const getUserInitials = (user: DiscussionEntry['user']) => {
     if (!user || !user.name) {
       return 'U';
@@ -84,6 +68,32 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     }
     return user.name;
   };
+
+  const filterUsers = () => {
+    let filteredUsers;
+    
+    if (activeTab === 'all') {
+      filteredUsers = users;
+    } else if (activeTab === 'graded') {
+      filteredUsers = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null));
+    } else if (activeTab === 'ungraded') {
+      filteredUsers = users.filter(u => !grades.find(g => g.user_id === u.user.id && g.grade !== null));
+    } else {
+      filteredUsers = users;
+    }
+
+    // Sort alphabetically by user name (case-insensitive)
+    return filteredUsers.sort((a, b) => {
+      const nameA = getUserName(a.user).toLowerCase();
+      const nameB = getUserName(b.user).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  };
+
+  const filteredUsers = filterUsers();
+
+  const gradedCount = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null)).length;
+  const ungradedCount = users.length - gradedCount;
 
   return (
     <Card>
