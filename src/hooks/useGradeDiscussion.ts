@@ -26,7 +26,8 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string): Us
   const {
     grades,
     saveGrade,
-    setGrades
+    setGrades,
+    fetchExistingGrades
   } = useDiscussionGrading(courseId, discussionId);
 
   const loading = discussionLoading || entriesLoading;
@@ -34,13 +35,21 @@ export const useGradeDiscussion = (courseId?: string, discussionId?: string): Us
 
   const retryFetch = async () => {
     console.log('Retrying fetch operations...');
-    await Promise.all([fetchDiscussionDetails(), fetchDiscussionEntries()]);
+    await Promise.all([
+      fetchDiscussionDetails(), 
+      fetchDiscussionEntries(),
+      fetchExistingGrades()
+    ]);
   };
 
   useEffect(() => {
     if (courseId && discussionId) {
       console.log('Starting fetch operations...');
-      Promise.all([fetchDiscussionDetails(), fetchDiscussionEntries()]);
+      Promise.all([
+        fetchDiscussionDetails(), 
+        fetchDiscussionEntries(),
+        fetchExistingGrades()
+      ]);
     } else {
       console.log('Missing courseId or discussionId in useEffect');
     }

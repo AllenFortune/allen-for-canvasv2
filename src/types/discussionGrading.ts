@@ -20,6 +20,7 @@ export interface UseDiscussionGradingReturn {
   grades: DiscussionGrade[];
   saveGrade: (userId: number, grade: string, feedback: string, aiGradeReview?: string) => Promise<boolean>;
   setGrades: React.Dispatch<React.SetStateAction<DiscussionGrade[]>>;
+  fetchExistingGrades: () => Promise<void>;
 }
 
 export interface UseGradeDiscussionReturn {

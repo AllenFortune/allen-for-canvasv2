@@ -9,6 +9,37 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
   const [grades, setGrades] = useState<DiscussionGrade[]>([]);
   const { toast } = useToast();
 
+  const fetchExistingGrades = async () => {
+    if (!courseId || !discussionId) {
+      console.log('Missing courseId or discussionId for fetchExistingGrades');
+      return;
+    }
+
+    try {
+      console.log('Fetching existing grades from Canvas...');
+      
+      const { data, error } = await supabase.functions.invoke('get-canvas-discussion-grades', {
+        body: { courseId, discussionId }
+      });
+
+      if (error) {
+        console.error('Error from get-canvas-discussion-grades:', error);
+        throw error;
+      }
+
+      console.log('Existing grades received:', data);
+      
+      if (data.grades && Array.isArray(data.grades)) {
+        setGrades(data.grades);
+        console.log(`Loaded ${data.grades.length} existing grades`);
+      }
+    } catch (err) {
+      console.error('Error fetching existing grades:', err);
+      // Don't show error toast for grades fetching as it's not critical
+      // The user can still grade normally even if existing grades fail to load
+    }
+  };
+
   const saveGrade = async (userId: number, grade: string, feedback: string, aiGradeReview?: string) => {
     if (!courseId || !discussionId) {
       console.error('Missing courseId or discussionId for saveGrade');
@@ -81,6 +112,7 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
   return {
     grades,
     saveGrade,
-    setGrades
+    setGrades,
+    fetchExistingGrades
   };
 };
