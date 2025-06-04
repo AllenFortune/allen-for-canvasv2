@@ -36,7 +36,9 @@ serve(async (req) => {
 
 Your task is to analyze assignments and provide specific, actionable suggestions for integrating AI literacy while maintaining academic integrity and promoting deep learning.
 
-Respond with a JSON object containing:
+IMPORTANT: Respond with ONLY a valid JSON object. Do not wrap your response in markdown code blocks or add any other formatting. Return the raw JSON object directly.
+
+The JSON should contain:
 - overview: A brief overview of how AI can enhance this assignment
 - suggestions: An array of 5 objects (one for each DIVER phase) with:
   - phase: The DIVER phase name
@@ -79,7 +81,22 @@ Please provide specific AI literacy integration suggestions using the DIVER fram
     }
 
     const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    let generatedContent = data.choices[0].message.content;
+
+    console.log('Raw OpenAI response:', generatedContent);
+
+    // Strip markdown code blocks if present
+    if (generatedContent.includes('```json')) {
+      const jsonMatch = generatedContent.match(/```json\n?([\s\S]*?)\n?```/);
+      if (jsonMatch) {
+        generatedContent = jsonMatch[1].trim();
+      }
+    } else if (generatedContent.includes('```')) {
+      const codeMatch = generatedContent.match(/```\n?([\s\S]*?)\n?```/);
+      if (codeMatch) {
+        generatedContent = codeMatch[1].trim();
+      }
+    }
 
     // Parse the JSON response
     let integrationSuggestions;
@@ -87,7 +104,28 @@ Please provide specific AI literacy integration suggestions using the DIVER fram
       integrationSuggestions = JSON.parse(generatedContent);
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', generatedContent);
-      throw new Error('Failed to parse AI response');
+      console.error('Parse error:', parseError.message);
+      
+      // Return a fallback response structure
+      integrationSuggestions = {
+        overview: "AI integration suggestions could not be generated due to a parsing error. Please try again with a different assignment.",
+        suggestions: [
+          {
+            phase: "Discovery",
+            title: "Error in AI Processing",
+            description: "Please try submitting your assignment again.",
+            activities: ["Retry the AI integration tool"],
+            examples: ["Check your assignment content and try again"]
+          }
+        ],
+        implementation_guide: "There was an error processing your request. Please try again or contact support if the issue persists."
+      };
+    }
+
+    // Validate the response structure
+    if (!integrationSuggestions.overview || !integrationSuggestions.suggestions || !Array.isArray(integrationSuggestions.suggestions)) {
+      console.error('Invalid response structure:', integrationSuggestions);
+      throw new Error('Invalid response structure from AI');
     }
 
     console.log('Successfully generated AI assignment integration');
