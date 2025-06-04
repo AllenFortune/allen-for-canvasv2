@@ -1,11 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, FileText, CheckCircle, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
-import QuizSubmissionView from './QuizSubmissionView';
-import QuizGradingForm from './QuizGradingForm';
+import { Card, CardContent } from '@/components/ui/card';
+import { Users } from 'lucide-react';
+import QuizGradingLayout from './QuizGradingLayout';
 import ErrorDisplay from './ErrorDisplay';
 
 interface Quiz {
@@ -71,7 +68,6 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   questions,
   submissions,
   gradeQuestion,
-  setSubmissions,
   submissionAnswers,
   loadingAnswers,
   answersErrors,
@@ -113,16 +109,6 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     );
   };
 
-  const handleFetchAnswers = (submissionId: number, userId?: number) => {
-    console.log(`GradeQuizContent: Fetching answers for submission ${submissionId}, user ${userId}`);
-    return fetchSubmissionAnswers(submissionId, userId);
-  };
-
-  const handleRetryAnswers = (submissionId: number, userId?: number) => {
-    console.log(`GradeQuizContent: Retrying answers for submission ${submissionId}, user ${userId}`);
-    retryAnswersFetch(submissionId, userId);
-  };
-
   if (!quiz) {
     return <ErrorDisplay error="Quiz data not found" onRetry={() => {}} />;
   }
@@ -143,118 +129,26 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     );
   }
 
-  // Find the selected question
-  const selectedQuestion = selectedQuestionId ? questions.find(q => q.id === selectedQuestionId) : null;
-
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Panel - Submission Navigation */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Student Navigation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Current Submission Info */}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-900">
-                    {selectedSubmissionIndex + 1} of {sortedSubmissions.length}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigateSubmission('prev')}
-                      disabled={selectedSubmissionIndex === 0}
-                    >
-                      <ArrowLeft className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigateSubmission('next')}
-                      disabled={selectedSubmissionIndex === sortedSubmissions.length - 1}
-                    >
-                      <ArrowRight className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="font-medium text-blue-900">{selectedSubmission.user.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={selectedSubmission.workflow_state === 'complete' ? 'default' : 'secondary'}>
-                    {selectedSubmission.workflow_state}
-                  </Badge>
-                  {selectedSubmission.score !== null && (
-                    <Badge variant="outline">
-                      {selectedSubmission.score} pts
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* All Submissions List */}
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {sortedSubmissions.map((submission, index) => (
-                  <Button
-                    key={submission.id}
-                    variant={index === selectedSubmissionIndex ? "default" : "outline"}
-                    className="w-full justify-start text-left h-auto p-3"
-                    onClick={() => setSelectedSubmissionIndex(index)}
-                  >
-                    <div className="flex flex-col items-start gap-1 w-full">
-                      <span className="font-medium truncate">{submission.user.name}</span>
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge 
-                          variant={submission.workflow_state === 'complete' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {submission.workflow_state}
-                        </Badge>
-                        {submission.score !== null && (
-                          <span className="text-gray-500">{submission.score} pts</span>
-                        )}
-                      </div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Center Panel - Questions and Answers */}
-        <div className="lg:col-span-1">
-          <QuizSubmissionView
-            submission={selectedSubmission}
-            questions={questions}
-            selectedQuestionId={selectedQuestionId}
-            onQuestionSelect={setSelectedQuestionId}
-            submissionAnswers={submissionAnswers[selectedSubmission.id] || []}
-            loadingAnswers={loadingAnswers[selectedSubmission.id] || false}
-            answersError={answersErrors[selectedSubmission.id] || ''}
-            onFetchAnswers={handleFetchAnswers}
-            onRetryAnswers={handleRetryAnswers}
-            manualGradingQuestions={getManualGradingQuestions()}
-            quiz={quiz}
-          />
-        </div>
-
-        {/* Right Panel - Grading Form */}
-        <div className="lg:col-span-1">
-          {selectedQuestion && (
-            <QuizGradingForm
-              submission={selectedSubmission}
-              question={selectedQuestion}
-              gradeQuestion={gradeQuestion}
-            />
-          )}
-        </div>
-      </div>
+      <QuizGradingLayout
+        quiz={quiz}
+        questions={questions}
+        sortedSubmissions={sortedSubmissions}
+        selectedSubmissionIndex={selectedSubmissionIndex}
+        selectedQuestionId={selectedQuestionId}
+        selectedSubmission={selectedSubmission}
+        onSubmissionSelect={setSelectedSubmissionIndex}
+        onNavigate={navigateSubmission}
+        onQuestionSelect={setSelectedQuestionId}
+        gradeQuestion={gradeQuestion}
+        submissionAnswers={submissionAnswers}
+        loadingAnswers={loadingAnswers}
+        answersErrors={answersErrors}
+        fetchSubmissionAnswers={fetchSubmissionAnswers}
+        retryAnswersFetch={retryAnswersFetch}
+        manualGradingQuestions={getManualGradingQuestions()}
+      />
     </div>
   );
 };
