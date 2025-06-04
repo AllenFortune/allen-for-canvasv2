@@ -67,6 +67,75 @@ serve(async (req) => {
     }
 
     const { canvas_instance_url, canvas_access_token } = profile;
+
+    // Helper function to extract answer based on question type
+    const extractAnswerByType = (item: any, questionType: string) => {
+      console.log(`Extracting answer for question type: ${questionType}`, {
+        item_keys: Object.keys(item),
+        answer: item.answer,
+        text: item.text,
+        answer_text: item.answer_text
+      });
+
+      switch (questionType) {
+        case 'essay_question':
+          // For essay questions, look for text content in multiple fields
+          return item.text || item.answer_text || item.answer || item.response || null;
+        
+        case 'matching_question':
+          // For matching questions, handle the match pairs
+          if (item.answer && typeof item.answer === 'object') {
+            if (Array.isArray(item.answer)) {
+              // Handle array format for matching
+              return item.answer.map((match: any, index: number) => ({
+                match_id: match.answer_id || match.id || index,
+                answer_text: match.text || match.answer_text || match.answer || 'No match'
+              }));
+            } else {
+              // Handle object format for matching
+              const matches = [];
+              for (const [key, value] of Object.entries(item.answer)) {
+                matches.push({
+                  match_id: key,
+                  answer_text: typeof value === 'string' ? value : JSON.stringify(value)
+                });
+              }
+              return matches;
+            }
+          }
+          return item.text || item.answer_text || null;
+        
+        case 'multiple_answers_question':
+          // For multiple answer questions, handle array selections
+          if (item.answer && Array.isArray(item.answer)) {
+            return item.answer;
+          }
+          return item.answer || item.text || item.answer_text || null;
+        
+        case 'fill_in_multiple_blanks_question':
+          // For fill-in-the-blank questions, handle multiple blank answers
+          if (item.answer && typeof item.answer === 'object' && !Array.isArray(item.answer)) {
+            const blanks = [];
+            for (const [blankId, blankAnswer] of Object.entries(item.answer)) {
+              blanks.push({
+                blank_id: blankId,
+                answer_text: blankAnswer
+              });
+            }
+            return blanks;
+          }
+          return item.answer || item.text || item.answer_text || null;
+        
+        case 'multiple_choice_question':
+        case 'true_false_question':
+        default:
+          // For standard question types, use the standard extraction
+          return item.answer !== undefined ? item.answer : 
+                 item.text !== undefined ? item.text : 
+                 item.answer_text !== undefined ? item.answer_text : 
+                 item.response !== undefined ? item.response : null;
+      }
+    };
     
     // STEP 1: Get quiz questions to create comprehensive ID mapping
     const questionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/questions?per_page=100`;
@@ -170,26 +239,21 @@ serve(async (req) => {
         
         submissionData.quiz_submission.submission_data.forEach((item, index) => {
           const position = index + 1;
+          const question = positionToQuestionMap.get(position) || questionIdMap.get(item.question_id?.toString());
+          const questionType = question?.question_type || 'unknown';
           
           console.log(`Processing item ${position}:`, {
             question_id: item.question_id,
+            question_type: questionType,
             answer_present: !!item.answer,
             text_present: !!item.text,
             answer_text_present: !!item.answer_text,
-            answer_type: typeof item.answer
+            answer_type: typeof item.answer,
+            raw_item: item
           });
 
-          // Extract answer from multiple possible fields
-          let answer = null;
-          if (item.answer !== undefined && item.answer !== null && item.answer !== '') {
-            answer = item.answer;
-          } else if (item.text !== undefined && item.text !== null && item.text !== '') {
-            answer = item.text;
-          } else if (item.answer_text !== undefined && item.answer_text !== null && item.answer_text !== '') {
-            answer = item.answer_text;
-          } else if (item.response !== undefined && item.response !== null && item.response !== '') {
-            answer = item.response;
-          }
+          // Extract answer using question type-specific logic
+          const answer = extractAnswerByType(item, questionType);
 
           // Always include an entry for each question, even if no answer
           rawAnswers.push({
@@ -199,6 +263,7 @@ serve(async (req) => {
             answer: answer,
             question_name: item.question_name,
             question_text: item.question_text,
+            question_type: questionType,
             points: item.points,
             correct: item.correct,
             source: 'submission_data'
@@ -231,18 +296,19 @@ serve(async (req) => {
           answersSource = 'questions_api';
           
           rawQuestions.forEach((questionData, index) => {
-            let answer = null;
+            const question = questionIdMap.get(questionData.question_id?.toString()) || 
+                           questionIdMap.get(questionData.id?.toString());
+            const questionType = question?.question_type || questionData.question_type || 'unknown';
             
-            if (questionData.answer !== undefined && questionData.answer !== null) {
-              answer = questionData.answer;
-            } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
-              answer = questionData.user_answer;
-            } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
-              const submittedAnswer = questionData.submitted_answers[0];
-              if (submittedAnswer) {
-                answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
-              }
-            }
+            console.log(`Processing questions API item ${index + 1}:`, {
+              question_id: questionData.question_id,
+              question_type: questionType,
+              has_answer: !!questionData.answer,
+              has_user_answer: !!questionData.user_answer,
+              raw_data: questionData
+            });
+
+            const answer = extractAnswerByType(questionData, questionType);
             
             rawAnswers.push({
               submission_question_id: questionData.id,
@@ -251,6 +317,7 @@ serve(async (req) => {
               answer: answer,
               question_name: questionData.question_name,
               question_text: questionData.question_text,
+              question_type: questionType,
               points: questionData.points,
               correct: questionData.correct,
               source: 'questions_api'
@@ -292,6 +359,7 @@ serve(async (req) => {
             answer: assignmentData.body,
             question_name: 'Assignment Response',
             question_text: 'Assignment Question Response',
+            question_type: 'essay_question',
             points: assignmentData.score,
             correct: null,
             source: 'assignment_body'
@@ -300,7 +368,62 @@ serve(async (req) => {
       }
     }
 
-    // STEP 6: Map raw answers to actual questions
+    // STEP 6: Try submission history for additional essay/matching data
+    if (submissionResponse.ok) {
+      try {
+        const submissionData = await submissionResponse.json();
+        
+        if (submissionData.quiz_submission?.submission_history && Array.isArray(submissionData.quiz_submission.submission_history)) {
+          console.log(`Checking submission history for additional answer data`);
+          
+          const latestHistory = submissionData.quiz_submission.submission_history[submissionData.quiz_submission.submission_history.length - 1];
+          
+          if (latestHistory?.submission_data) {
+            latestHistory.submission_data.forEach((historyItem: any, index: number) => {
+              const position = index + 1;
+              const question = positionToQuestionMap.get(position) || questionIdMap.get(historyItem.question_id?.toString());
+              const questionType = question?.question_type || 'unknown';
+              
+              // Check if we already have this answer from a better source
+              const existingAnswer = rawAnswers.find(a => 
+                a.original_question_id === historyItem.question_id || 
+                a.position_in_quiz === position
+              );
+              
+              if (!existingAnswer || !existingAnswer.answer) {
+                console.log(`Found additional answer in history for question ${historyItem.question_id} (${questionType})`);
+                
+                const answer = extractAnswerByType(historyItem, questionType);
+                
+                if (existingAnswer) {
+                  // Update existing answer
+                  existingAnswer.answer = answer;
+                  existingAnswer.source = 'submission_history';
+                } else {
+                  // Add new answer
+                  rawAnswers.push({
+                    submission_question_id: historyItem.question_id || position,
+                    original_question_id: historyItem.question_id || position,
+                    position_in_quiz: position,
+                    answer: answer,
+                    question_name: historyItem.question_name,
+                    question_text: historyItem.question_text,
+                    question_type: questionType,
+                    points: historyItem.points,
+                    correct: historyItem.correct,
+                    source: 'submission_history'
+                  });
+                }
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.log(`Failed to process submission history: ${error.message}`);
+      }
+    }
+
+    // STEP 7: Map raw answers to actual questions
     const mappedAnswers = [];
     
     console.log(`Starting answer mapping process with ${rawAnswers.length} raw answers`);
@@ -356,6 +479,7 @@ serve(async (req) => {
           answer: rawAnswer.answer,
           question_name: rawAnswer.question_name || 'Unknown Question',
           question_text: rawAnswer.question_text || 'Question text not available',
+          question_type: rawAnswer.question_type || 'unknown',
           points: rawAnswer.points,
           correct: rawAnswer.correct,
           source: rawAnswer.source,
@@ -364,7 +488,7 @@ serve(async (req) => {
       }
     });
 
-    // STEP 7: Ensure we have entries for ALL questions, even if no answers
+    // STEP 8: Ensure we have entries for ALL questions, even if no answers
     const finalAnswers = [];
     const answersMap = new Map();
     
@@ -386,7 +510,7 @@ serve(async (req) => {
     allQuestions.forEach(question => {
       const key = question.id.toString();
       if (!answersMap.has(key)) {
-        console.log(`No answer found for question ${question.id}, creating empty entry`);
+        console.log(`No answer found for question ${question.id} (${question.question_type}), creating empty entry`);
         answersMap.set(key, {
           id: question.id,
           question_id: question.id,
@@ -411,7 +535,7 @@ serve(async (req) => {
     console.log(`Final results: ${finalAnswers.length} total answers (including empty ones)`);
     finalAnswers.forEach(answer => {
       const hasAnswer = answer.answer && answer.answer.toString().trim() !== '';
-      console.log(`Question ${answer.question_id}: ${hasAnswer ? 'HAS ANSWER' : 'NO ANSWER'} (${answer.mapping_strategy}, source: ${answer.source})`);
+      console.log(`Question ${answer.question_id} (${answer.question_type}): ${hasAnswer ? 'HAS ANSWER' : 'NO ANSWER'} (${answer.mapping_strategy}, source: ${answer.source})`);
     });
 
     return new Response(
@@ -433,6 +557,7 @@ serve(async (req) => {
             submission_q_id: a.submission_question_id,
             original_q_id: a.original_question_id,
             position: a.position_in_quiz,
+            question_type: a.question_type,
             has_answer: !!a.answer,
             source: a.source
           }))

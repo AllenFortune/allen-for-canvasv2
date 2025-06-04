@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { isContentEffectivelyEmpty } from '../utils/quizSubmissionUtils';
 
 interface SubmissionAnswer {
@@ -10,6 +10,7 @@ interface SubmissionAnswer {
   answer: string | string[] | null;
   correct: boolean | null;
   points: number | null;
+  question_type?: string;
 }
 
 interface AnswerContentRendererProps {
@@ -61,6 +62,72 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
       .trim();
   };
 
+  const renderMatchingAnswer = (matchingData: any) => {
+    console.log('Rendering matching answer:', matchingData);
+    
+    if (Array.isArray(matchingData)) {
+      return (
+        <div className="space-y-2">
+          {matchingData.map((match: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+              <span className="font-medium text-sm">Match {index + 1}:</span>
+              <ArrowRight className="w-3 h-3 text-gray-400" />
+              <span>{match.answer_text || match.text || 'No match selected'}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    if (typeof matchingData === 'object' && matchingData !== null) {
+      const entries = Object.entries(matchingData);
+      return (
+        <div className="space-y-2">
+          {entries.map(([key, value], index) => (
+            <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+              <span className="font-medium text-sm">{key}:</span>
+              <ArrowRight className="w-3 h-3 text-gray-400" />
+              <span>{typeof value === 'string' ? value : JSON.stringify(value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return <span className="text-gray-500">Invalid matching format</span>;
+  };
+
+  const renderFillInBlanksAnswer = (blanksData: any) => {
+    console.log('Rendering fill-in-blanks answer:', blanksData);
+    
+    if (Array.isArray(blanksData)) {
+      return (
+        <div className="space-y-2">
+          {blanksData.map((blank: any, index: number) => (
+            <div key={index} className="p-2 bg-white rounded border">
+              <strong>Blank {blank.blank_id || (index + 1)}:</strong> {blank.answer_text || 'No answer'}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    if (typeof blanksData === 'object' && blanksData !== null) {
+      const entries = Object.entries(blanksData);
+      return (
+        <div className="space-y-2">
+          {entries.map(([blankId, blankAnswer], index) => (
+            <div key={index} className="p-2 bg-white rounded border">
+              <strong>Blank {blankId}:</strong> {typeof blankAnswer === 'string' ? blankAnswer : JSON.stringify(blankAnswer)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return <span className="text-gray-500">Invalid fill-in-blanks format</span>;
+  };
+
   if (!answer || isContentEffectivelyEmpty(answer.answer)) {
     return (
       <div className="p-3 bg-gray-50 rounded-lg border-l-4 border-l-gray-300">
@@ -69,10 +136,32 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
     );
   }
 
+  // Handle different question types specifically
+  if (questionType === 'matching_question' && answer.answer) {
+    return (
+      <div className="p-3 bg-gray-50 rounded-lg">
+        <h5 className="font-medium text-sm mb-2">Matching Pairs:</h5>
+        {renderMatchingAnswer(answer.answer)}
+        {renderCorrectnessBadge()}
+      </div>
+    );
+  }
+
+  if (questionType === 'fill_in_multiple_blanks_question' && answer.answer) {
+    return (
+      <div className="p-3 bg-gray-50 rounded-lg">
+        <h5 className="font-medium text-sm mb-2">Fill-in-the-Blanks:</h5>
+        {renderFillInBlanksAnswer(answer.answer)}
+        {renderCorrectnessBadge()}
+      </div>
+    );
+  }
+
   // Handle array answers (for multiple answer questions)
   if (Array.isArray(answer.answer)) {
     return (
       <div className="p-3 bg-gray-50 rounded-lg">
+        <h5 className="font-medium text-sm mb-2">Selected Answers:</h5>
         <div className="space-y-2">
           {answer.answer.map((item, index) => (
             <div key={index} className="p-2 bg-white rounded border">
@@ -106,7 +195,7 @@ const AnswerContentRenderer: React.FC<AnswerContentRendererProps> = ({
         <div className="space-y-2">
           {answerObj.answers.map((item: any, index: number) => (
             <div key={index} className="p-2 bg-white rounded border">
-              <strong>Blank {index + 1}:</strong> {item.text || item.answer_text || item.answer || 'No answer'}
+              <strong>Item {index + 1}:</strong> {item.text || item.answer_text || item.answer || 'No answer'}
             </div>
           ))}
         </div>
