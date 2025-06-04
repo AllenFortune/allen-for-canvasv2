@@ -6,6 +6,8 @@ import GradeInput from './GradeInput';
 import FeedbackInput from './FeedbackInput';
 import AIGradingSection from './AIGradingSection';
 import ActionButtons from './ActionButtons';
+import PreviousFeedbackSection from './PreviousFeedbackSection';
+import PreviousCommentsSection from './PreviousCommentsSection';
 
 interface DiscussionGradingSectionProps {
   discussion: Discussion;
@@ -72,56 +74,74 @@ const DiscussionGradingSection: React.FC<DiscussionGradingSectionProps> = ({
   const maxPoints = getMaxPoints();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Grade & Feedback</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <GradeInput
-              gradeInput={gradeInput}
-              setGradeInput={setGradeInput}
-              maxPoints={maxPoints}
-              currentScore={currentGrade?.score}
-            />
-            
-            <FeedbackInput
-              commentInput={feedbackInput}
-              setCommentInput={setFeedbackInput}
-            />
-          </div>
+    <div className="space-y-6">
+      {/* Previous Feedback Section */}
+      {currentGrade && (
+        <PreviousFeedbackSection
+          currentGrade={currentGrade}
+          maxPoints={maxPoints}
+        />
+      )}
 
-          <div className="space-y-4">
-            <AIGradingSection
-              isSummativeAssessment={isSummativeAssessment}
-              setIsSummativeAssessment={setIsSummativeAssessment}
-              useRubricForAI={useRubricForAI}
-              setUseRubricForAI={setUseRubricForAI}
-              useCustomPrompt={useCustomPrompt}
-              setUseCustomPrompt={setUseCustomPrompt}
-              customPrompt={customPrompt}
-              setCustomPrompt={setCustomPrompt}
-              assignment={discussion.assignment || null}
-            />
+      {/* Previous Comments Section */}
+      {currentGrade?.submission_comments && currentGrade.submission_comments.length > 0 && (
+        <PreviousCommentsSection
+          comments={currentGrade.submission_comments}
+        />
+      )}
 
-            <ActionButtons
-              onAIGrading={onAIGrading}
-              onSaveGrade={onSaveGrade}
-              isGenerating={isGenerating}
-              isProcessingFiles={false}
-              saving={saving}
-              gradeInput={gradeInput}
-              currentSubmission={currentSubmission}
-              assignment={discussion.assignment || null}
-              useRubricForAI={useRubricForAI}
-              isSummativeAssessment={isSummativeAssessment}
-              useCustomPrompt={useCustomPrompt}
-            />
+      {/* Current Grading Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Grade & Feedback</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <GradeInput
+                gradeInput={gradeInput}
+                setGradeInput={setGradeInput}
+                maxPoints={maxPoints}
+                currentScore={currentGrade?.score}
+              />
+              
+              <FeedbackInput
+                commentInput={feedbackInput}
+                setCommentInput={setFeedbackInput}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <AIGradingSection
+                isSummativeAssessment={isSummativeAssessment}
+                setIsSummativeAssessment={setIsSummativeAssessment}
+                useRubricForAI={useRubricForAI}
+                setUseRubricForAI={setUseRubricForAI}
+                useCustomPrompt={useCustomPrompt}
+                setUseCustomPrompt={setUseCustomPrompt}
+                customPrompt={customPrompt}
+                setCustomPrompt={setCustomPrompt}
+                assignment={discussion.assignment || null}
+              />
+
+              <ActionButtons
+                onAIGrading={onAIGrading}
+                onSaveGrade={onSaveGrade}
+                isGenerating={isGenerating}
+                isProcessingFiles={false}
+                saving={saving}
+                gradeInput={gradeInput}
+                currentSubmission={currentSubmission}
+                assignment={discussion.assignment || null}
+                useRubricForAI={useRubricForAI}
+                isSummativeAssessment={isSummativeAssessment}
+                useCustomPrompt={useCustomPrompt}
+              />
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

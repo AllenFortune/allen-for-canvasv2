@@ -100,8 +100,8 @@ serve(async (req) => {
       );
     }
 
-    // Now fetch the submissions (grades) for this assignment
-    const submissionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&per_page=100`;
+    // Now fetch the submissions (grades) for this assignment with comments included
+    const submissionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?include[]=user&include[]=submission_comments&per_page=100`;
     console.log(`Fetching submissions from: ${submissionsUrl}`);
     
     const submissionsResponse = await fetch(submissionsUrl, {
@@ -124,14 +124,15 @@ serve(async (req) => {
     const submissionsData = await submissionsResponse.json();
     console.log(`Found ${submissionsData.length} submissions`);
     
-    // Transform submissions into our grade format
+    // Transform submissions into our grade format including comments
     const grades = submissionsData
       .filter(submission => submission.grade !== null || submission.score !== null)
       .map(submission => {
         console.log(`Processing submission for user ${submission.user_id}:`, {
           grade: submission.grade,
           score: submission.score,
-          graded_at: submission.graded_at
+          graded_at: submission.graded_at,
+          comments_count: submission.submission_comments?.length || 0
         });
         
         return {
@@ -139,11 +140,12 @@ serve(async (req) => {
           grade: submission.grade,
           score: submission.score,
           feedback: null, // Canvas submissions don't include feedback in this endpoint
-          ai_grade_review: null
+          ai_grade_review: null,
+          submission_comments: submission.submission_comments || []
         };
       });
 
-    console.log(`Returning ${grades.length} existing grades`);
+    console.log(`Returning ${grades.length} existing grades with comments`);
     
     return new Response(
       JSON.stringify({ success: true, grades }),

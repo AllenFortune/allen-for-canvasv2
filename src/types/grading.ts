@@ -1,3 +1,4 @@
+
 export interface Assignment {
   id: number;
   name: string;
@@ -103,10 +104,26 @@ export interface DiscussionEntry {
   rating_count?: number;
 }
 
+export interface SubmissionComment {
+  id: number;
+  author_id: number;
+  author_name: string;
+  author: {
+    id: number;
+    display_name: string;
+    avatar_image_url?: string;
+    html_url?: string;
+  };
+  comment: string;
+  created_at: string;
+  edited_at?: string | null;
+}
+
 export interface DiscussionGrade {
   user_id: number;
   grade: string | null;
   score: number | null;
   feedback: string | null;
   ai_grade_review?: string | null;
+  submission_comments?: SubmissionComment[];
 }
