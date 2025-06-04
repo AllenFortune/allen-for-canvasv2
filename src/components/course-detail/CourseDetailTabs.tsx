@@ -24,6 +24,9 @@ interface Discussion {
   todo_date: string | null;
   assignment_id?: number;
   is_assignment?: boolean;
+  needs_grading_count?: number;
+  graded_count?: number;
+  total_submissions?: number;
 }
 
 interface Quiz {
@@ -62,26 +65,39 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
 }) => {
   console.log('CourseDetailTabs rendered with courseId:', courseId);
 
+  // Calculate grading counts for each category
+  const assignmentsNeedingGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
+  const discussionsNeedingGrading = discussions.reduce((total, discussion) => total + (discussion.needs_grading_count || 0), 0);
+  // TODO: Add quiz grading count when quiz grading data is available
+  const quizzesNeedingGrading = 0; // Placeholder for when quiz grading is implemented
+
   return (
     <Tabs defaultValue="assignments" className="w-full">
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="assignments" className="relative">
           Assignments
-          {totalNeedsGrading > 0 && (
+          {assignmentsNeedingGrading > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {totalNeedsGrading}
+              {assignmentsNeedingGrading}
             </span>
           )}
         </TabsTrigger>
         <TabsTrigger value="discussions" className="relative">
           Discussions
-          {totalUnread > 0 && (
+          {discussionsNeedingGrading > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {totalUnread}
+              {discussionsNeedingGrading}
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+        <TabsTrigger value="quizzes" className="relative">
+          Quizzes
+          {quizzesNeedingGrading > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {quizzesNeedingGrading}
+            </span>
+          )}
+        </TabsTrigger>
         <TabsTrigger value="students">Students</TabsTrigger>
         <TabsTrigger value="analytics">Analytics</TabsTrigger>
       </TabsList>
