@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 interface DiverSuggestion {
   phase: string;
@@ -22,6 +23,8 @@ interface DiverSuggestionsProps {
 }
 
 const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration }) => {
+  const { toast } = useToast();
+
   const phaseIcons = {
     'Discovery': Eye,
     'Interaction & Collaboration': Users,
@@ -59,7 +62,39 @@ ${integration.implementation_guide}
     `;
     
     navigator.clipboard.writeText(content);
-    alert('Content copied to clipboard!');
+    toast({
+      title: "Content Copied",
+      description: "All AI integration suggestions have been copied to your clipboard.",
+    });
+  };
+
+  const handleCopySuggestion = (suggestion: DiverSuggestion) => {
+    const content = `
+${suggestion.phase}: ${suggestion.title}
+${suggestion.description}
+
+Activities:
+${suggestion.activities.map(activity => `• ${activity}`).join('\n')}
+
+Examples:
+${suggestion.examples.map(example => `• ${example}`).join('\n')}
+    `;
+    
+    navigator.clipboard.writeText(content.trim());
+    toast({
+      title: "Phase Content Copied",
+      description: `${suggestion.phase} phase content has been copied to your clipboard.`,
+    });
+  };
+
+  const handleCopyImplementationGuide = () => {
+    const content = `Implementation Guide:\n${integration.implementation_guide}`;
+    
+    navigator.clipboard.writeText(content);
+    toast({
+      title: "Implementation Guide Copied",
+      description: "The implementation guide has been copied to your clipboard.",
+    });
   };
 
   const handleDownload = () => {
@@ -131,6 +166,14 @@ ${integration.implementation_guide}
                     <CardTitle className="text-lg">{suggestion.title}</CardTitle>
                   </div>
                 </div>
+                <Button 
+                  onClick={() => handleCopySuggestion(suggestion)} 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -168,7 +211,17 @@ ${integration.implementation_guide}
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">Implementation Guide</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Implementation Guide</CardTitle>
+            <Button 
+              onClick={handleCopyImplementationGuide} 
+              variant="ghost" 
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="whitespace-pre-line text-gray-700">{integration.implementation_guide}</div>
