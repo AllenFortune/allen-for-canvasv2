@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -80,7 +81,14 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   const [selectedSubmissionIndex, setSelectedSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
-  const selectedSubmission = submissions[selectedSubmissionIndex];
+  // Sort submissions alphabetically by last name (sortable_name)
+  const sortedSubmissions = useMemo(() => {
+    return [...submissions].sort((a, b) => 
+      a.user.sortable_name.localeCompare(b.user.sortable_name)
+    );
+  }, [submissions]);
+
+  const selectedSubmission = sortedSubmissions[selectedSubmissionIndex];
 
   // Auto-select first question when submission changes
   useEffect(() => {
@@ -92,7 +100,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   const navigateSubmission = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && selectedSubmissionIndex > 0) {
       setSelectedSubmissionIndex(selectedSubmissionIndex - 1);
-    } else if (direction === 'next' && selectedSubmissionIndex < submissions.length - 1) {
+    } else if (direction === 'next' && selectedSubmissionIndex < sortedSubmissions.length - 1) {
       setSelectedSubmissionIndex(selectedSubmissionIndex + 1);
     }
   };
@@ -119,7 +127,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     return <ErrorDisplay error="Quiz data not found" onRetry={() => {}} />;
   }
 
-  if (submissions.length === 0) {
+  if (sortedSubmissions.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-6">
         <Card>
@@ -155,7 +163,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-blue-900">
-                    {selectedSubmissionIndex + 1} of {submissions.length}
+                    {selectedSubmissionIndex + 1} of {sortedSubmissions.length}
                   </span>
                   <div className="flex gap-1">
                     <Button
@@ -170,7 +178,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => navigateSubmission('next')}
-                      disabled={selectedSubmissionIndex === submissions.length - 1}
+                      disabled={selectedSubmissionIndex === sortedSubmissions.length - 1}
                     >
                       <ArrowRight className="w-3 h-3" />
                     </Button>
@@ -191,7 +199,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
 
               {/* All Submissions List */}
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {submissions.map((submission, index) => (
+                {sortedSubmissions.map((submission, index) => (
                   <Button
                     key={submission.id}
                     variant={index === selectedSubmissionIndex ? "default" : "outline"}
