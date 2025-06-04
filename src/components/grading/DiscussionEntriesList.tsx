@@ -53,6 +53,21 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return null;
   };
 
+  const getScoreDisplay = (grade: DiscussionGrade, maxPoints: number | null) => {
+    // If there's a score and max points are available
+    if (grade && grade.score !== null && maxPoints !== null) {
+      return `${grade.score}/${maxPoints}`;
+    }
+    
+    // If there's a score but no max points available
+    if (grade && grade.score !== null && maxPoints === null) {
+      return `${grade.score}/Ungraded`;
+    }
+    
+    // No score available
+    return null;
+  };
+
   const filterUsers = () => {
     if (activeTab === 'all') {
       return users;
@@ -114,6 +129,7 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
               const originalIndex = users.findIndex(u => u.user.id === userEntry.user.id);
               const isSelected = originalIndex === currentUserIndex;
               const grade = grades.find(g => g.user_id === userEntry.user.id);
+              const scoreDisplay = getScoreDisplay(grade, maxPoints);
               
               return (
                 <button
@@ -136,9 +152,9 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
                       <p className="text-sm font-medium truncate">{getUserName(userEntry.user)}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {getGradeStatusBadge(userEntry.user.id)}
-                        {grade && grade.score !== null && (
+                        {scoreDisplay && (
                           <span className="text-xs text-gray-500">
-                            {grade.score}/{maxPoints !== null ? maxPoints : 'Ungraded'}
+                            {scoreDisplay}
                           </span>
                         )}
                         <span className="text-xs text-gray-500">

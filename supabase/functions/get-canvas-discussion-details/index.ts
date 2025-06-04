@@ -68,6 +68,8 @@ serve(async (req) => {
     
     const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}?include[]=assignment`;
     
+    console.log(`Fetching discussion from: ${canvasUrl}`);
+    
     const response = await fetch(canvasUrl, {
       method: 'GET',
       headers: {
@@ -87,8 +89,35 @@ serve(async (req) => {
 
     const discussionData = await response.json();
     
+    console.log('Raw Canvas discussion data received:', JSON.stringify(discussionData, null, 2));
+    console.log('Discussion points_possible:', discussionData.points_possible);
+    console.log('Assignment data:', discussionData.assignment ? JSON.stringify(discussionData.assignment, null, 2) : 'No assignment data');
+    console.log('Assignment points_possible:', discussionData.assignment?.points_possible);
+    
+    // Ensure we properly extract points_possible
+    let finalPointsPossible = null;
+    
+    // First try discussion.points_possible
+    if (discussionData.points_possible !== null && discussionData.points_possible !== undefined) {
+      finalPointsPossible = discussionData.points_possible;
+      console.log('Using discussion.points_possible:', finalPointsPossible);
+    }
+    // Then try assignment.points_possible  
+    else if (discussionData.assignment?.points_possible !== null && discussionData.assignment?.points_possible !== undefined) {
+      finalPointsPossible = discussionData.assignment.points_possible;
+      console.log('Using assignment.points_possible:', finalPointsPossible);
+    }
+    
+    // Update the discussion object with the correct points_possible
+    const processedDiscussion = {
+      ...discussionData,
+      points_possible: finalPointsPossible
+    };
+    
+    console.log('Final processed discussion points_possible:', processedDiscussion.points_possible);
+    
     return new Response(
-      JSON.stringify({ success: true, discussion: discussionData }),
+      JSON.stringify({ success: true, discussion: processedDiscussion }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
