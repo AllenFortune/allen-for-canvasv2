@@ -116,12 +116,25 @@ serve(async (req) => {
 
     const assignmentsData = await response.json();
     
-    console.log(`Successfully fetched ${assignmentsData.length} assignments from Canvas`);
+    // Filter out discussions and quizzes to only show true assignments
+    const filteredAssignments = assignmentsData.filter((assignment: any) => {
+      // Exclude assignments that are discussions or quizzes
+      const submissionTypes = assignment.submission_types || [];
+      
+      // Filter out discussion topics and online quizzes
+      const isDiscussion = submissionTypes.includes('discussion_topic');
+      const isQuiz = submissionTypes.includes('online_quiz');
+      
+      // Only include assignments that are not discussions or quizzes
+      return !isDiscussion && !isQuiz;
+    });
+    
+    console.log(`Fetched ${assignmentsData.length} total assignments, filtered to ${filteredAssignments.length} true assignments`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        assignments: assignmentsData
+        assignments: filteredAssignments
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
