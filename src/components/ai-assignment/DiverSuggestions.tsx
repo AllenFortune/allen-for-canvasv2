@@ -1,10 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain, Sparkles } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import AssignmentEditor from './AssignmentEditor';
 
 interface DiverSuggestion {
   phase: string;
@@ -20,10 +22,20 @@ interface DiverSuggestionsProps {
     suggestions: DiverSuggestion[];
     implementation_guide: string;
   };
+  originalAssignment?: {
+    title: string;
+    content: string;
+    subject?: string;
+    gradeLevel?: string;
+    estimatedTime?: string;
+  };
 }
 
-const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration }) => {
+const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, originalAssignment }) => {
   const { toast } = useToast();
+  const [selectedSuggestions, setSelectedSuggestions] = useState<DiverSuggestion[]>([]);
+  const [revisedAssignment, setRevisedAssignment] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
   const phaseIcons = {
     'Discovery': Eye,
@@ -39,6 +51,56 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration }) => {
     'Verification': 'bg-yellow-100 text-yellow-800 border-yellow-200',
     'Editing & Iteration': 'bg-purple-100 text-purple-800 border-purple-200',
     'Reflection': 'bg-red-100 text-red-800 border-red-200'
+  };
+
+  const handleSuggestionToggle = (suggestion: DiverSuggestion, checked: boolean) => {
+    if (checked) {
+      setSelectedSuggestions(prev => [...prev, suggestion]);
+    } else {
+      setSelectedSuggestions(prev => prev.filter(s => s.phase !== suggestion.phase));
+    }
+  };
+
+  const generateRevisedAssignment = async () => {
+    if (!originalAssignment || selectedSuggestions.length === 0) {
+      toast({
+        title: "Selection Required",
+        description: "Please select at least one suggestion to integrate.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-revised-assignment', {
+        body: {
+          originalAssignment: originalAssignment.content,
+          selectedSuggestions,
+          assignmentTitle: originalAssignment.title,
+          subject: originalAssignment.subject,
+          gradeLevel: originalAssignment.gradeLevel,
+          estimatedTime: originalAssignment.estimatedTime
+        }
+      });
+
+      if (error) throw error;
+
+      setRevisedAssignment(data.revisedAssignment);
+      toast({
+        title: "Assignment Revised",
+        description: "Your assignment has been successfully updated with the selected AI literacy suggestions.",
+      });
+    } catch (error) {
+      console.error('Error generating revised assignment:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate revised assignment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopy = () => {
@@ -149,15 +211,50 @@ ${integration.implementation_guide}
         </CardContent>
       </Card>
 
+      {originalAssignment && (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="text-lg text-green-900">
+              Select Suggestions to Integrate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-green-800 text-sm mb-4">
+              Choose which DIVER suggestions you'd like to integrate into your assignment. 
+              Selected suggestions will be used to create a revised assignment description.
+            </p>
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <span className="font-medium">Selected:</span>
+              <Badge variant="outline" className="bg-green-100 text-green-800">
+                {selectedSuggestions.length} of {integration.suggestions.length}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {integration.suggestions.map((suggestion, index) => {
         const IconComponent = phaseIcons[suggestion.phase as keyof typeof phaseIcons] || Eye;
         const colorClass = phaseColors[suggestion.phase as keyof typeof phaseColors] || phaseColors['Discovery'];
+        const isSelected = selectedSuggestions.some(s => s.phase === suggestion.phase);
         
         return (
-          <Card key={index} className="border-l-4 border-l-indigo-500">
+          <Card 
+            key={index} 
+            className={`border-l-4 border-l-indigo-500 transition-all duration-200 ${
+              isSelected ? 'ring-2 ring-indigo-200 bg-indigo-50' : ''
+            }`}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
+                  {originalAssignment && (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) => handleSuggestionToggle(suggestion, checked as boolean)}
+                      className="mr-3"
+                    />
+                  )}
                   <IconComponent className="w-6 h-6 text-indigo-600 mr-3" />
                   <div>
                     <Badge className={`mb-2 ${colorClass}`}>
@@ -208,6 +305,39 @@ ${integration.implementation_guide}
           </Card>
         );
       })}
+
+      {originalAssignment && (
+        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-purple-900 mb-2">
+                  Ready to Create Your Revised Assignment?
+                </h3>
+                <p className="text-purple-800 text-sm">
+                  Generate a new assignment description that integrates your selected AI literacy suggestions.
+                </p>
+              </div>
+              <Button 
+                onClick={generateRevisedAssignment}
+                disabled={selectedSuggestions.length === 0 || loading}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <Sparkles className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Generating...' : 'Create Revised Assignment'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {revisedAssignment && (
+        <AssignmentEditor
+          revisedAssignment={revisedAssignment}
+          onRegenerate={generateRevisedAssignment}
+          loading={loading}
+        />
+      )}
 
       <Card className="bg-gray-50">
         <CardHeader>

@@ -21,12 +21,22 @@ interface AssignmentIntegration {
   implementation_guide: string;
 }
 
+interface OriginalAssignment {
+  title: string;
+  content: string;
+  subject?: string;
+  gradeLevel?: string;
+  estimatedTime?: string;
+}
+
 const AIAssignmentIntegration = () => {
   const [integration, setIntegration] = useState<AssignmentIntegration | null>(null);
+  const [originalAssignment, setOriginalAssignment] = useState<OriginalAssignment | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleIntegrationGenerated = (result: AssignmentIntegration) => {
+  const handleIntegrationGenerated = (result: AssignmentIntegration, assignmentData: OriginalAssignment) => {
     setIntegration(result);
+    setOriginalAssignment(assignmentData);
   };
 
   return (
@@ -98,7 +108,10 @@ const AIAssignmentIntegration = () => {
               {/* Results Section */}
               <div>
                 {integration ? (
-                  <DiverSuggestions integration={integration} />
+                  <DiverSuggestions 
+                    integration={integration} 
+                    originalAssignment={originalAssignment}
+                  />
                 ) : (
                   <Card className="h-full flex items-center justify-center border-2 border-dashed border-gray-300">
                     <CardContent className="text-center py-8">
