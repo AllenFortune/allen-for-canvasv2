@@ -69,6 +69,21 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return user.name;
   };
 
+  const getUserLastName = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'Unknown User';
+    }
+    
+    // Split the name and get the last part as the last name
+    const nameParts = user.name.trim().split(' ');
+    if (nameParts.length > 1) {
+      return nameParts[nameParts.length - 1];
+    }
+    
+    // If there's only one name part, use it as both first and last
+    return nameParts[0];
+  };
+
   const filterUsers = () => {
     let filteredUsers;
     
@@ -82,11 +97,11 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
       filteredUsers = users;
     }
 
-    // Sort alphabetically by user name (case-insensitive)
+    // Sort alphabetically by last name (case-insensitive)
     return filteredUsers.sort((a, b) => {
-      const nameA = getUserName(a.user).toLowerCase();
-      const nameB = getUserName(b.user).toLowerCase();
-      return nameA.localeCompare(nameB);
+      const lastNameA = getUserLastName(a.user).toLowerCase();
+      const lastNameB = getUserLastName(b.user).toLowerCase();
+      return lastNameA.localeCompare(lastNameB);
     });
   };
 
