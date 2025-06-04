@@ -9,7 +9,7 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
   const [grades, setGrades] = useState<DiscussionGrade[]>([]);
   const { toast } = useToast();
 
-  const saveGrade = async (userId: number, grade: string, feedback: string) => {
+  const saveGrade = async (userId: number, grade: string, feedback: string, aiGradeReview?: string) => {
     if (!courseId || !discussionId) {
       console.error('Missing courseId or discussionId for saveGrade');
       toast({
@@ -21,7 +21,7 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
     }
 
     try {
-      console.log('Saving grade for user:', { userId, grade, feedback });
+      console.log('Saving grade for user:', { userId, grade, feedback, aiGradeReview });
       
       const { data, error } = await supabase.functions.invoke('grade-canvas-discussion-entry', {
         body: {
@@ -29,7 +29,8 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
           discussionId,
           userId,
           grade,
-          feedback
+          feedback,
+          aiGradeReview
         }
       });
 
@@ -46,11 +47,17 @@ export const useDiscussionGrading = (courseId?: string, discussionId?: string): 
         if (existing) {
           return prev.map(g => 
             g.user_id === userId 
-              ? { ...g, grade, score: parseFloat(grade), feedback }
+              ? { ...g, grade, score: parseFloat(grade), feedback, ai_grade_review: aiGradeReview }
               : g
           );
         } else {
-          return [...prev, { user_id: userId, grade, score: parseFloat(grade), feedback }];
+          return [...prev, { 
+            user_id: userId, 
+            grade, 
+            score: parseFloat(grade), 
+            feedback, 
+            ai_grade_review: aiGradeReview 
+          }];
         }
       });
 

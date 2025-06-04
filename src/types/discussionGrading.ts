@@ -18,7 +18,7 @@ export interface UseDiscussionEntriesReturn {
 
 export interface UseDiscussionGradingReturn {
   grades: DiscussionGrade[];
-  saveGrade: (userId: number, grade: string, feedback: string) => Promise<boolean>;
+  saveGrade: (userId: number, grade: string, feedback: string, aiGradeReview?: string) => Promise<boolean>;
   setGrades: React.Dispatch<React.SetStateAction<DiscussionGrade[]>>;
 }
 
@@ -28,7 +28,7 @@ export interface UseGradeDiscussionReturn {
   grades: DiscussionGrade[];
   loading: boolean;
   error: string | null;
-  saveGrade: (userId: number, grade: string, feedback: string) => Promise<boolean>;
+  saveGrade: (userId: number, grade: string, feedback: string, aiGradeReview?: string) => Promise<boolean>;
   retryFetch: () => Promise<void>;
   setEntries: React.Dispatch<React.SetStateAction<DiscussionEntry[]>>;
   setGrades: React.Dispatch<React.SetStateAction<DiscussionGrade[]>>;

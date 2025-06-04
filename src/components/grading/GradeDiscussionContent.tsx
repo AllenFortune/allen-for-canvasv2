@@ -8,7 +8,7 @@ interface GradeDiscussionContentProps {
   discussion: Discussion | null;
   entries: DiscussionEntry[];
   grades: DiscussionGrade[];
-  saveGrade: (userId: number, grade: string, feedback: string) => Promise<boolean>;
+  saveGrade: (userId: number, grade: string, feedback: string, aiGradeReview?: string) => Promise<boolean>;
   setEntries: React.Dispatch<React.SetStateAction<DiscussionEntry[]>>;
   setGrades: React.Dispatch<React.SetStateAction<DiscussionGrade[]>>;
 }

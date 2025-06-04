@@ -14,7 +14,7 @@ interface DiscussionGradingFormProps {
   user: DiscussionEntry['user'];
   entries: DiscussionEntry[];
   grades: DiscussionGrade[];
-  saveGrade: (userId: number, grade: string, feedback: string) => Promise<boolean>;
+  saveGrade: (userId: number, grade: string, feedback: string, aiGradeReview?: string) => Promise<boolean>;
   currentUserIndex: number;
   totalUsers: number;
   onUserChange: (index: number) => void;
@@ -69,17 +69,18 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
     if (currentGrade) {
       setGradeInput(currentGrade.grade || '');
       setFeedbackInput(currentGrade.feedback || '');
+      // Load the persisted AI grade review
+      setAiGradeReview(currentGrade.ai_grade_review || '');
     } else {
       setGradeInput('');
       setFeedbackInput('');
+      setAiGradeReview('');
     }
-    // Clear AI grade review when switching users
-    setAiGradeReview('');
   }, [currentGrade, user.id]);
 
   const handleSaveGrade = async () => {
     setSaving(true);
-    const success = await saveGrade(user.id, gradeInput, feedbackInput);
+    const success = await saveGrade(user.id, gradeInput, feedbackInput, aiGradeReview);
     setSaving(false);
   };
 

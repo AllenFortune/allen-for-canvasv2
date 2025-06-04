@@ -31,9 +31,9 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { courseId, discussionId, userId, grade, feedback } = body;
+    const { courseId, discussionId, userId, grade, feedback, aiGradeReview } = body;
 
-    console.log('Grading discussion entry:', { courseId, discussionId, userId, grade });
+    console.log('Grading discussion entry:', { courseId, discussionId, userId, grade, aiGradeReview: !!aiGradeReview });
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -121,8 +121,11 @@ serve(async (req) => {
     const result = await response.json();
     console.log('Grade saved successfully:', result);
     
+    // Note: AI grade review is handled in frontend state and doesn't need to be stored in Canvas
+    // It's persisted in the frontend grades state for the session
+    
     return new Response(
-      JSON.stringify({ success: true, result }),
+      JSON.stringify({ success: true, result, aiGradeReview }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

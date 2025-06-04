@@ -1,4 +1,3 @@
-
 export interface Assignment {
   id: number;
   name: string;
@@ -109,4 +108,5 @@ export interface DiscussionGrade {
   grade: string | null;
   score: number | null;
   feedback: string | null;
+  ai_grade_review?: string | null;
 }
