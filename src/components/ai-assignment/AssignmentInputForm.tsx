@@ -10,7 +10,7 @@ import { Upload, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AssignmentInputFormProps {
-  onIntegrationGenerated: (integration: any) => void;
+  onIntegrationGenerated: (integration: any, assignmentData: any) => void;
   loading: boolean;
   setLoading: (loading: boolean) => void;
 }
@@ -60,7 +60,15 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
 
       if (error) throw error;
 
-      onIntegrationGenerated(data);
+      const assignmentData = {
+        title: assignmentTitle,
+        content: assignmentText,
+        subject,
+        gradeLevel,
+        estimatedTime
+      };
+
+      onIntegrationGenerated(data, assignmentData);
     } catch (error) {
       console.error('Error generating integration:', error);
       alert('Failed to generate AI integration suggestions. Please try again.');
