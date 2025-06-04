@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -6,7 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, Users, Settings, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, Users, Settings, ArrowRight, BookText } from 'lucide-react';
 
 interface UserProfile {
   canvas_instance_url?: string;
@@ -115,7 +114,7 @@ const Dashboard = () => {
             )}
             
             {/* Dashboard Cards */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Courses Card */}
               <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Courses</h3>
@@ -134,6 +133,20 @@ const Dashboard = () => {
                 <Link to="/assignments">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white" disabled={!isCanvasConnected}>
                     View Assignments <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* AI Literacy Assignment Integration Tool Card */}
+              <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
+                <div className="flex items-center mb-2">
+                  <BookText className="w-6 h-6 text-indigo-600 mr-2" />
+                  <h3 className="text-xl font-semibold text-gray-900">AI Literacy Tool</h3>
+                </div>
+                <p className="text-gray-600 mb-6 flex-grow">Transform assignments with DIVER framework AI integration</p>
+                <Link to="/ai-assignment-integration">
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Launch Tool <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
