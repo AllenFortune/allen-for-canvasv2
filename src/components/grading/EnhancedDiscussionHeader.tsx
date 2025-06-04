@@ -44,21 +44,10 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
     });
   };
 
-  // Calculate the correct points possible value
-  const getDisplayPoints = () => {
-    // First check if discussion has points_possible directly
-    if (discussion.points_possible && discussion.points_possible > 0) {
-      return discussion.points_possible;
-    }
-    
-    // Then check if the linked assignment has points_possible
-    if (discussion.assignment?.points_possible && discussion.assignment.points_possible > 0) {
-      return discussion.assignment.points_possible;
-    }
-    
-    // Return 0 if no points found (for display purposes)
-    return 0;
-  };
+  // Use the points_possible directly from Canvas discussion data
+  const displayPoints = discussion.points_possible;
+
+  console.log('EnhancedDiscussionHeader - Discussion points_possible:', displayPoints);
 
   // Group entries by user to get unique participants
   const userEntries = entries.reduce((acc, entry) => {
@@ -71,7 +60,6 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
 
   const totalParticipants = Object.keys(userEntries).length;
   const totalPosts = entries.length;
-  const displayPoints = getDisplayPoints();
 
   return (
     <div className="bg-white border-b">
@@ -111,7 +99,9 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <BarChart3 className="w-4 h-4" />
-                  <span>{displayPoints} points</span>
+                  <span>
+                    {displayPoints !== null ? `${displayPoints} points` : 'Ungraded'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />

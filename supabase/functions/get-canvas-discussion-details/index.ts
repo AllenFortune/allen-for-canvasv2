@@ -90,22 +90,24 @@ serve(async (req) => {
     const discussionData = await response.json();
     
     console.log('Raw Canvas discussion data received:', JSON.stringify(discussionData, null, 2));
-    console.log('Discussion points_possible:', discussionData.points_possible);
-    console.log('Assignment data:', discussionData.assignment ? JSON.stringify(discussionData.assignment, null, 2) : 'No assignment data');
-    console.log('Assignment points_possible:', discussionData.assignment?.points_possible);
     
-    // Ensure we properly extract points_possible
+    // Calculate the correct points_possible value from Canvas data
     let finalPointsPossible = null;
     
-    // First try discussion.points_possible
-    if (discussionData.points_possible !== null && discussionData.points_possible !== undefined) {
-      finalPointsPossible = discussionData.points_possible;
-      console.log('Using discussion.points_possible:', finalPointsPossible);
+    // Priority 1: Check if assignment has a rubric with points
+    if (discussionData.assignment?.rubric_settings?.points_possible) {
+      finalPointsPossible = discussionData.assignment.rubric_settings.points_possible;
+      console.log('Using rubric points_possible:', finalPointsPossible);
     }
-    // Then try assignment.points_possible  
+    // Priority 2: Check assignment points_possible (but only if > 0 or explicitly set)
     else if (discussionData.assignment?.points_possible !== null && discussionData.assignment?.points_possible !== undefined) {
       finalPointsPossible = discussionData.assignment.points_possible;
-      console.log('Using assignment.points_possible:', finalPointsPossible);
+      console.log('Using assignment points_possible:', finalPointsPossible);
+    }
+    // Priority 3: Check discussion points_possible (legacy)
+    else if (discussionData.points_possible !== null && discussionData.points_possible !== undefined) {
+      finalPointsPossible = discussionData.points_possible;
+      console.log('Using discussion points_possible:', finalPointsPossible);
     }
     
     // Update the discussion object with the correct points_possible

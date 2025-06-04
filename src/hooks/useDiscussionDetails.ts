@@ -30,9 +30,12 @@ export const useDiscussionDetails = (courseId?: string, discussionId?: string): 
       }
 
       console.log('Discussion details received:', data);
-      console.log('Discussion points_possible:', data.discussion?.points_possible);
-      console.log('Assignment data:', data.discussion?.assignment);
-      console.log('Assignment points_possible:', data.discussion?.assignment?.points_possible);
+      console.log('Canvas points_possible value:', data.discussion?.points_possible);
+      
+      // Log for debugging the rubric information
+      if (data.discussion?.assignment?.rubric_settings) {
+        console.log('Rubric settings found:', data.discussion.assignment.rubric_settings);
+      }
       
       setDiscussion(data.discussion);
     } catch (err) {

@@ -35,31 +35,18 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return <Badge variant="outline" className="text-gray-500">Not Graded</Badge>;
   };
 
-  const getMaxPoints = () => {
-    console.log('Discussion points_possible:', discussion.points_possible);
-    console.log('Assignment points_possible:', discussion.assignment?.points_possible);
+  const getScoreDisplay = (grade: DiscussionGrade) => {
+    // Always use the points_possible from the Canvas discussion data
+    const maxPoints = discussion.points_possible;
     
-    // First check if discussion has points_possible directly (including 0)
-    if (discussion.points_possible !== null && discussion.points_possible !== undefined) {
-      return discussion.points_possible;
-    }
+    console.log('DiscussionEntriesList - Discussion points_possible:', maxPoints);
     
-    // Then check if the linked assignment has points_possible (including 0)
-    if (discussion.assignment?.points_possible !== null && discussion.assignment?.points_possible !== undefined) {
-      return discussion.assignment.points_possible;
-    }
-    
-    // Return null if no valid points found (ungraded discussion)
-    return null;
-  };
-
-  const getScoreDisplay = (grade: DiscussionGrade, maxPoints: number | null) => {
     // If there's a score and max points are available
     if (grade && grade.score !== null && maxPoints !== null) {
       return `${grade.score}/${maxPoints}`;
     }
     
-    // If there's a score but no max points available
+    // If there's a score but no max points available (should be rare)
     if (grade && grade.score !== null && maxPoints === null) {
       return `${grade.score}/Ungraded`;
     }
@@ -98,9 +85,6 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     return user.name;
   };
 
-  const maxPoints = getMaxPoints();
-  console.log('Calculated maxPoints:', maxPoints);
-
   return (
     <Card>
       <CardHeader>
@@ -129,7 +113,7 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
               const originalIndex = users.findIndex(u => u.user.id === userEntry.user.id);
               const isSelected = originalIndex === currentUserIndex;
               const grade = grades.find(g => g.user_id === userEntry.user.id);
-              const scoreDisplay = getScoreDisplay(grade, maxPoints);
+              const scoreDisplay = getScoreDisplay(grade);
               
               return (
                 <button
