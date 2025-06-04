@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -67,9 +68,9 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    // STEP 1: Get quiz questions to create ID mapping
+    // STEP 1: Get quiz questions to create comprehensive ID mapping
     const questionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/questions?per_page=100`;
-    console.log(`Fetching quiz questions for ID mapping: ${questionsUrl}`);
+    console.log(`Fetching quiz questions for comprehensive mapping: ${questionsUrl}`);
     
     const questionsResponse = await fetch(questionsUrl, {
       method: 'GET',
@@ -81,31 +82,34 @@ serve(async (req) => {
     });
 
     let questionIdMap = new Map();
-    let questionPositionMap = new Map();
+    let positionToQuestionMap = new Map();
+    let allQuestions = [];
     
     if (questionsResponse.ok) {
       const questionsData = await questionsResponse.json();
+      allQuestions = questionsData;
       console.log(`Found ${questionsData.length} quiz questions`);
       
-      // Create mappings between different ID systems
+      // Create comprehensive mappings for ALL questions
       questionsData.forEach((question, index) => {
+        const position = index + 1;
+        
         // Map by actual question ID
         questionIdMap.set(question.id.toString(), question);
-        questionIdMap.set((index + 1).toString(), question); // Position-based mapping
         
-        // Map by position for essay questions
-        if (question.question_type === 'essay_question') {
-          questionPositionMap.set(index + 1, question.id);
-          console.log(`Essay question mapping: position ${index + 1} = question ID ${question.id} (${question.question_name})`);
-        }
+        // Map by position (very important for Canvas submission data)
+        questionIdMap.set(position.toString(), question);
+        positionToQuestionMap.set(position, question);
+        
+        console.log(`Question mapping: Position ${position} = Question ID ${question.id} (${question.question_type}) - "${question.question_name || question.question_text?.substring(0, 50)}..."`);
       });
     } else {
       console.error(`Failed to fetch quiz questions: ${questionsResponse.status}`);
     }
 
-    // STEP 2: Get quiz details to determine if it's assignment-based
+    // STEP 2: Get quiz details to determine type
     const quizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}`;
-    console.log(`Fetching quiz details to determine type: ${quizUrl}`);
+    console.log(`Fetching quiz details: ${quizUrl}`);
 
     const quizResponse = await fetch(quizUrl, {
       method: 'GET',
@@ -136,126 +140,46 @@ serve(async (req) => {
     const quizData = await quizResponse.json();
     const isAssignmentBasedQuiz = !!quizData.assignment_id;
     console.log(`Quiz type: ${isAssignmentBasedQuiz ? 'assignment-based (New Quizzes)' : 'classic Canvas quiz'}`);
-    console.log(`Assignment ID: ${quizData.assignment_id || 'none'}`);
 
     let rawAnswers = [];
     let answersSource = 'unknown';
 
-    // STEP 3: Strategy 1 - Assignment-based quiz (New Quizzes)
-    if (isAssignmentBasedQuiz && quizData.assignment_id && userId) {
-      console.log(`Fetching assignment submission for assignment ID: ${quizData.assignment_id}, user ID: ${userId}`);
-      
-      const assignmentSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${quizData.assignment_id}/submissions/${userId}?include[]=submission_history&include[]=submission_comments&include[]=rubric_assessment`;
-      
-      console.log(`Assignment submission URL: ${assignmentSubmissionUrl}`);
+    // STEP 3: Try to get quiz submission data first (works for both types)
+    console.log(`Fetching quiz submission data for all questions`);
+    
+    const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission&include[]=quiz&include[]=user&include[]=submission_questions&include[]=submission_history`;
+    console.log(`Quiz submission URL: ${submissionUrl}`);
 
-      const assignmentResponse = await fetch(assignmentSubmissionUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${canvas_access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
+    const submissionResponse = await fetch(submissionUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
 
-      if (assignmentResponse.ok) {
-        const assignmentData = await assignmentResponse.json();
-        console.log(`Assignment submission response structure:`, Object.keys(assignmentData));
-        
-        answersSource = 'assignment_submission';
-        
-        // Extract essay content from assignment submission
-        if (assignmentData.body) {
-          console.log(`Found assignment submission body with ${assignmentData.body.length} characters`);
-          
-          rawAnswers.push({
-            submission_question_id: 1,
-            original_question_id: 1,
-            position_in_quiz: 1,
-            answer: assignmentData.body,
-            question_name: 'Essay Response',
-            question_text: 'Essay Question Response',
-            points: assignmentData.score,
-            correct: null,
-            source: 'assignment_body'
-          });
-        }
-        
-        // Also check submission history for additional attempts
-        if (assignmentData.submission_history && assignmentData.submission_history.length > 0) {
-          console.log(`Processing ${assignmentData.submission_history.length} submission history entries`);
-          
-          const latestSubmission = assignmentData.submission_history[0];
-          if (latestSubmission.body && !rawAnswers.length) {
-            rawAnswers.push({
-              submission_question_id: 1,
-              original_question_id: 1,
-              position_in_quiz: 1,
-              answer: latestSubmission.body,
-              question_name: 'Essay Response',
-              question_text: 'Essay Question Response',
-              points: latestSubmission.score,
-              correct: null,
-              source: 'assignment_history'
-            });
-          }
-        }
-      } else {
-        console.log(`Assignment submission fetch failed: ${assignmentResponse.status}`);
-      }
-    }
-
-    // STEP 4: Strategy 2 - Classic quiz submission approach
-    if (rawAnswers.length === 0) {
-      console.log(`Using classic quiz submission approach`);
+    if (submissionResponse.ok) {
+      const submissionData = await submissionResponse.json();
+      console.log(`Successfully fetched submission data`);
       answersSource = 'quiz_submission';
       
-      // Get the full quiz submission with all possible includes
-      const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission&include[]=quiz&include[]=user&include[]=submission_questions&include[]=submission_history`;
-      console.log(`Fetching comprehensive submission details from: ${submissionUrl}`);
-
-      const submissionResponse = await fetch(submissionUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${canvas_access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!submissionResponse.ok) {
-        const errorText = await submissionResponse.text();
-        console.error(`Canvas API error fetching submission: ${submissionResponse.status} - ${errorText}`);
-        
-        let errorMessage = `Canvas API returned ${submissionResponse.status}: ${submissionResponse.statusText}`;
-        if (submissionResponse.status === 401) {
-          errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
-        } else if (submissionResponse.status === 404) {
-          errorMessage = 'Quiz submission not found or access denied.';
-        }
-
-        return new Response(
-          JSON.stringify({ error: errorMessage }),
-          { status: submissionResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const submissionData = await submissionResponse.json();
-      console.log(`Successfully fetched submission data from Canvas`);
-
-      // Extract from submission_data
+      // Extract from submission_data - this contains individual question answers
       if (submissionData.quiz_submission?.submission_data) {
-        console.log(`Processing submission_data (${submissionData.quiz_submission.submission_data.length} items)`);
+        console.log(`Processing submission_data with ${submissionData.quiz_submission.submission_data.length} items`);
         
         submissionData.quiz_submission.submission_data.forEach((item, index) => {
-          console.log(`Item ${index}:`, {
+          const position = index + 1;
+          
+          console.log(`Processing item ${position}:`, {
             question_id: item.question_id,
-            answer: item.answer ? `"${item.answer.substring(0, 50)}..."` : 'null',
-            text: item.text ? `"${item.text.substring(0, 50)}..."` : 'null',
-            answer_text: item.answer_text ? `"${item.answer_text.substring(0, 50)}..."` : 'null'
+            answer_present: !!item.answer,
+            text_present: !!item.text,
+            answer_text_present: !!item.answer_text,
+            answer_type: typeof item.answer
           });
 
-          // Try multiple fields where the answer might be stored
+          // Extract answer from multiple possible fields
           let answer = null;
           if (item.answer !== undefined && item.answer !== null && item.answer !== '') {
             answer = item.answer;
@@ -267,96 +191,134 @@ serve(async (req) => {
             answer = item.response;
           }
 
-          if (answer) {
-            rawAnswers.push({
-              submission_question_id: item.question_id,
-              original_question_id: item.question_id,
-              position_in_quiz: index + 1,
-              answer: answer,
-              question_name: item.question_name,
-              question_text: item.question_text,
-              points: item.points,
-              correct: item.correct,
-              source: 'submission_data'
-            });
-          }
+          // Always include an entry for each question, even if no answer
+          rawAnswers.push({
+            submission_question_id: item.question_id || position,
+            original_question_id: item.question_id || position,
+            position_in_quiz: position,
+            answer: answer,
+            question_name: item.question_name,
+            question_text: item.question_text,
+            points: item.points,
+            correct: item.correct,
+            source: 'submission_data'
+          });
         });
       }
+    } else {
+      console.log(`Quiz submission fetch failed: ${submissionResponse.status}`);
+    }
 
-      // Try the dedicated quiz submission questions endpoint if no answers found
-      if (rawAnswers.length === 0) {
-        const questionsApiUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
-        console.log(`Trying dedicated questions endpoint: ${questionsApiUrl}`);
+    // STEP 4: Try the dedicated quiz submission questions endpoint
+    if (rawAnswers.length === 0) {
+      const questionsApiUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
+      console.log(`Trying dedicated questions endpoint: ${questionsApiUrl}`);
 
-        try {
-          const questionsApiResponse = await fetch(questionsApiUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${canvas_access_token}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-          });
+      try {
+        const questionsApiResponse = await fetch(questionsApiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
 
-          if (questionsApiResponse.ok) {
-            const questionsApiData = await questionsApiResponse.json();
-            const rawQuestions = questionsApiData.quiz_submission_questions || [];
-            console.log(`Questions API returned ${rawQuestions.length} questions`);
+        if (questionsApiResponse.ok) {
+          const questionsApiData = await questionsApiResponse.json();
+          const rawQuestions = questionsApiData.quiz_submission_questions || [];
+          console.log(`Questions API returned ${rawQuestions.length} questions`);
+          answersSource = 'questions_api';
+          
+          rawQuestions.forEach((questionData, index) => {
+            let answer = null;
             
-            rawQuestions.forEach((questionData, index) => {
-              let answer = null;
-              
-              if (questionData.answer !== undefined && questionData.answer !== null) {
-                answer = questionData.answer;
-              } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
-                answer = questionData.user_answer;
-              } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
-                const submittedAnswer = questionData.submitted_answers[0];
-                if (submittedAnswer) {
-                  answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
-                }
+            if (questionData.answer !== undefined && questionData.answer !== null) {
+              answer = questionData.answer;
+            } else if (questionData.user_answer !== undefined && questionData.user_answer !== null) {
+              answer = questionData.user_answer;
+            } else if (questionData.submitted_answers && Array.isArray(questionData.submitted_answers)) {
+              const submittedAnswer = questionData.submitted_answers[0];
+              if (submittedAnswer) {
+                answer = submittedAnswer.text || submittedAnswer.answer_text || submittedAnswer.answer || submittedAnswer;
               }
-              
-              if (answer) {
-                rawAnswers.push({
-                  submission_question_id: questionData.id,
-                  original_question_id: questionData.question_id || questionData.id,
-                  position_in_quiz: index + 1,
-                  answer: answer,
-                  question_name: questionData.question_name,
-                  question_text: questionData.question_text,
-                  points: questionData.points,
-                  correct: questionData.correct,
-                  source: 'questions_api'
-                });
-              }
+            }
+            
+            rawAnswers.push({
+              submission_question_id: questionData.id,
+              original_question_id: questionData.question_id || questionData.id,
+              position_in_quiz: index + 1,
+              answer: answer,
+              question_name: questionData.question_name,
+              question_text: questionData.question_text,
+              points: questionData.points,
+              correct: questionData.correct,
+              source: 'questions_api'
             });
-          }
-        } catch (error) {
-          console.log(`Questions API failed: ${error.message}`);
+          });
+        }
+      } catch (error) {
+        console.log(`Questions API failed: ${error.message}`);
+      }
+    }
+
+    // STEP 5: For assignment-based quizzes, also try assignment submission as fallback
+    if (isAssignmentBasedQuiz && quizData.assignment_id && userId && rawAnswers.length === 0) {
+      console.log(`Trying assignment submission as fallback for New Quizzes`);
+      
+      const assignmentSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${quizData.assignment_id}/submissions/${userId}?include[]=submission_history&include[]=submission_comments`;
+      
+      const assignmentResponse = await fetch(assignmentSubmissionUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (assignmentResponse.ok) {
+        const assignmentData = await assignmentResponse.json();
+        answersSource = 'assignment_submission';
+        
+        // For assignment-based quizzes with only body content, map to first question
+        if (assignmentData.body) {
+          console.log(`Found assignment submission body, mapping to first question`);
+          
+          rawAnswers.push({
+            submission_question_id: 1,
+            original_question_id: 1,
+            position_in_quiz: 1,
+            answer: assignmentData.body,
+            question_name: 'Assignment Response',
+            question_text: 'Assignment Question Response',
+            points: assignmentData.score,
+            correct: null,
+            source: 'assignment_body'
+          });
         }
       }
     }
 
-    // STEP 5: Create properly mapped answers
+    // STEP 6: Map raw answers to actual questions
     const mappedAnswers = [];
     
-    rawAnswers.forEach(rawAnswer => {
-      // Try to find the matching quiz question using various mapping strategies
+    console.log(`Starting answer mapping process with ${rawAnswers.length} raw answers`);
+    
+    rawAnswers.forEach((rawAnswer, index) => {
       let matchedQuestion = null;
       let mappingStrategy = 'none';
       
-      // Strategy 1: Direct ID match
+      // Strategy 1: Direct question ID match
       matchedQuestion = questionIdMap.get(rawAnswer.original_question_id.toString());
       if (matchedQuestion) {
         mappingStrategy = 'direct_id';
       }
       
-      // Strategy 2: Position-based match for essay questions
+      // Strategy 2: Position-based match
       if (!matchedQuestion) {
-        const questionIdByPosition = questionPositionMap.get(rawAnswer.position_in_quiz);
-        if (questionIdByPosition) {
-          matchedQuestion = questionIdMap.get(questionIdByPosition.toString());
+        matchedQuestion = positionToQuestionMap.get(rawAnswer.position_in_quiz);
+        if (matchedQuestion) {
           mappingStrategy = 'position_based';
         }
       }
@@ -370,7 +332,7 @@ serve(async (req) => {
       }
 
       if (matchedQuestion) {
-        console.log(`Successfully mapped answer to question ${matchedQuestion.id} (${matchedQuestion.question_name}) using ${mappingStrategy}`);
+        console.log(`Successfully mapped answer ${index + 1} to question ${matchedQuestion.id} (${matchedQuestion.question_name}) using ${mappingStrategy}`);
         
         mappedAnswers.push({
           id: matchedQuestion.id,
@@ -385,15 +347,15 @@ serve(async (req) => {
           mapping_strategy: mappingStrategy
         });
       } else {
-        console.log(`Could not map answer for submission question ${rawAnswer.submission_question_id}`);
+        console.log(`Could not map answer ${index + 1} for submission question ${rawAnswer.submission_question_id}`);
         
         // Include unmapped answers with their original IDs
         mappedAnswers.push({
           id: rawAnswer.submission_question_id,
           question_id: rawAnswer.submission_question_id,
           answer: rawAnswer.answer,
-          question_name: rawAnswer.question_name,
-          question_text: rawAnswer.question_text,
+          question_name: rawAnswer.question_name || 'Unknown Question',
+          question_text: rawAnswer.question_text || 'Question text not available',
           points: rawAnswer.points,
           correct: rawAnswer.correct,
           source: rawAnswer.source,
@@ -402,9 +364,11 @@ serve(async (req) => {
       }
     });
 
-    // STEP 6: Remove duplicates, keeping the best answer for each question
-    const answerMap = new Map();
+    // STEP 7: Ensure we have entries for ALL questions, even if no answers
+    const finalAnswers = [];
+    const answersMap = new Map();
     
+    // First, add all mapped answers
     mappedAnswers.forEach(answer => {
       const key = answer.question_id.toString();
       const hasContent = answer.answer && 
@@ -413,16 +377,41 @@ serve(async (req) => {
                         answer.answer !== '' && 
                         answer.answer.toString().trim() !== '';
       
-      if (!answerMap.has(key) || (hasContent && !answerMap.get(key).hasContent)) {
-        answerMap.set(key, { ...answer, hasContent });
+      if (!answersMap.has(key) || (hasContent && !answersMap.get(key).hasContent)) {
+        answersMap.set(key, { ...answer, hasContent });
       }
     });
 
-    const finalAnswers = Array.from(answerMap.values()).map(({ hasContent, ...answer }) => answer);
-    
-    console.log(`Final results: ${finalAnswers.length} unique answers found`);
+    // Then, ensure all questions have entries (even if no answer)
+    allQuestions.forEach(question => {
+      const key = question.id.toString();
+      if (!answersMap.has(key)) {
+        console.log(`No answer found for question ${question.id}, creating empty entry`);
+        answersMap.set(key, {
+          id: question.id,
+          question_id: question.id,
+          answer: null,
+          question_name: question.question_name,
+          question_text: question.question_text,
+          question_type: question.question_type,
+          points: null,
+          correct: null,
+          source: 'no_answer',
+          mapping_strategy: 'question_placeholder',
+          hasContent: false
+        });
+      }
+    });
+
+    // Convert to final array
+    Array.from(answersMap.values()).forEach(({ hasContent, ...answer }) => {
+      finalAnswers.push(answer);
+    });
+
+    console.log(`Final results: ${finalAnswers.length} total answers (including empty ones)`);
     finalAnswers.forEach(answer => {
-      console.log(`Question ${answer.question_id}: ${answer.answer ? 'HAS ANSWER' : 'NO ANSWER'} (${answer.mapping_strategy}, source: ${answer.source})`);
+      const hasAnswer = answer.answer && answer.answer.toString().trim() !== '';
+      console.log(`Question ${answer.question_id}: ${hasAnswer ? 'HAS ANSWER' : 'NO ANSWER'} (${answer.mapping_strategy}, source: ${answer.source})`);
     });
 
     return new Response(
@@ -432,6 +421,7 @@ serve(async (req) => {
         user_id: userId,
         answers: finalAnswers,
         debug_info: {
+          total_questions: allQuestions.length,
           total_raw_answers: rawAnswers.length,
           total_final_answers: finalAnswers.length,
           answers_with_content: finalAnswers.filter(a => a.answer && a.answer.toString().trim() !== '').length,
@@ -439,7 +429,6 @@ serve(async (req) => {
           is_assignment_based_quiz: isAssignmentBasedQuiz,
           assignment_id: quizData.assignment_id,
           question_mapping_created: questionIdMap.size > 0,
-          essay_questions_mapped: Array.from(questionPositionMap.entries()),
           raw_answers_summary: rawAnswers.map(a => ({
             submission_q_id: a.submission_question_id,
             original_q_id: a.original_question_id,
