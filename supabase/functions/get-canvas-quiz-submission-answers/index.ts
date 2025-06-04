@@ -1,6 +1,13 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+import { fetchQuizQuestions, fetchQuizDetails } from './canvas-api.ts';
+import { extractFromSubmissionData, extractFromQuestionsAPI } from './submission-extractor.ts';
+import { extractEssayAnswers } from './essay-extractor.ts';
+import { processSubmissionHistory, mapAnswersToQuestions, ensureAllQuestionsHaveEntries } from './answer-processor.ts';
+import { CanvasCredentials } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,280 +72,40 @@ serve(async (req) => {
       );
     }
 
-    const { canvas_instance_url, canvas_access_token } = profile;
-
-    // Helper function to extract answer based on question type
-    const extractAnswerByType = (item: any, questionType: string) => {
-      console.log(`Extracting answer for question type: ${questionType}`, {
-        item_keys: Object.keys(item),
-        answer: item.answer,
-        text: item.text,
-        answer_text: item.answer_text
-      });
-
-      switch (questionType) {
-        case 'essay_question':
-          // For essay questions, look for text content in multiple fields
-          return item.text || item.answer_text || item.answer || item.response || null;
-        
-        case 'matching_question':
-          // For matching questions, handle the match pairs
-          if (item.answer && typeof item.answer === 'object') {
-            if (Array.isArray(item.answer)) {
-              // Handle array format for matching
-              return item.answer.map((match: any, index: number) => ({
-                match_id: match.answer_id || match.id || index,
-                answer_text: match.text || match.answer_text || match.answer || 'No match'
-              }));
-            } else {
-              // Handle object format for matching
-              const matches = [];
-              for (const [key, value] of Object.entries(item.answer)) {
-                matches.push({
-                  match_id: key,
-                  answer_text: typeof value === 'string' ? value : JSON.stringify(value)
-                });
-              }
-              return matches;
-            }
-          }
-          return item.text || item.answer_text || null;
-        
-        case 'multiple_answers_question':
-          // For multiple answer questions, handle array selections
-          if (item.answer && Array.isArray(item.answer)) {
-            return item.answer;
-          }
-          return item.answer || item.text || item.answer_text || null;
-        
-        case 'fill_in_multiple_blanks_question':
-          // For fill-in-the-blank questions, handle multiple blank answers
-          if (item.answer && typeof item.answer === 'object' && !Array.isArray(item.answer)) {
-            const blanks = [];
-            for (const [blankId, blankAnswer] of Object.entries(item.answer)) {
-              blanks.push({
-                blank_id: blankId,
-                answer_text: blankAnswer
-              });
-            }
-            return blanks;
-          }
-          return item.answer || item.text || item.answer_text || null;
-        
-        case 'multiple_choice_question':
-        case 'true_false_question':
-        default:
-          // For standard question types, use the standard extraction
-          return item.answer !== undefined ? item.answer : 
-                 item.text !== undefined ? item.text : 
-                 item.answer_text !== undefined ? item.answer_text : 
-                 item.response !== undefined ? item.response : null;
-      }
+    const credentials: CanvasCredentials = {
+      canvas_instance_url: profile.canvas_instance_url,
+      canvas_access_token: profile.canvas_access_token
     };
-    
-    // STEP 1: Get quiz questions to create comprehensive ID mapping
-    const questionsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/questions?per_page=100`;
-    console.log(`Fetching quiz questions for comprehensive mapping: ${questionsUrl}`);
-    
-    const questionsResponse = await fetch(questionsUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${canvas_access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
 
-    let questionIdMap = new Map();
-    let positionToQuestionMap = new Map();
-    let allQuestions = [];
-    
-    if (questionsResponse.ok) {
-      const questionsData = await questionsResponse.json();
-      allQuestions = questionsData;
-      console.log(`Found ${questionsData.length} quiz questions`);
-      
-      // Create comprehensive mappings for ALL questions
-      questionsData.forEach((question, index) => {
-        const position = index + 1;
-        
-        // Map by actual question ID
-        questionIdMap.set(question.id.toString(), question);
-        
-        // Map by position (very important for Canvas submission data)
-        questionIdMap.set(position.toString(), question);
-        positionToQuestionMap.set(position, question);
-        
-        console.log(`Question mapping: Position ${position} = Question ID ${question.id} (${question.question_type}) - "${question.question_name || question.question_text?.substring(0, 50)}..."`);
-      });
-    } else {
-      console.error(`Failed to fetch quiz questions: ${questionsResponse.status}`);
-    }
+    // Step 1: Get quiz questions to create comprehensive ID mapping
+    const questionMaps = await fetchQuizQuestions(credentials, courseId, quizId);
 
-    // STEP 2: Get quiz details to determine type
-    const quizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}`;
-    console.log(`Fetching quiz details: ${quizUrl}`);
-
-    const quizResponse = await fetch(quizUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${canvas_access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!quizResponse.ok) {
-      const errorText = await quizResponse.text();
-      console.error(`Canvas API error fetching quiz: ${quizResponse.status} - ${errorText}`);
-      
-      let errorMessage = `Canvas API returned ${quizResponse.status}: ${quizResponse.statusText}`;
-      if (quizResponse.status === 401) {
-        errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
-      } else if (quizResponse.status === 404) {
-        errorMessage = 'Quiz not found or access denied.';
-      }
-
-      return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: quizResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const quizData = await quizResponse.json();
+    // Step 2: Get quiz details to determine type
+    const quizData = await fetchQuizDetails(credentials, courseId, quizId);
     const isAssignmentBasedQuiz = !!quizData.assignment_id;
     console.log(`Quiz type: ${isAssignmentBasedQuiz ? 'assignment-based (New Quizzes)' : 'classic Canvas quiz'}`);
 
-    let rawAnswers = [];
-    let answersSource = 'unknown';
-    let submissionData = null;
+    // Step 3: Try to get quiz submission data first (works for both types)
+    const { rawAnswers, submissionData, answersSource } = await extractFromSubmissionData(
+      credentials, courseId, quizId, submissionId, questionMaps
+    );
 
-    // STEP 3: Try to get quiz submission data first (works for both types)
-    console.log(`Fetching quiz submission data for all questions`);
-    
-    const submissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}?include[]=submission&include[]=quiz&include[]=user&include[]=submission_questions&include[]=submission_history`;
-    console.log(`Quiz submission URL: ${submissionUrl}`);
-
-    const submissionResponse = await fetch(submissionUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${canvas_access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
-
-    if (submissionResponse.ok) {
-      submissionData = await submissionResponse.json();
-      console.log(`Successfully fetched submission data`);
-      answersSource = 'quiz_submission';
-      
-      // Extract from submission_data - this contains individual question answers
-      if (submissionData.quiz_submission?.submission_data) {
-        console.log(`Processing submission_data with ${submissionData.quiz_submission.submission_data.length} items`);
-        
-        submissionData.quiz_submission.submission_data.forEach((item, index) => {
-          const position = index + 1;
-          const question = positionToQuestionMap.get(position) || questionIdMap.get(item.question_id?.toString());
-          const questionType = question?.question_type || 'unknown';
-          
-          console.log(`Processing item ${position}:`, {
-            question_id: item.question_id,
-            question_type: questionType,
-            answer_present: !!item.answer,
-            text_present: !!item.text,
-            answer_text_present: !!item.answer_text,
-            answer_type: typeof item.answer,
-            raw_item: item
-          });
-
-          // Extract answer using question type-specific logic
-          const answer = extractAnswerByType(item, questionType);
-
-          // Always include an entry for each question, even if no answer
-          rawAnswers.push({
-            submission_question_id: item.question_id || position,
-            original_question_id: item.question_id || position,
-            position_in_quiz: position,
-            answer: answer,
-            question_name: item.question_name,
-            question_text: item.question_text,
-            question_type: questionType,
-            points: item.points,
-            correct: item.correct,
-            source: 'submission_data'
-          });
-        });
-      }
-    } else {
-      console.log(`Quiz submission fetch failed: ${submissionResponse.status}`);
-    }
-
-    // STEP 4: Try the dedicated quiz submission questions endpoint
+    // Step 4: Try the dedicated quiz submission questions endpoint if no answers
     if (rawAnswers.length === 0) {
-      const questionsApiUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}/questions`;
-      console.log(`Trying dedicated questions endpoint: ${questionsApiUrl}`);
-
-      try {
-        const questionsApiResponse = await fetch(questionsApiUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        });
-
-        if (questionsApiResponse.ok) {
-          const questionsApiData = await questionsApiResponse.json();
-          const rawQuestions = questionsApiData.quiz_submission_questions || [];
-          console.log(`Questions API returned ${rawQuestions.length} questions`);
-          answersSource = 'questions_api';
-          
-          rawQuestions.forEach((questionData, index) => {
-            const question = questionIdMap.get(questionData.question_id?.toString()) || 
-                           questionIdMap.get(questionData.id?.toString());
-            const questionType = question?.question_type || questionData.question_type || 'unknown';
-            
-            console.log(`Processing questions API item ${index + 1}:`, {
-              question_id: questionData.question_id,
-              question_type: questionType,
-              has_answer: !!questionData.answer,
-              has_user_answer: !!questionData.user_answer,
-              raw_data: questionData
-            });
-
-            const answer = extractAnswerByType(questionData, questionType);
-            
-            rawAnswers.push({
-              submission_question_id: questionData.id,
-              original_question_id: questionData.question_id || questionData.id,
-              position_in_quiz: index + 1,
-              answer: answer,
-              question_name: questionData.question_name,
-              question_text: questionData.question_text,
-              question_type: questionType,
-              points: questionData.points,
-              correct: questionData.correct,
-              source: 'questions_api'
-            });
-          });
-        }
-      } catch (error) {
-        console.log(`Questions API failed: ${error.message}`);
-      }
+      const questionsApiAnswers = await extractFromQuestionsAPI(credentials, submissionId, questionMaps);
+      rawAnswers.push(...questionsApiAnswers);
     }
 
-    // STEP 5: For assignment-based quizzes, also try assignment submission as fallback
+    // Step 5: For assignment-based quizzes, also try assignment submission as fallback
     if (isAssignmentBasedQuiz && quizData.assignment_id && userId && rawAnswers.length === 0) {
       console.log(`Trying assignment submission as fallback for New Quizzes`);
       
-      const assignmentSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${quizData.assignment_id}/submissions/${userId}?include[]=submission_history&include[]=submission_comments`;
+      const assignmentSubmissionUrl = `${credentials.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${quizData.assignment_id}/submissions/${userId}?include[]=submission_history&include[]=submission_comments`;
       
       const assignmentResponse = await fetch(assignmentSubmissionUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${canvas_access_token}`,
+          'Authorization': `Bearer ${credentials.canvas_access_token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
@@ -346,9 +113,7 @@ serve(async (req) => {
 
       if (assignmentResponse.ok) {
         const assignmentData = await assignmentResponse.json();
-        answersSource = 'assignment_submission';
         
-        // For assignment-based quizzes with only body content, map to first question
         if (assignmentData.body) {
           console.log(`Found assignment submission body, mapping to first question`);
           
@@ -368,362 +133,19 @@ serve(async (req) => {
       }
     }
 
-    // STEP 6.5: Specific strategy for essay questions - try submission events and raw data
-    if (allQuestions.some(q => q.question_type === 'essay_question')) {
-      console.log('Found essay questions, trying additional extraction methods');
-      
-      // Try submission events endpoint which sometimes contains essay data
-      try {
-        const eventsUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/events`;
-        console.log(`Trying submission events for essay data: ${eventsUrl}`);
-        
-        const eventsResponse = await fetch(eventsUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
+    // Step 6: Specific strategy for essay questions
+    await extractEssayAnswers(credentials, courseId, quizId, submissionId, questionMaps, submissionData, rawAnswers);
 
-        if (eventsResponse.ok) {
-          const eventsData = await eventsResponse.json();
-          console.log('Events data:', JSON.stringify(eventsData, null, 2));
-          
-          if (eventsData.quiz_submission_events) {
-            eventsData.quiz_submission_events.forEach(event => {
-              if (event.event_type === 'question_answered' && event.event_data) {
-                const questionId = event.event_data.question_id;
-                const question = questionIdMap.get(questionId.toString());
-                
-                if (question && question.question_type === 'essay_question') {
-                  console.log(`Found essay answer in events for question ${questionId}`);
-                  
-                  // Check if we already have this answer
-                  const existingAnswer = rawAnswers.find(a => 
-                    a.original_question_id === questionId || 
-                    a.submission_question_id === questionId
-                  );
-                  
-                  const eventAnswer = event.event_data.answer || event.event_data.text || event.event_data.response;
-                  
-                  if (eventAnswer && (!existingAnswer || !existingAnswer.answer)) {
-                    if (existingAnswer) {
-                      existingAnswer.answer = eventAnswer;
-                      existingAnswer.source = 'submission_events';
-                    } else {
-                      rawAnswers.push({
-                        submission_question_id: questionId,
-                        original_question_id: questionId,
-                        position_in_quiz: allQuestions.findIndex(q => q.id === questionId) + 1,
-                        answer: eventAnswer,
-                        question_name: question.question_name,
-                        question_text: question.question_text,
-                        question_type: 'essay_question',
-                        points: null,
-                        correct: null,
-                        source: 'submission_events'
-                      });
-                    }
-                  }
-                }
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.log(`Submission events failed: ${error.message}`);
-      }
-
-      // Try quiz submission attempts endpoint for essay data
-      try {
-        const attemptNumber = submissionData?.quiz_submission?.attempt || 1;
-        const attemptUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/attempts/${attemptNumber}`;
-        console.log(`Trying specific attempt endpoint: ${attemptUrl}`);
-        
-        const attemptResponse = await fetch(attemptUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-
-        if (attemptResponse.ok) {
-          const attemptData = await attemptResponse.json();
-          console.log('Attempt data structure:', Object.keys(attemptData));
-          
-          if (attemptData.quiz_submission_questions) {
-            attemptData.quiz_submission_questions.forEach((q, index) => {
-              const question = questionIdMap.get(q.question_id?.toString()) || 
-                              questionIdMap.get(q.id?.toString());
-              
-              if (question && question.question_type === 'essay_question') {
-                console.log(`Processing essay question from attempt data:`, q);
-                
-                const existingAnswer = rawAnswers.find(a => 
-                  a.original_question_id === question.id || 
-                  a.submission_question_id === question.id
-                );
-                
-                const attemptAnswer = extractAnswerByType(q, 'essay_question');
-                
-                if (attemptAnswer && (!existingAnswer || !existingAnswer.answer)) {
-                  if (existingAnswer) {
-                    existingAnswer.answer = attemptAnswer;
-                    existingAnswer.source = 'attempt_data';
-                  } else {
-                    rawAnswers.push({
-                      submission_question_id: question.id,
-                      original_question_id: question.id,
-                      position_in_quiz: index + 1,
-                      answer: attemptAnswer,
-                      question_name: question.question_name,
-                      question_text: question.question_text,
-                      question_type: 'essay_question',
-                      points: q.points,
-                      correct: q.correct,
-                      source: 'attempt_data'
-                    });
-                  }
-                }
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.log(`Attempt endpoint failed: ${error.message}`);
-      }
-
-      // Final check: try raw Canvas quiz data endpoint
-      try {
-        const rawQuizUrl = `${canvas_instance_url}/api/v1/quiz_submissions/${submissionId}?include[]=submission&include[]=quiz&include[]=user`;
-        console.log(`Trying raw quiz submission endpoint: ${rawQuizUrl}`);
-        
-        const rawQuizResponse = await fetch(rawQuizUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-
-        if (rawQuizResponse.ok) {
-          const rawQuizData = await rawQuizResponse.json();
-          console.log('Raw quiz data structure:', Object.keys(rawQuizData));
-          
-          // Check if submission data exists in this format
-          if (rawQuizData.quiz_submissions && rawQuizData.quiz_submissions[0]) {
-            const rawSubmission = rawQuizData.quiz_submissions[0];
-            
-            if (rawSubmission.submission_data) {
-              console.log('Found submission_data in raw quiz response');
-              
-              rawSubmission.submission_data.forEach((item, index) => {
-                const question = positionToQuestionMap.get(index + 1) || 
-                                questionIdMap.get(item.question_id?.toString());
-                
-                if (question && question.question_type === 'essay_question') {
-                  const existingAnswer = rawAnswers.find(a => 
-                    a.original_question_id === question.id
-                  );
-                  
-                  const rawAnswer = extractAnswerByType(item, 'essay_question');
-                  
-                  if (rawAnswer && (!existingAnswer || !existingAnswer.answer)) {
-                    console.log(`Found essay answer in raw data for question ${question.id}`);
-                    
-                    if (existingAnswer) {
-                      existingAnswer.answer = rawAnswer;
-                      existingAnswer.source = 'raw_quiz_data';
-                    } else {
-                      rawAnswers.push({
-                        submission_question_id: question.id,
-                        original_question_id: question.id,
-                        position_in_quiz: index + 1,
-                        answer: rawAnswer,
-                        question_name: question.question_name,
-                        question_text: question.question_text,
-                        question_type: 'essay_question',
-                        points: item.points,
-                        correct: item.correct,
-                        source: 'raw_quiz_data'
-                      });
-                    }
-                  }
-                }
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.log(`Raw quiz endpoint failed: ${error.message}`);
-      }
+    // Step 7: Try submission history for additional data
+    if (submissionData) {
+      await processSubmissionHistory(submissionData, questionMaps, rawAnswers);
     }
 
-    // STEP 6: Try submission history for additional essay/matching data
-    if (submissionResponse.ok) {
-      try {
-        if (submissionData.quiz_submission?.submission_history && Array.isArray(submissionData.quiz_submission.submission_history)) {
-          console.log(`Checking submission history for additional answer data`);
-          
-          const latestHistory = submissionData.quiz_submission.submission_history[submissionData.quiz_submission.submission_history.length - 1];
-          
-          if (latestHistory?.submission_data) {
-            latestHistory.submission_data.forEach((historyItem: any, index: number) => {
-              const position = index + 1;
-              const question = positionToQuestionMap.get(position) || questionIdMap.get(historyItem.question_id?.toString());
-              const questionType = question?.question_type || 'unknown';
-              
-              // Check if we already have this answer from a better source
-              const existingAnswer = rawAnswers.find(a => 
-                a.original_question_id === historyItem.question_id || 
-                a.position_in_quiz === position
-              );
-              
-              if (!existingAnswer || !existingAnswer.answer) {
-                console.log(`Found additional answer in history for question ${historyItem.question_id} (${questionType})`);
-                
-                const answer = extractAnswerByType(historyItem, questionType);
-                
-                if (existingAnswer) {
-                  // Update existing answer
-                  existingAnswer.answer = answer;
-                  existingAnswer.source = 'submission_history';
-                } else {
-                  // Add new answer
-                  rawAnswers.push({
-                    submission_question_id: historyItem.question_id || position,
-                    original_question_id: historyItem.question_id || position,
-                    position_in_quiz: position,
-                    answer: answer,
-                    question_name: historyItem.question_name,
-                    question_text: historyItem.question_text,
-                    question_type: questionType,
-                    points: historyItem.points,
-                    correct: historyItem.correct,
-                    source: 'submission_history'
-                  });
-                }
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.log(`Failed to process submission history: ${error.message}`);
-      }
-    }
+    // Step 8: Map raw answers to actual questions
+    const mappedAnswers = mapAnswersToQuestions(rawAnswers, questionMaps);
 
-    // STEP 7: Map raw answers to actual questions
-    const mappedAnswers = [];
-    
-    console.log(`Starting answer mapping process with ${rawAnswers.length} raw answers`);
-    
-    rawAnswers.forEach((rawAnswer, index) => {
-      let matchedQuestion = null;
-      let mappingStrategy = 'none';
-      
-      // Strategy 1: Direct question ID match
-      matchedQuestion = questionIdMap.get(rawAnswer.original_question_id.toString());
-      if (matchedQuestion) {
-        mappingStrategy = 'direct_id';
-      }
-      
-      // Strategy 2: Position-based match
-      if (!matchedQuestion) {
-        matchedQuestion = positionToQuestionMap.get(rawAnswer.position_in_quiz);
-        if (matchedQuestion) {
-          mappingStrategy = 'position_based';
-        }
-      }
-      
-      // Strategy 3: Try submission question ID
-      if (!matchedQuestion) {
-        matchedQuestion = questionIdMap.get(rawAnswer.submission_question_id.toString());
-        if (matchedQuestion) {
-          mappingStrategy = 'submission_id';
-        }
-      }
-
-      if (matchedQuestion) {
-        console.log(`Successfully mapped answer ${index + 1} to question ${matchedQuestion.id} (${matchedQuestion.question_name}) using ${mappingStrategy}`);
-        
-        mappedAnswers.push({
-          id: matchedQuestion.id,
-          question_id: matchedQuestion.id,
-          answer: rawAnswer.answer,
-          question_name: matchedQuestion.question_name,
-          question_text: matchedQuestion.question_text,
-          question_type: matchedQuestion.question_type,
-          points: rawAnswer.points,
-          correct: rawAnswer.correct,
-          source: rawAnswer.source,
-          mapping_strategy: mappingStrategy
-        });
-      } else {
-        console.log(`Could not map answer ${index + 1} for submission question ${rawAnswer.submission_question_id}`);
-        
-        // Include unmapped answers with their original IDs
-        mappedAnswers.push({
-          id: rawAnswer.submission_question_id,
-          question_id: rawAnswer.submission_question_id,
-          answer: rawAnswer.answer,
-          question_name: rawAnswer.question_name || 'Unknown Question',
-          question_text: rawAnswer.question_text || 'Question text not available',
-          question_type: rawAnswer.question_type || 'unknown',
-          points: rawAnswer.points,
-          correct: rawAnswer.correct,
-          source: rawAnswer.source,
-          mapping_strategy: 'unmapped'
-        });
-      }
-    });
-
-    // STEP 8: Ensure we have entries for ALL questions, even if no answers
-    const finalAnswers = [];
-    const answersMap = new Map();
-    
-    // First, add all mapped answers
-    mappedAnswers.forEach(answer => {
-      const key = answer.question_id.toString();
-      const hasContent = answer.answer && 
-                        answer.answer !== null && 
-                        answer.answer !== undefined && 
-                        answer.answer !== '' && 
-                        answer.answer.toString().trim() !== '';
-      
-      if (!answersMap.has(key) || (hasContent && !answersMap.get(key).hasContent)) {
-        answersMap.set(key, { ...answer, hasContent });
-      }
-    });
-
-    // Then, ensure all questions have entries (even if no answer)
-    allQuestions.forEach(question => {
-      const key = question.id.toString();
-      if (!answersMap.has(key)) {
-        console.log(`No answer found for question ${question.id} (${question.question_type}), creating empty entry`);
-        answersMap.set(key, {
-          id: question.id,
-          question_id: question.id,
-          answer: null,
-          question_name: question.question_name,
-          question_text: question.question_text,
-          question_type: question.question_type,
-          points: null,
-          correct: null,
-          source: 'no_answer',
-          mapping_strategy: 'question_placeholder',
-          hasContent: false
-        });
-      }
-    });
-
-    // Convert to final array
-    Array.from(answersMap.values()).forEach(({ hasContent, ...answer }) => {
-      finalAnswers.push(answer);
-    });
+    // Step 9: Ensure we have entries for ALL questions, even if no answers
+    const finalAnswers = ensureAllQuestionsHaveEntries(mappedAnswers, questionMaps.allQuestions);
 
     console.log(`Final results: ${finalAnswers.length} total answers (including empty ones)`);
     finalAnswers.forEach(answer => {
@@ -738,14 +160,14 @@ serve(async (req) => {
         user_id: userId,
         answers: finalAnswers,
         debug_info: {
-          total_questions: allQuestions.length,
+          total_questions: questionMaps.allQuestions.length,
           total_raw_answers: rawAnswers.length,
           total_final_answers: finalAnswers.length,
           answers_with_content: finalAnswers.filter(a => a.answer && a.answer.toString().trim() !== '').length,
           answers_source: answersSource,
           is_assignment_based_quiz: isAssignmentBasedQuiz,
           assignment_id: quizData.assignment_id,
-          question_mapping_created: questionIdMap.size > 0,
+          question_mapping_created: questionMaps.questionIdMap.size > 0,
           raw_answers_summary: rawAnswers.map(a => ({
             submission_q_id: a.submission_question_id,
             original_q_id: a.original_question_id,
