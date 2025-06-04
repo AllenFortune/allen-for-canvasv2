@@ -30,6 +30,22 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
     gradesCount: grades.length
   });
 
+  // Helper function to get user's last name for sorting
+  const getUserLastName = (user: DiscussionEntry['user']) => {
+    if (!user || !user.name) {
+      return 'Unknown User';
+    }
+    
+    // Split the name and get the last part as the last name
+    const nameParts = user.name.trim().split(' ');
+    if (nameParts.length > 1) {
+      return nameParts[nameParts.length - 1];
+    }
+    
+    // If there's only one name part, use it as both first and last
+    return nameParts[0];
+  };
+
   // Group entries by user - ALL entries are available for context
   const userEntries = entries.reduce((acc, entry) => {
     if (!acc[entry.user_id]) {
@@ -42,7 +58,13 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
     return acc;
   }, {} as Record<number, { user: DiscussionEntry['user']; entries: DiscussionEntry[] }>);
 
-  const users = Object.values(userEntries);
+  // Sort users alphabetically by last name (case-insensitive) - SAME SORTING AS SIDEBAR
+  const users = Object.values(userEntries).sort((a, b) => {
+    const lastNameA = getUserLastName(a.user).toLowerCase();
+    const lastNameB = getUserLastName(b.user).toLowerCase();
+    return lastNameA.localeCompare(lastNameB);
+  });
+
   const currentUser = users[currentUserIndex];
 
   console.log('Processed user data:', {
@@ -82,6 +104,7 @@ const GradeDiscussionContent: React.FC<GradeDiscussionContentProps> = ({
             setActiveTab={setActiveTab}
             currentUserIndex={currentUserIndex}
             onUserChange={setCurrentUserIndex}
+            sortedUsers={users}
           />
         </div>
         

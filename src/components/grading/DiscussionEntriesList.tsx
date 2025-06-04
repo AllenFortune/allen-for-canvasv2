@@ -14,6 +14,7 @@ interface DiscussionEntriesListProps {
   setActiveTab: (tab: string) => void;
   currentUserIndex: number;
   onUserChange: (index: number) => void;
+  sortedUsers: { user: DiscussionEntry['user']; entries: DiscussionEntry[] }[];
 }
 
 const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
@@ -23,10 +24,9 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
   activeTab,
   setActiveTab,
   currentUserIndex,
-  onUserChange
+  onUserChange,
+  sortedUsers
 }) => {
-  const users = Object.values(userEntries);
-
   const getGradeStatusBadge = (userId: number) => {
     const grade = grades.find(g => g.user_id === userId);
     if (grade && grade.grade !== null) {
@@ -88,37 +88,32 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
     let filteredUsers;
     
     if (activeTab === 'all') {
-      filteredUsers = users;
+      filteredUsers = sortedUsers;
     } else if (activeTab === 'graded') {
-      filteredUsers = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null));
+      filteredUsers = sortedUsers.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null));
     } else if (activeTab === 'ungraded') {
-      filteredUsers = users.filter(u => !grades.find(g => g.user_id === u.user.id && g.grade !== null));
+      filteredUsers = sortedUsers.filter(u => !grades.find(g => g.user_id === u.user.id && g.grade !== null));
     } else {
-      filteredUsers = users;
+      filteredUsers = sortedUsers;
     }
 
-    // Sort alphabetically by last name (case-insensitive)
-    return filteredUsers.sort((a, b) => {
-      const lastNameA = getUserLastName(a.user).toLowerCase();
-      const lastNameB = getUserLastName(b.user).toLowerCase();
-      return lastNameA.localeCompare(lastNameB);
-    });
+    return filteredUsers;
   };
 
   const filteredUsers = filterUsers();
 
-  const gradedCount = users.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null)).length;
-  const ungradedCount = users.length - gradedCount;
+  const gradedCount = sortedUsers.filter(u => grades.find(g => g.user_id === u.user.id && g.grade !== null)).length;
+  const ungradedCount = sortedUsers.length - gradedCount;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Student Entries ({users.length})</CardTitle>
+        <CardTitle>Student Entries ({sortedUsers.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">All ({users.length})</TabsTrigger>
+            <TabsTrigger value="all">All ({sortedUsers.length})</TabsTrigger>
             <TabsTrigger value="ungraded">
               Ungraded ({ungradedCount})
             </TabsTrigger>
@@ -135,15 +130,16 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
             </div>
           ) : (
             filteredUsers.map((userEntry, index) => {
-              const originalIndex = users.findIndex(u => u.user.id === userEntry.user.id);
-              const isSelected = originalIndex === currentUserIndex;
+              // Find the index in the sortedUsers array (which matches the main component's array)
+              const sortedIndex = sortedUsers.findIndex(u => u.user.id === userEntry.user.id);
+              const isSelected = sortedIndex === currentUserIndex;
               const grade = grades.find(g => g.user_id === userEntry.user.id);
               const scoreDisplay = getScoreDisplay(grade);
               
               return (
                 <button
                   key={userEntry.user.id}
-                  onClick={() => onUserChange(originalIndex)}
+                  onClick={() => onUserChange(sortedIndex)}
                   className={`w-full text-left p-3 rounded-md border transition-colors ${
                     isSelected 
                       ? 'bg-blue-50 border-blue-300' 
