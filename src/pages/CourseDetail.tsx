@@ -36,6 +36,11 @@ interface Discussion {
   discussion_type: string;
   unread_count: number;
   todo_date: string | null;
+  needs_grading_count?: number;
+  graded_count?: number;
+  total_submissions?: number;
+  assignment_id?: number;
+  is_assignment?: boolean;
 }
 
 interface Quiz {
@@ -167,7 +172,8 @@ const CourseDetail = () => {
     }
   };
 
-  const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
+  const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0) + 
+                           discussions.reduce((total, discussion) => total + (discussion.needs_grading_count || 0), 0);
   const totalUnread = discussions.reduce((total, discussion) => total + discussion.unread_count, 0);
 
   if (loading) {

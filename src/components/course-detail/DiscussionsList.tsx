@@ -13,6 +13,9 @@ interface Discussion {
   todo_date: string | null;
   assignment_id?: number;
   is_assignment?: boolean;
+  needs_grading_count?: number;
+  graded_count?: number;
+  total_submissions?: number;
 }
 
 interface DiscussionsListProps {
@@ -57,6 +60,57 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
     }
   };
 
+  const getGradingStatusIndicator = (discussion: Discussion) => {
+    if (!discussion.is_assignment) {
+      return null;
+    }
+
+    const needsGrading = discussion.needs_grading_count || 0;
+    const graded = discussion.graded_count || 0;
+
+    if (needsGrading > 0) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
+          {needsGrading}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const getGradingStatusText = (discussion: Discussion) => {
+    if (!discussion.is_assignment) {
+      return null;
+    }
+
+    const needsGrading = discussion.needs_grading_count || 0;
+    const graded = discussion.graded_count || 0;
+    const total = discussion.total_submissions || 0;
+
+    if (needsGrading > 0) {
+      return (
+        <span className="text-red-600 font-medium">
+          {needsGrading} need{needsGrading !== 1 ? '' : 's'} grading
+        </span>
+      );
+    } else if (graded > 0) {
+      return (
+        <span className="text-green-600 font-medium">
+          {graded} graded
+        </span>
+      );
+    } else if (total === 0) {
+      return (
+        <span className="text-gray-500">
+          No submissions yet
+        </span>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -76,21 +130,13 @@ const DiscussionsList: React.FC<DiscussionsListProps> = ({
           <div className="space-y-4">
             {discussions.map(discussion => (
               <div key={discussion.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 relative">
-                {discussion.unread_count > 0 && (
-                  <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
-                    {discussion.unread_count}
-                  </div>
-                )}
+                {getGradingStatusIndicator(discussion)}
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{discussion.title}</h3>
                   <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
                     <span>Posted: {formatDate(discussion.posted_at)}</span>
                     <span className="capitalize">{discussion.discussion_type || 'Discussion'}</span>
-                    {discussion.unread_count > 0 && (
-                      <span className="text-red-600 font-medium">
-                        {discussion.unread_count} unread
-                      </span>
-                    )}
+                    {getGradingStatusText(discussion)}
                     {discussion.is_assignment && (
                       <span className="text-blue-600 font-medium">Graded</span>
                     )}

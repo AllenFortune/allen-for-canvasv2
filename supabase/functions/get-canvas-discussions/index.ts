@@ -147,22 +147,74 @@ serve(async (req) => {
     console.log(`Successfully fetched ${discussionsData.length} discussions from Canvas`);
     console.log('Sample discussion data:', discussionsData[0] ? JSON.stringify(discussionsData[0], null, 2) : 'No discussions found');
 
-    // Transform the data to match our expected format
-    const transformedDiscussions = discussionsData.map((discussion: any) => ({
-      id: discussion.id,
-      title: discussion.title,
-      posted_at: discussion.posted_at,
-      discussion_type: discussion.discussion_type || 'discussion',
-      unread_count: discussion.unread_count || 0,
-      todo_date: discussion.todo_date,
-      assignment_id: discussion.assignment_id,
-      is_assignment: !!discussion.assignment_id
-    }));
+    // For graded discussions, fetch grading data
+    const enhancedDiscussions = await Promise.all(
+      discussionsData.map(async (discussion: any) => {
+        const transformedDiscussion = {
+          id: discussion.id,
+          title: discussion.title,
+          posted_at: discussion.posted_at,
+          discussion_type: discussion.discussion_type || 'discussion',
+          unread_count: discussion.unread_count || 0,
+          todo_date: discussion.todo_date,
+          assignment_id: discussion.assignment_id,
+          is_assignment: !!discussion.assignment_id
+        };
+
+        // If this is a graded discussion, fetch grading information
+        if (discussion.assignment_id) {
+          try {
+            const gradingUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${discussion.assignment_id}/submissions?include[]=user&per_page=100`;
+            
+            const gradingResponse = await fetch(gradingUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${canvas_access_token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+            });
+
+            if (gradingResponse.ok) {
+              const submissions = await gradingResponse.json();
+              
+              // Count submissions that need grading vs are graded
+              let needsGrading = 0;
+              let graded = 0;
+              let totalSubmissions = 0;
+
+              submissions.forEach((submission: any) => {
+                // Only count submissions that have been submitted (not just enrolled students)
+                if (submission.submitted_at) {
+                  totalSubmissions++;
+                  if (submission.workflow_state === 'graded' && submission.score !== null) {
+                    graded++;
+                  } else {
+                    needsGrading++;
+                  }
+                }
+              });
+
+              return {
+                ...transformedDiscussion,
+                needs_grading_count: needsGrading,
+                graded_count: graded,
+                total_submissions: totalSubmissions
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching grading data for discussion ${discussion.id}:`, error);
+          }
+        }
+
+        return transformedDiscussion;
+      })
+    );
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        discussions: transformedDiscussions
+        discussions: enhancedDiscussions
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
