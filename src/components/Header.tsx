@@ -1,10 +1,58 @@
+
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UserProfile {
+  full_name?: string;
+}
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const getFirstName = (fullName?: string) => {
+    if (!fullName) return null;
+    return fullName.split(' ')[0];
+  };
+
+  const getDisplayName = () => {
+    if (profileLoading) return "...";
+    
+    const firstName = getFirstName(profile?.full_name);
+    return firstName || user?.email || "User";
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+
+      setProfileLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleAuthAction = async () => {
     if (user) {
@@ -66,7 +114,7 @@ const Header = () => {
           {user ? (
             <>
               <span className="text-sm text-gray-600 hidden sm:inline">
-                Welcome, {user.email}
+                Welcome, {getDisplayName()}
               </span>
               <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                 Dashboard
