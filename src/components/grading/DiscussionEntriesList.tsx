@@ -36,13 +36,16 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
   };
 
   const getMaxPoints = () => {
-    // First check if discussion has points_possible directly
-    if (discussion.points_possible && discussion.points_possible > 0) {
+    console.log('Discussion points_possible:', discussion.points_possible);
+    console.log('Assignment points_possible:', discussion.assignment?.points_possible);
+    
+    // First check if discussion has points_possible directly (including 0)
+    if (discussion.points_possible !== null && discussion.points_possible !== undefined) {
       return discussion.points_possible;
     }
     
-    // Then check if the linked assignment has points_possible
-    if (discussion.assignment?.points_possible && discussion.assignment.points_possible > 0) {
+    // Then check if the linked assignment has points_possible (including 0)
+    if (discussion.assignment?.points_possible !== null && discussion.assignment?.points_possible !== undefined) {
       return discussion.assignment.points_possible;
     }
     
@@ -81,6 +84,7 @@ const DiscussionEntriesList: React.FC<DiscussionEntriesListProps> = ({
   };
 
   const maxPoints = getMaxPoints();
+  console.log('Calculated maxPoints:', maxPoints);
 
   return (
     <Card>
