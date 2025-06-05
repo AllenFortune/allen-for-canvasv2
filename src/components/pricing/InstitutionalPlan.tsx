@@ -1,9 +1,12 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Check, Mail } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const InstitutionalPlan: React.FC = () => {
+  const navigate = useNavigate();
+
   const institutionalPlan = {
     name: "Institutional Plan",
     description: "For schools, districts, and large organizations",
@@ -18,6 +21,10 @@ const InstitutionalPlan: React.FC = () => {
       "Custom integrations",
       "Priority support & SLA"
     ]
+  };
+
+  const handleInquiryClick = () => {
+    navigate('/institutional-inquiry');
   };
 
   return (
@@ -46,13 +53,13 @@ const InstitutionalPlan: React.FC = () => {
           </p>
           <Button 
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 text-lg"
-            onClick={() => window.location.href = 'mailto:sales@allen-ai.com?subject=Institutional Plan Inquiry'}
+            onClick={handleInquiryClick}
           >
-            <Mail className="w-5 h-5 mr-2" />
-            Contact for Pricing
+            <ArrowRight className="w-5 h-5 mr-2" />
+            Request Custom Quote
           </Button>
           <p className="text-sm text-gray-500 mt-3">
-            Get a custom quote within 24 hours
+            Get a personalized quote within 24 hours
           </p>
         </div>
       </div>
