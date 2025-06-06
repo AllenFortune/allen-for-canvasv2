@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
+import { useFavoriteCourses } from './useFavoriteCourses';
 
 interface Course {
   id: number;
@@ -15,6 +16,7 @@ interface Course {
 
 export const useCourses = () => {
   const { user } = useAuth();
+  const { favoriteCourses } = useFavoriteCourses();
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +58,12 @@ export const useCourses = () => {
       filtered = courses.filter(course => course.workflow_state === 'available');
     } else if (filter === 'unpublished') {
       filtered = courses.filter(course => course.workflow_state === 'unpublished');
+    } else if (filter === 'favorites') {
+      filtered = courses.filter(course => favoriteCourses.includes(course.id));
     }
     
     setFilteredCourses(filtered);
-  }, [filter, courses]);
+  }, [filter, courses, favoriteCourses]);
 
   const handleRefresh = () => {
     setRefreshing(true);

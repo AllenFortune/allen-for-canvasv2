@@ -27,6 +27,7 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Courses</SelectItem>
+            <SelectItem value="favorites">Favorites</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="unpublished">Unpublished</SelectItem>
           </SelectContent>

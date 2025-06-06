@@ -3,7 +3,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Users } from 'lucide-react';
+import { Clock, Users, Star } from 'lucide-react';
+import { useFavoriteCourses } from '@/hooks/useFavoriteCourses';
 
 interface Course {
   id: number;
@@ -21,6 +22,9 @@ interface CourseCardProps {
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }) => {
+  const { toggleFavorite, isFavorite } = useFavoriteCourses();
+  const isCourseFavorite = isFavorite(course.id);
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No dates set';
     const date = new Date(dateString);
@@ -56,6 +60,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     }
   };
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(course.id);
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow relative">
       {needsGradingCount > 0 && (
@@ -66,9 +76,24 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{course.name}</CardTitle>
-          <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state)}`}>
-            {getStatusLabel(course.workflow_state)}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleFavoriteClick}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title={isCourseFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star 
+                className={`w-5 h-5 ${
+                  isCourseFavorite 
+                    ? 'text-yellow-500 fill-yellow-500' 
+                    : 'text-gray-400 hover:text-yellow-500'
+                }`}
+              />
+            </button>
+            <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state)}`}>
+              {getStatusLabel(course.workflow_state)}
+            </span>
+          </div>
         </div>
         <p className="text-gray-600 text-sm">{course.course_code}</p>
       </CardHeader>
