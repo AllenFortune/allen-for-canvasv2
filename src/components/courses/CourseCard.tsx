@@ -3,8 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, Star } from 'lucide-react';
-import { useFavoriteCourses } from '@/hooks/useFavoriteCourses';
+import { Clock, Users, Info } from 'lucide-react';
 
 interface Course {
   id: number;
@@ -22,9 +21,6 @@ interface CourseCardProps {
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }) => {
-  const { toggleFavorite, isFavorite } = useFavoriteCourses();
-  const isCourseFavorite = isFavorite(course.id);
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No dates set';
     const date = new Date(dateString);
@@ -60,12 +56,6 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     }
   };
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleFavorite(course.id);
-  };
-
   return (
     <Card className="hover:shadow-md transition-shadow relative">
       {needsGradingCount > 0 && (
@@ -77,19 +67,6 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{course.name}</CardTitle>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleFavoriteClick}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-              title={isCourseFavorite ? "Remove from favorites" : "Add to favorites"}
-            >
-              <Star 
-                className={`w-5 h-5 ${
-                  isCourseFavorite 
-                    ? 'text-yellow-500 fill-yellow-500' 
-                    : 'text-gray-400 hover:text-yellow-500'
-                }`}
-              />
-            </button>
             <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state)}`}>
               {getStatusLabel(course.workflow_state)}
             </span>
@@ -106,6 +83,10 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
           <div className="flex items-center text-gray-600 text-sm">
             <Users className="w-4 h-4 mr-2" />
             {course.total_students > 0 ? `${course.total_students} students` : 'Unknown students'}
+          </div>
+          <div className="flex items-start gap-2 text-gray-500 text-xs bg-blue-50 p-2 rounded">
+            <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <span>To manage favorites, use the star icon in your Canvas course list</span>
           </div>
           <Link to={`/courses/${course.id}`}>
             <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white mt-4">

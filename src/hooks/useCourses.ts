@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
-import { useFavoriteCourses } from './useFavoriteCourses';
 
 interface Course {
   id: number;
@@ -16,8 +15,8 @@ interface Course {
 
 export const useCourses = () => {
   const { user } = useAuth();
-  const { favoriteCourses } = useFavoriteCourses();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [favoriteCourses, setFavoriteCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,8 +46,29 @@ export const useCourses = () => {
     }
   };
 
+  const fetchFavoriteCourses = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-canvas-favorite-courses', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data.courses) {
+        setFavoriteCourses(data.courses);
+      }
+    } catch (error) {
+      console.error('Error fetching favorite courses:', error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchFavoriteCourses();
   }, [user]);
 
   useEffect(() => {
@@ -59,7 +79,7 @@ export const useCourses = () => {
     } else if (filter === 'unpublished') {
       filtered = courses.filter(course => course.workflow_state === 'unpublished');
     } else if (filter === 'favorites') {
-      filtered = courses.filter(course => favoriteCourses.includes(course.id));
+      filtered = favoriteCourses;
     }
     
     setFilteredCourses(filtered);
@@ -68,6 +88,7 @@ export const useCourses = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchCourses();
+    fetchFavoriteCourses();
   };
 
   return {
