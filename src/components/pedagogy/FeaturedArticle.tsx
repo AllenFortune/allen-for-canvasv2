@@ -8,6 +8,7 @@ import DiverFrameworkArticle from './DiverFrameworkArticle';
 import AssessmentArticle from './AssessmentArticle';
 import PromptEngineeringArticle from './PromptEngineeringArticle';
 import DigitalCitizenshipArticle from './DigitalCitizenshipArticle';
+import AIAssistedAssessmentArticle from './AIAssistedAssessmentArticle';
 
 const FeaturedArticle = () => {
   const [showFullArticle, setShowFullArticle] = useState<string | null>(null);
@@ -62,6 +63,16 @@ const FeaturedArticle = () => {
       category: "Classroom Management",
       tags: ["Digital Citizenship", "AI Literacy", "Ethics", "Critical Thinking"],
       featured: true
+    },
+    {
+      id: 'ai-assisted-assessment',
+      title: "AI-Assisted Assessment: Beyond Auto-Grading",
+      excerpt: "In the evolving landscape of educational technology, AI-assisted assessment has emerged as a powerful tool with potential far beyond simply automating the grading process. While auto-grading multiple-choice questions has been around for decades, today's AI tools offer sophisticated capabilities that can transform how we approach student feedback, formative assessment, and the entire evaluation process.",
+      readTime: "8 min read",
+      author: "A.L.L.E.N. Educational Team",
+      category: "Assessment & Feedback",
+      tags: ["AI Integration", "Assessment Methods", "Formative Assessment", "Educational Technology"],
+      featured: true
     }
   ];
 
@@ -83,6 +94,10 @@ const FeaturedArticle = () => {
 
   if (showFullArticle === 'digital-citizenship') {
     return <DigitalCitizenshipArticle onBack={() => setShowFullArticle(null)} />;
+  }
+
+  if (showFullArticle === 'ai-assisted-assessment') {
+    return <AIAssistedAssessmentArticle onBack={() => setShowFullArticle(null)} />;
   }
 
   return (
