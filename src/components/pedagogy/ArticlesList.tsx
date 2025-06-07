@@ -7,13 +7,6 @@ import { Clock, Plus } from 'lucide-react';
 const ArticlesList = () => {
   const comingSoonArticles = [
     {
-      title: "Prompt Engineering for Educators: Crafting Effective AI Conversations",
-      excerpt: "Learn how to write prompts that generate meaningful educational content and foster student critical thinking.",
-      category: "AI Implementation",
-      readTime: "6 min read",
-      comingSoon: true
-    },
-    {
       title: "Building Digital Citizenship in the AI Era",
       excerpt: "Preparing students to be responsible digital citizens and critical consumers of AI-generated content.",
       category: "Classroom Management",

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import ArticleContent from './ArticleContent';
 import DiverFrameworkArticle from './DiverFrameworkArticle';
 import AssessmentArticle from './AssessmentArticle';
+import PromptEngineeringArticle from './PromptEngineeringArticle';
 
 const FeaturedArticle = () => {
   const [showFullArticle, setShowFullArticle] = useState<string | null>(null);
@@ -41,6 +42,16 @@ const FeaturedArticle = () => {
       category: "Assessment & Feedback",
       tags: ["AI Integration", "Assessment Methods", "Process Evaluation", "Academic Integrity"],
       featured: true
+    },
+    {
+      id: 'prompt-engineering',
+      title: "Prompt Engineering for Educators: Crafting Effective AI Conversations",
+      excerpt: "In today's AI-enhanced classroom, the quality of information you receive from AI tools depends largely on the quality of your prompts. Just as a well-crafted question leads students to deeper thinking, a skillfully engineered prompt guides AI toward more useful, accurate, and educationally valuable responses.",
+      readTime: "6 min read",
+      author: "A.L.L.E.N. Educational Team",
+      category: "AI Implementation",
+      tags: ["Prompt Engineering", "AI Implementation", "Teaching Strategies", "Digital Literacy"],
+      featured: true
     }
   ];
 
@@ -54,6 +65,10 @@ const FeaturedArticle = () => {
 
   if (showFullArticle === 'assessment-ai') {
     return <AssessmentArticle onBack={() => setShowFullArticle(null)} />;
+  }
+
+  if (showFullArticle === 'prompt-engineering') {
+    return <PromptEngineeringArticle onBack={() => setShowFullArticle(null)} />;
   }
 
   return (
