@@ -13,6 +13,8 @@ interface SubscriptionData {
 interface UsageData {
   submissions_used: number;
   limit: number;
+  purchased_submissions: number;
+  total_limit: number;
   percentage: number;
 }
 
@@ -52,7 +54,7 @@ export const useSubscription = () => {
       console.log('Subscription data received:', data);
       setSubscription(data);
       
-      // Get current usage
+      // Get current usage including purchased submissions
       await getCurrentUsage();
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -70,17 +72,33 @@ export const useSubscription = () => {
     if (!user?.email) return;
 
     try {
-      const { data, error } = await supabase.rpc('get_current_month_usage', {
+      // Get current month usage
+      const { data: usageData, error: usageError } = await supabase.rpc('get_current_month_usage', {
         user_email: user.email
       });
 
-      if (error) throw error;
+      if (usageError) throw usageError;
 
-      const submissions_used = data || 0;
-      const limit = subscription ? PLAN_LIMITS[subscription.subscription_tier as keyof typeof PLAN_LIMITS] || 10 : 10;
-      const percentage = (submissions_used / limit) * 100;
+      // Get purchased submissions
+      const { data: purchasedData, error: purchasedError } = await supabase.rpc('get_purchased_submissions', {
+        user_email: user.email
+      });
 
-      setUsage({ submissions_used, limit, percentage });
+      if (purchasedError) throw purchasedError;
+
+      const submissions_used = usageData || 0;
+      const purchased_submissions = purchasedData || 0;
+      const base_limit = subscription ? PLAN_LIMITS[subscription.subscription_tier as keyof typeof PLAN_LIMITS] || 10 : 10;
+      const total_limit = base_limit + purchased_submissions;
+      const percentage = (submissions_used / total_limit) * 100;
+
+      setUsage({ 
+        submissions_used, 
+        limit: base_limit,
+        purchased_submissions,
+        total_limit, 
+        percentage 
+      });
     } catch (error) {
       console.error('Error getting usage:', error);
     }
@@ -93,10 +111,10 @@ export const useSubscription = () => {
       // Check current usage first
       await getCurrentUsage();
       
-      if (usage && usage.submissions_used >= usage.limit) {
+      if (usage && usage.submissions_used >= usage.total_limit) {
         toast({
           title: "Usage Limit Reached",
-          description: `You've reached your monthly limit of ${usage.limit} submissions. Please upgrade your plan to continue grading.`,
+          description: `You've reached your monthly limit of ${usage.total_limit} submissions. Consider purchasing additional submissions or upgrading your plan.`,
           variant: "destructive",
         });
         return false;
@@ -114,7 +132,7 @@ export const useSubscription = () => {
         const newUsage = {
           ...usage,
           submissions_used: data,
-          percentage: (data / usage.limit) * 100
+          percentage: (data / usage.total_limit) * 100
         };
         setUsage(newUsage);
       }
@@ -163,6 +181,37 @@ export const useSubscription = () => {
     }
   };
 
+  const purchaseAdditionalSubmissions = async () => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to purchase additional submissions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-submission-purchase', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error creating submission purchase:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create purchase session",
+        variant: "destructive",
+      });
+    }
+  };
+
   const openCustomerPortal = async () => {
     if (!session?.access_token) return;
 
@@ -202,7 +251,8 @@ export const useSubscription = () => {
     checkSubscription,
     incrementUsage,
     createCheckout,
+    purchaseAdditionalSubmissions,
     openCustomerPortal,
-    canGrade: usage ? usage.submissions_used < usage.limit : false
+    canGrade: usage ? usage.submissions_used < usage.total_limit : false
   };
 };

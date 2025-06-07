@@ -42,6 +42,42 @@ export type Database = {
         }
         Relationships: []
       }
+      submission_purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          email: string
+          id: string
+          status: string
+          stripe_session_id: string | null
+          submissions_purchased: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          submissions_purchased?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          submissions_purchased?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
@@ -115,6 +151,14 @@ export type Database = {
     Functions: {
       get_current_month_usage: {
         Args: { user_email: string }
+        Returns: number
+      }
+      get_purchased_submissions: {
+        Args: { user_email: string }
+        Returns: number
+      }
+      get_total_submission_limit: {
+        Args: { user_email: string; base_limit: number }
         Returns: number
       }
       increment_usage: {
