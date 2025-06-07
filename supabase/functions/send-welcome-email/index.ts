@@ -61,12 +61,31 @@ const handler = async (req: Request): Promise<Response> => {
                 Thank you for joining A.L.L.E.N.! We're excited to help you transform your grading experience with the power of AI.
               </p>
 
+              <!-- Complete Setup Guide Section -->
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center;">
+                <h3 style="color: #ffffff; margin: 0 0 15px 0; font-size: 20px;">📋 Complete Setup Guide</h3>
+                <p style="color: #f0f4ff; margin: 0 0 20px 0; font-size: 16px;">
+                  Follow our comprehensive step-by-step walkthrough to connect your Canvas account and start grading with AI assistance.
+                </p>
+                <a href="https://scribehow.com/shared/ALLEN_Setup_Guide_connecting_your_Canvas_account__vzd6vnM_RQ2o1gCqhUgtyw" 
+                   style="background-color: #ffffff; 
+                          color: #667eea; 
+                          text-decoration: none; 
+                          padding: 15px 30px; 
+                          border-radius: 6px; 
+                          font-weight: bold; 
+                          font-size: 16px; 
+                          display: inline-block;">
+                  Start Setup Walkthrough →
+                </a>
+              </div>
+
               <div style="background-color: #f8f9ff; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 18px;">🚀 Get Started in 3 Easy Steps:</h3>
+                <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 18px;">🚀 What You'll Learn in the Guide:</h3>
                 <ol style="margin: 0; padding-left: 20px;">
-                  <li style="margin-bottom: 10px;"><strong>Connect your Canvas LMS</strong> - Integrate with your existing Canvas instance</li>
-                  <li style="margin-bottom: 10px;"><strong>Import your courses</strong> - Access all your assignments and discussions</li>
-                  <li style="margin-bottom: 10px;"><strong>Start grading with AI</strong> - Get intelligent feedback suggestions instantly</li>
+                  <li style="margin-bottom: 10px;"><strong>Connect your Canvas LMS</strong> - Step-by-step integration with your Canvas instance</li>
+                  <li style="margin-bottom: 10px;"><strong>Import your courses</strong> - Access all your assignments and discussions seamlessly</li>
+                  <li style="margin-bottom: 10px;"><strong>Start grading with AI</strong> - Complete walkthrough of the grading process</li>
                 </ol>
               </div>
 
@@ -78,25 +97,11 @@ const handler = async (req: Request): Promise<Response> => {
                 <li style="margin-bottom: 8px;"><strong>Time Savings:</strong> Focus on meaningful feedback while AI handles initial review</li>
               </ul>
 
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://allen-for-canvas.lovable.app/canvas-setup" 
-                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                          color: #ffffff; 
-                          text-decoration: none; 
-                          padding: 15px 30px; 
-                          border-radius: 6px; 
-                          font-weight: bold; 
-                          font-size: 16px; 
-                          display: inline-block;">
-                  Connect Your Canvas LMS →
-                </a>
-              </div>
-
               <h3 style="color: #333; margin: 30px 0 15px 0; font-size: 20px;">Helpful Resources:</h3>
               <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                <p style="margin: 0 0 10px 0;"><strong><a href="https://allen-for-canvas.lovable.app/ai-pedagogy" style="color: #667eea; text-decoration: none;">📚 AI Pedagogy Hub</a></strong> - Learn best practices for AI in education</p>
-                <p style="margin: 0 0 10px 0;"><strong><a href="https://allen-for-canvas.lovable.app/ai-literacy" style="color: #667eea; text-decoration: none;">🎓 AI Literacy Resources</a></strong> - Understand AI's role in modern education</p>
-                <p style="margin: 0;"><strong><a href="https://allen-for-canvas.lovable.app/contact" style="color: #667eea; text-decoration: none;">💬 Contact Support</a></strong> - We're here to help with any questions</p>
+                <p style="margin: 0 0 10px 0;"><strong><a href="https://www.allengradeassist.com/ai-pedagogy" style="color: #667eea; text-decoration: none;">📚 AI Pedagogy Hub</a></strong> - Learn best practices for AI in education</p>
+                <p style="margin: 0 0 10px 0;"><strong><a href="https://www.allengradeassist.com/ai-literacy" style="color: #667eea; text-decoration: none;">🎓 AI Literacy Resources</a></strong> - Understand AI's role in modern education</p>
+                <p style="margin: 0;"><strong><a href="https://www.allengradeassist.com/contact" style="color: #667eea; text-decoration: none;">💬 Contact Support</a></strong> - We're here to help with any questions</p>
               </div>
 
               <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 25px 0;">
