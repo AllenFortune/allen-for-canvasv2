@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SubmissionPurchaseCard from "@/components/dashboard/SubmissionPurchaseCard";
+import SecurityStatusCard from "@/components/security/SecurityStatusCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -119,6 +120,9 @@ const Dashboard = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Submission Usage Card */}
               <SubmissionPurchaseCard />
+              
+              {/* Security Status Card */}
+              <SecurityStatusCard />
               
               {/* Courses Card */}
               <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">

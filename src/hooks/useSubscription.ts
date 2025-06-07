@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuditLog } from './useAuditLog';
 
 interface SubscriptionData {
   subscribed: boolean;
@@ -32,6 +33,7 @@ const PLAN_LIMITS = {
 
 export const useSubscription = () => {
   const { user, session } = useAuth();
+  const { logAction } = useAuditLog();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -150,6 +152,18 @@ export const useSubscription = () => {
           description: `You've reached your limit of ${usage.total_limit} submissions for this billing period. Consider purchasing additional submissions or upgrading your plan.`,
           variant: "destructive",
         });
+        
+        // Log the usage limit reached event
+        await logAction({
+          action: 'USAGE_LIMIT_REACHED',
+          table_name: 'usage_tracking',
+          new_values: {
+            current_usage: usage.submissions_used,
+            limit: usage.total_limit,
+            user_email: user.email
+          }
+        });
+        
         return false;
       }
 
@@ -160,6 +174,17 @@ export const useSubscription = () => {
       });
 
       if (error) throw error;
+
+      // Log usage increment
+      await logAction({
+        action: 'USAGE_INCREMENTED',
+        table_name: 'usage_tracking',
+        new_values: {
+          new_usage_count: data,
+          user_email: user.email,
+          increment_time: new Date().toISOString()
+        }
+      });
 
       // Update local usage state
       if (usage) {
@@ -194,6 +219,18 @@ export const useSubscription = () => {
     }
 
     try {
+      // Log subscription attempt
+      await logAction({
+        action: 'SUBSCRIPTION_CHECKOUT_INITIATED',
+        table_name: 'subscribers',
+        new_values: {
+          plan_name: planName,
+          is_yearly: isYearly,
+          monthly_price: monthlyPrice,
+          yearly_price: yearlyPrice
+        }
+      });
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planName, monthlyPrice, yearlyPrice, isYearly },
         headers: {
@@ -226,6 +263,17 @@ export const useSubscription = () => {
     }
 
     try {
+      // Log submission purchase attempt
+      await logAction({
+        action: 'SUBMISSION_PURCHASE_INITIATED',
+        table_name: 'submission_purchases',
+        new_values: {
+          submissions_to_purchase: 100,
+          current_usage: usage?.submissions_used || 0,
+          current_limit: usage?.total_limit || 0
+        }
+      });
+
       const { data, error } = await supabase.functions.invoke('create-submission-purchase', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -250,6 +298,12 @@ export const useSubscription = () => {
     if (!session?.access_token) return;
 
     try {
+      // Log customer portal access
+      await logAction({
+        action: 'CUSTOMER_PORTAL_ACCESSED',
+        table_name: 'subscribers'
+      });
+
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,

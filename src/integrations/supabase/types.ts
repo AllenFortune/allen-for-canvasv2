@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           canvas_access_token: string | null
@@ -204,6 +243,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
+      encrypt_canvas_token: {
+        Args: { token: string }
+        Returns: string
+      }
       get_current_month_usage: {
         Args: { user_email: string }
         Returns: number
@@ -235,6 +278,10 @@ export type Database = {
       reset_user_submissions: {
         Args: { user_email: string }
         Returns: undefined
+      }
+      validate_user_access: {
+        Args: { target_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
