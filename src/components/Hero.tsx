@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -56,15 +55,13 @@ const Hero = () => {
         <div className="mt-16 bg-white rounded-lg shadow-xl p-8 max-w-4xl mx-auto">
           <div className="mb-6 text-center">
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">See A.L.L.E.N. in Action</h3>
-            <p className="text-gray-600">Watch our complete walkthrough of AI-powered Canvas integration</p>
+            <p className="text-gray-600">Watch a quick walkthrough of A.L.L.E.N.'s AI Assisted Grading</p>
           </div>
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
             <div style={{position: 'relative', paddingBottom: '49.583333333333336%', height: 0}}>
               <iframe 
                 src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" 
                 frameBorder="0" 
-                webkitallowfullscreen="true" 
-                mozallowfullscreen="true" 
                 allowFullScreen 
                 style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}
                 title="A.L.L.E.N. Demo Walkthrough"
