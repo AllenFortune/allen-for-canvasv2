@@ -131,7 +131,7 @@ const ArticleContent = ({ onBack }: ArticleContentProps) => {
               <img 
                 src="/lovable-uploads/a09f6f4c-9adf-49b3-ac6d-b52fc3484309.png" 
                 alt="Cognitive Load Theory & AI: Balancing Mental Effort in the Digital Classroom - Visual representation showing a person's brain, a balance scale with AI and learning materials, and educational technology"
-                className="mx-auto rounded-lg shadow-lg max-w-full h-auto"
+                className="mx-auto rounded-lg shadow-lg max-w-2xl h-auto"
               />
               <p className="text-sm text-gray-600 mt-2 italic">
                 Cognitive Load Theory & AI: Balancing Mental Effort in the Digital Classroom
