@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, Clock, User, Tag, Printer, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -130,12 +129,12 @@ const ArticleContent = ({ onBack }: ArticleContentProps) => {
 
             <div className="my-8 text-center">
               <img 
-                src="/lovable-uploads/d644e2ea-e597-4168-bff4-35ee20a31995.png" 
-                alt="ALLEN D.I.V.E.R. Framework for AI-Enhanced Assignments showing the five steps: Discovery, Interaction & Collaboration, Verification, Editing & Iteration, and Reflection"
+                src="/lovable-uploads/a09f6f4c-9adf-49b3-ac6d-b52fc3484309.png" 
+                alt="Cognitive Load Theory & AI: Balancing Mental Effort in the Digital Classroom - Visual representation showing a person's brain, a balance scale with AI and learning materials, and educational technology"
                 className="mx-auto rounded-lg shadow-lg max-w-full h-auto"
               />
               <p className="text-sm text-gray-600 mt-2 italic">
-                The ALLEN D.I.V.E.R. Framework for AI-Enhanced Assignments
+                Cognitive Load Theory & AI: Balancing Mental Effort in the Digital Classroom
               </p>
             </div>
 
