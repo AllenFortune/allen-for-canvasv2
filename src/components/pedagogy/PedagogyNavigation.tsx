@@ -79,22 +79,6 @@ const PedagogyNavigation = () => {
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Reading Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-indigo-600 mb-1">2</div>
-            <div className="text-sm text-gray-600">Articles Available</div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-              <div className="bg-indigo-600 h-2 rounded-full" style={{width: '50%'}}></div>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">2 of 4 planned articles ready</div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
