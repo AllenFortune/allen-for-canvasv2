@@ -11,6 +11,7 @@ import Features from "./pages/Features";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import CanvasSetup from "./pages/CanvasSetup";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";

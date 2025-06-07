@@ -1,18 +1,59 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Plus, CreditCard, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, CreditCard, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const SubmissionPurchaseCard: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     usage,
     subscription,
     loading,
-    purchaseAdditionalSubmissions
+    purchaseAdditionalSubmissions,
+    checkSubscription
   } = useSubscription();
+
+  // Handle purchase success from URL parameters
+  useEffect(() => {
+    const purchaseStatus = searchParams.get('purchase');
+    if (purchaseStatus === 'success') {
+      toast({
+        title: "Purchase Successful!",
+        description: "Your additional submissions have been added.",
+      });
+      // Remove the parameter from URL
+      setSearchParams(prev => {
+        prev.delete('purchase');
+        return prev;
+      });
+      // Refresh subscription data
+      checkSubscription();
+    } else if (purchaseStatus === 'cancelled') {
+      toast({
+        title: "Purchase Cancelled",
+        description: "Your purchase was cancelled.",
+        variant: "destructive",
+      });
+      // Remove the parameter from URL
+      setSearchParams(prev => {
+        prev.delete('purchase');
+        return prev;
+      });
+    }
+  }, [searchParams, setSearchParams, checkSubscription]);
+
+  const handleManualRefresh = async () => {
+    await checkSubscription();
+    toast({
+      title: "Refreshed",
+      description: "Subscription and usage data updated.",
+    });
+  };
 
   if (loading) {
     return <Card>
@@ -51,9 +92,20 @@ const SubmissionPurchaseCard: React.FC = () => {
 
   return <Card className={isNearLimit ? 'border-orange-200 bg-orange-50' : ''}>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <CreditCard className="w-5 h-5 mr-2" />
-          Billing Period Usage
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <CreditCard className="w-5 h-5 mr-2" />
+            Billing Period Usage
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualRefresh}
+            className="text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Refresh
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
