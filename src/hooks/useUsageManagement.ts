@@ -8,7 +8,7 @@ import { UsageData } from '@/types/subscription';
 export const useUsageManagement = (
   usage: UsageData | null,
   setUsage: (usage: UsageData) => void,
-  getCurrentUsage: () => Promise<void>
+  getCurrentUsage: (freshSubscriptionData?: any) => Promise<void>
 ) => {
   const { user } = useAuth();
   const { logAction } = useAuditLog();
@@ -17,7 +17,7 @@ export const useUsageManagement = (
     if (!user?.email || !user?.id) return false;
 
     try {
-      // Check current usage first
+      // Check current usage first - pass undefined to use existing subscription data
       await getCurrentUsage();
       
       if (usage && usage.submissions_used >= usage.total_limit) {

@@ -33,6 +33,8 @@ export const useSubscriptionData = () => {
 
       console.log('Subscription data received:', data);
       
+      let subscriptionData = data;
+      
       // Get billing info for the user
       if (data && user.email) {
         const { data: billingData, error: billingError } = await supabase.rpc('get_user_billing_info', {
@@ -41,21 +43,19 @@ export const useSubscriptionData = () => {
 
         if (!billingError && billingData && billingData.length > 0) {
           const billing = billingData[0];
-          setSubscription({
+          subscriptionData = {
             ...data,
             billing_cycle_start: billing.billing_cycle_start,
             next_reset_date: billing.next_reset_date,
             days_remaining: billing.days_remaining
-          });
-        } else {
-          setSubscription(data);
+          };
         }
-      } else {
-        setSubscription(data);
       }
       
-      // Get current usage including purchased submissions
-      await getCurrentUsage();
+      setSubscription(subscriptionData);
+      
+      // Pass the fresh subscription data directly to getCurrentUsage
+      await getCurrentUsage(subscriptionData);
     } catch (error) {
       console.error('Error checking subscription:', error);
       toast({
@@ -68,10 +68,15 @@ export const useSubscriptionData = () => {
     }
   };
 
-  const getCurrentUsage = async () => {
+  const getCurrentUsage = async (freshSubscriptionData?: SubscriptionData) => {
     if (!user?.email) return;
 
     try {
+      // Use fresh subscription data if provided, otherwise fall back to state
+      const subscriptionToUse = freshSubscriptionData || subscription;
+      
+      console.log('Getting current usage with subscription:', subscriptionToUse);
+      
       // Get current month usage using the new billing period function
       const { data: usageData, error: usageError } = await supabase.rpc('get_current_month_usage', {
         user_email: user.email
@@ -88,7 +93,14 @@ export const useSubscriptionData = () => {
 
       const submissions_used = usageData || 0;
       const purchased_submissions = purchasedData || 0;
-      const base_limit = subscription ? PLAN_LIMITS[subscription.subscription_tier as keyof typeof PLAN_LIMITS] || 10 : 10;
+      
+      // Calculate base limit using the subscription data
+      const subscriptionTier = subscriptionToUse?.subscription_tier || 'Free Trial';
+      console.log('Calculating limit for subscription tier:', subscriptionTier);
+      
+      const base_limit = PLAN_LIMITS[subscriptionTier as keyof typeof PLAN_LIMITS] || 10;
+      console.log('Base limit determined:', base_limit, 'for tier:', subscriptionTier);
+      
       const total_limit = base_limit + purchased_submissions;
       const percentage = total_limit > 0 ? (submissions_used / total_limit) * 100 : 0;
 
@@ -100,14 +112,17 @@ export const useSubscriptionData = () => {
         .eq('month_year', new Date().toISOString().slice(0, 7))
         .single();
 
-      setUsage({ 
+      const newUsageData = { 
         submissions_used, 
         limit: base_limit,
         purchased_submissions,
         total_limit, 
         percentage,
         billing_period: trackingData?.billing_period || null
-      });
+      };
+      
+      console.log('Usage data calculated:', newUsageData);
+      setUsage(newUsageData);
     } catch (error) {
       console.error('Error getting usage:', error);
     }
