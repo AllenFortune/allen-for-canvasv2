@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SubmissionPurchaseCard from "@/components/dashboard/SubmissionPurchaseCard";
-import SecurityStatusCard from "@/components/security/SecurityStatusCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -115,11 +114,13 @@ const Dashboard = () => {
               </div>
             )}
             
-            {/* Dashboard Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Submission Usage Card */}
+            {/* Horizontal Billing Usage Section */}
+            <div className="mb-8">
               <SubmissionPurchaseCard />
-              
+            </div>
+            
+            {/* Dashboard Cards Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Courses Card */}
               <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Courses</h3>
