@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, Clock, User, Tag, Printer, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -88,6 +87,17 @@ const AssessmentArticle: React.FC<AssessmentArticleProps> = ({ onBack }) => {
             <p className="text-xl font-medium text-gray-800 mb-8">
               In an era where artificial intelligence (AI) can generate essays, solve complex problems, and even simulate human conversation, traditional assessment methods are facing unprecedented challenges. The ease with which students can utilize AI tools to produce polished assignments calls into question the efficacy of evaluating solely the final product. To ensure that assessments truly reflect a student's understanding and learning journey, educators must pivot towards evaluating the learning process itself.
             </p>
+
+            <div className="my-8 text-center">
+              <img 
+                src="/lovable-uploads/3d7e2873-9f44-4096-809f-a9eb33f740a6.png" 
+                alt="Rethinking Assessment in the Age of AI: From Product to Process - Visual representation of AI-enhanced assessment methods"
+                className="mx-auto rounded-lg shadow-lg max-w-2xl h-auto"
+              />
+              <p className="text-sm text-gray-600 mt-2 italic">
+                The transformation of assessment methods in the AI era
+              </p>
+            </div>
 
             <hr className="my-8 border-gray-200" />
 
