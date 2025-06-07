@@ -8,6 +8,9 @@ interface SubscriptionData {
   subscribed: boolean;
   subscription_tier: string;
   subscription_end: string | null;
+  billing_cycle_start: string | null;
+  next_reset_date: string | null;
+  days_remaining: number;
 }
 
 interface UsageData {
@@ -16,6 +19,7 @@ interface UsageData {
   purchased_submissions: number;
   total_limit: number;
   percentage: number;
+  billing_period: string | null;
 }
 
 const PLAN_LIMITS = {
@@ -52,7 +56,27 @@ export const useSubscription = () => {
       }
 
       console.log('Subscription data received:', data);
-      setSubscription(data);
+      
+      // Get billing info for the user
+      if (data && user.email) {
+        const { data: billingData, error: billingError } = await supabase.rpc('get_user_billing_info', {
+          user_email: user.email
+        });
+
+        if (!billingError && billingData && billingData.length > 0) {
+          const billing = billingData[0];
+          setSubscription({
+            ...data,
+            billing_cycle_start: billing.billing_cycle_start,
+            next_reset_date: billing.next_reset_date,
+            days_remaining: billing.days_remaining
+          });
+        } else {
+          setSubscription(data);
+        }
+      } else {
+        setSubscription(data);
+      }
       
       // Get current usage including purchased submissions
       await getCurrentUsage();
@@ -72,7 +96,7 @@ export const useSubscription = () => {
     if (!user?.email) return;
 
     try {
-      // Get current month usage
+      // Get current month usage using the new billing period function
       const { data: usageData, error: usageError } = await supabase.rpc('get_current_month_usage', {
         user_email: user.email
       });
@@ -90,14 +114,23 @@ export const useSubscription = () => {
       const purchased_submissions = purchasedData || 0;
       const base_limit = subscription ? PLAN_LIMITS[subscription.subscription_tier as keyof typeof PLAN_LIMITS] || 10 : 10;
       const total_limit = base_limit + purchased_submissions;
-      const percentage = (submissions_used / total_limit) * 100;
+      const percentage = total_limit > 0 ? (submissions_used / total_limit) * 100 : 0;
+
+      // Get billing period for display
+      const { data: trackingData } = await supabase
+        .from('usage_tracking')
+        .select('billing_period')
+        .eq('email', user.email)
+        .eq('month_year', new Date().toISOString().slice(0, 7))
+        .single();
 
       setUsage({ 
         submissions_used, 
         limit: base_limit,
         purchased_submissions,
         total_limit, 
-        percentage 
+        percentage,
+        billing_period: trackingData?.billing_period || null
       });
     } catch (error) {
       console.error('Error getting usage:', error);
@@ -114,13 +147,14 @@ export const useSubscription = () => {
       if (usage && usage.submissions_used >= usage.total_limit) {
         toast({
           title: "Usage Limit Reached",
-          description: `You've reached your monthly limit of ${usage.total_limit} submissions. Consider purchasing additional submissions or upgrading your plan.`,
+          description: `You've reached your limit of ${usage.total_limit} submissions for this billing period. Consider purchasing additional submissions or upgrading your plan.`,
           variant: "destructive",
         });
         return false;
       }
 
-      const { data, error } = await supabase.rpc('increment_usage', {
+      // Use the new billing period function
+      const { data, error } = await supabase.rpc('increment_usage_with_billing_period', {
         user_email: user.email,
         user_uuid: user.id
       });
@@ -132,7 +166,7 @@ export const useSubscription = () => {
         const newUsage = {
           ...usage,
           submissions_used: data,
-          percentage: (data / usage.total_limit) * 100
+          percentage: usage.total_limit > 0 ? (data / usage.total_limit) * 100 : 0
         };
         setUsage(newUsage);
       }

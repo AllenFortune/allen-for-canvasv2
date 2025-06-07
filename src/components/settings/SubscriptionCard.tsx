@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CreditCard, ExternalLink, RefreshCw } from 'lucide-react';
+import { CreditCard, ExternalLink, RefreshCw, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -44,6 +44,15 @@ const SubscriptionCard: React.FC = () => {
   const usagePercentage = usage?.percentage || 0;
   const isNearLimit = usagePercentage >= 80;
 
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Unknown';
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -67,7 +76,7 @@ const SubscriptionCard: React.FC = () => {
                 <p className="text-gray-900 font-semibold">{currentPlan}</p>
                 {subscription?.subscription_end && (
                   <p className="text-sm text-gray-600">
-                    Renews on {new Date(subscription.subscription_end).toLocaleDateString()}
+                    Renews on {formatDate(subscription.subscription_end)}
                   </p>
                 )}
               </div>
@@ -79,24 +88,50 @@ const SubscriptionCard: React.FC = () => {
             </div>
           </div>
 
+          {/* Billing Cycle Info */}
+          {subscription?.next_reset_date && (
+            <div>
+              <label className="text-sm font-medium text-gray-700">Billing Cycle</label>
+              <div className="mt-1 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <div className="flex items-center">
+                  <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Next Reset: {formatDate(subscription.next_reset_date)}
+                    </p>
+                    {subscription.days_remaining !== undefined && (
+                      <p className="text-xs text-blue-600">
+                        {subscription.days_remaining} days remaining in current period
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Usage Progress */}
           {usage && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Monthly Usage
+                  Current Period Usage
                 </label>
                 <span className="text-sm text-gray-600">
-                  {usage.submissions_used} / {usage.limit} submissions
+                  {usage.submissions_used} / {usage.total_limit} submissions
                 </span>
               </div>
               <Progress 
                 value={usagePercentage} 
                 className={`w-full h-2 ${isNearLimit ? 'bg-red-100' : 'bg-gray-100'}`}
               />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Plan: {usage.limit}</span>
+                {usage.purchased_submissions > 0 && <span>Purchased: +{usage.purchased_submissions}</span>}
+              </div>
               {isNearLimit && (
                 <p className="text-sm text-red-600 mt-1">
-                  ⚠️ You're approaching your monthly limit
+                  ⚠️ You're approaching your billing period limit
                 </p>
               )}
             </div>

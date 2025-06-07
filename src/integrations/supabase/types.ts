@@ -80,9 +80,11 @@ export type Database = {
       }
       subscribers: {
         Row: {
+          billing_cycle_start: string
           created_at: string
           email: string
           id: string
+          next_reset_date: string | null
           stripe_customer_id: string | null
           subscribed: boolean
           subscription_end: string | null
@@ -91,9 +93,11 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          billing_cycle_start: string
           created_at?: string
           email: string
           id?: string
+          next_reset_date?: string | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
@@ -102,9 +106,11 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          billing_cycle_start?: string
           created_at?: string
           email?: string
           id?: string
+          next_reset_date?: string | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
@@ -114,8 +120,51 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_history: {
+        Row: {
+          base_submissions_used: number
+          billing_period: string
+          created_at: string
+          email: string
+          id: string
+          period_end: string
+          period_start: string
+          plan_tier: string
+          purchased_submissions_used: number
+          total_available: number
+          user_id: string
+        }
+        Insert: {
+          base_submissions_used?: number
+          billing_period: string
+          created_at?: string
+          email: string
+          id?: string
+          period_end: string
+          period_start: string
+          plan_tier: string
+          purchased_submissions_used?: number
+          total_available?: number
+          user_id: string
+        }
+        Update: {
+          base_submissions_used?: number
+          billing_period?: string
+          created_at?: string
+          email?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          plan_tier?: string
+          purchased_submissions_used?: number
+          total_available?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       usage_tracking: {
         Row: {
+          billing_period: string | null
           created_at: string
           email: string
           id: string
@@ -125,6 +174,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          billing_period?: string | null
           created_at?: string
           email: string
           id?: string
@@ -134,6 +184,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          billing_period?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -149,6 +200,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_user_usage: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
       get_current_month_usage: {
         Args: { user_email: string }
         Returns: number
@@ -161,9 +216,25 @@ export type Database = {
         Args: { user_email: string; base_limit: number }
         Returns: number
       }
+      get_user_billing_info: {
+        Args: { user_email: string }
+        Returns: {
+          billing_cycle_start: string
+          next_reset_date: string
+          days_remaining: number
+        }[]
+      }
       increment_usage: {
         Args: { user_email: string; user_uuid: string }
         Returns: number
+      }
+      increment_usage_with_billing_period: {
+        Args: { user_email: string; user_uuid: string }
+        Returns: number
+      }
+      reset_user_submissions: {
+        Args: { user_email: string }
+        Returns: undefined
       }
     }
     Enums: {

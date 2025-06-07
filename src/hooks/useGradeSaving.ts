@@ -37,7 +37,7 @@ export const useGradeSaving = () => {
       return false;
     }
 
-    // Check usage limits before proceeding
+    // Check usage limits before proceeding (now uses billing period logic)
     const canProceed = await incrementUsage();
     if (!canProceed) {
       return false; // Toast message already shown in incrementUsage
@@ -117,7 +117,7 @@ export const useGradeSaving = () => {
         variant: "default",
       });
       
-      // Update the local submission status - fix the TypeScript error
+      // Update the local submission status
       const updatedSubmissions = submissions.map(sub => 
         sub.id === submissionId 
           ? { ...sub, score: parseFloat(grade) || null, workflow_state: 'graded' }
