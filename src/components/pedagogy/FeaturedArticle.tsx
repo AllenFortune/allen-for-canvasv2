@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Clock, User, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import ArticleContent from './ArticleContent';
 import DiverFrameworkArticle from './DiverFrameworkArticle';
 import AssessmentArticle from './AssessmentArticle';
 import PromptEngineeringArticle from './PromptEngineeringArticle';
+import DigitalCitizenshipArticle from './DigitalCitizenshipArticle';
 
 const FeaturedArticle = () => {
   const [showFullArticle, setShowFullArticle] = useState<string | null>(null);
@@ -52,6 +52,16 @@ const FeaturedArticle = () => {
       category: "AI Implementation",
       tags: ["Prompt Engineering", "AI Implementation", "Teaching Strategies", "Digital Literacy"],
       featured: true
+    },
+    {
+      id: 'digital-citizenship',
+      title: "Building Digital Citizenship in the AI Era",
+      excerpt: "In today's classrooms, digital citizenship has evolved far beyond teaching students to create strong passwords and avoid sharing personal information online. With artificial intelligence now embedded in students' daily digital experiences, educators face a critical new dimension of digital citizenship education.",
+      readTime: "7 min read",
+      author: "A.L.L.E.N. Educational Team",
+      category: "Classroom Management",
+      tags: ["Digital Citizenship", "AI Literacy", "Ethics", "Critical Thinking"],
+      featured: true
     }
   ];
 
@@ -69,6 +79,10 @@ const FeaturedArticle = () => {
 
   if (showFullArticle === 'prompt-engineering') {
     return <PromptEngineeringArticle onBack={() => setShowFullArticle(null)} />;
+  }
+
+  if (showFullArticle === 'digital-citizenship') {
+    return <DigitalCitizenshipArticle onBack={() => setShowFullArticle(null)} />;
   }
 
   return (

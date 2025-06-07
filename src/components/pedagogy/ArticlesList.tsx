@@ -7,13 +7,6 @@ import { Clock, Plus } from 'lucide-react';
 const ArticlesList = () => {
   const comingSoonArticles = [
     {
-      title: "Building Digital Citizenship in the AI Era",
-      excerpt: "Preparing students to be responsible digital citizens and critical consumers of AI-generated content.",
-      category: "Classroom Management",
-      readTime: "7 min read",
-      comingSoon: true
-    },
-    {
       title: "AI-Assisted Assessment: Beyond Auto-Grading",
       excerpt: "Explore innovative ways to use AI for formative assessment and meaningful feedback generation.",
       category: "Assessment & Feedback",
