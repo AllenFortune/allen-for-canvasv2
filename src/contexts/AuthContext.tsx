@@ -28,12 +28,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const clearAuthState = () => {
+    console.log('Clearing local auth state');
+    setSession(null);
+    setUser(null);
+  };
+
   const refreshSession = async () => {
     try {
       console.log('Refreshing session...');
       const { data: { session }, error } = await supabase.auth.refreshSession();
       if (error) {
         console.error('Error refreshing session:', error);
+        if (error.message.includes('session_not_found') || error.message.includes('refresh_token_not_found')) {
+          console.log('Session expired, clearing auth state');
+          clearAuthState();
+        }
       } else {
         console.log('Session refreshed successfully');
         setSession(session);
@@ -41,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
+      clearAuthState();
     }
   };
 
@@ -71,11 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
+          console.log('User signed out - clearing state');
+          clearAuthState();
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
         }
         
-        setSession(session);
-        setUser(session?.user ?? null);
         setLoading(false);
       }
     );
@@ -84,13 +97,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Error getting initial session:', error);
+        if (error.message.includes('session_not_found')) {
+          console.log('No valid session found, clearing auth state');
+          clearAuthState();
+        }
       } else {
         console.log('Initial session loaded:', !!session);
         console.log('Initial session access token exists:', !!session?.access_token);
+        setSession(session);
+        setUser(session?.user ?? null);
       }
       
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
     });
 
@@ -142,8 +159,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    console.log('Signing out user');
-    await supabase.auth.signOut();
+    console.log('Attempting to sign out user');
+    
+    try {
+      // First, try to validate the current session
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.warn('Session validation error before sign out:', sessionError);
+      }
+      
+      if (!currentSession) {
+        console.log('No active session found, clearing local state');
+        clearAuthState();
+        return;
+      }
+
+      // Attempt server-side sign out
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Server-side sign out error:', error);
+        
+        // Handle specific session-related errors
+        if (error.message.includes('session_not_found') || 
+            error.message.includes('Session not found') ||
+            error.message.includes('refresh_token_not_found')) {
+          console.log('Session already invalid on server, clearing local state');
+          clearAuthState();
+          return;
+        }
+        
+        // For other errors, still try to clear local state as fallback
+        console.log('Sign out error occurred, clearing local state as fallback');
+        clearAuthState();
+        
+        // Don't throw the error - we want to ensure the user is signed out locally
+        return;
+      }
+      
+      console.log('Server-side sign out successful');
+      // State will be cleared by the onAuthStateChange listener
+      
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+      // Ensure we clear local state even if there's an unexpected error
+      clearAuthState();
+    }
   };
 
   const value = {

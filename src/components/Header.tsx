@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
   full_name?: string;
@@ -12,8 +13,10 @@ interface UserProfile {
 const Header = () => {
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const getFirstName = (fullName?: string) => {
     if (!fullName) return null;
@@ -56,8 +59,24 @@ const Header = () => {
 
   const handleAuthAction = async () => {
     if (user) {
-      await signOut();
-      navigate('/');
+      setSigningOut(true);
+      try {
+        await signOut();
+        toast({
+          title: "Signed out successfully",
+          description: "You have been logged out of your account.",
+        });
+        navigate('/');
+      } catch (error) {
+        console.error('Sign out error in header:', error);
+        toast({
+          title: "Signed out",
+          description: "You have been logged out of your account.",
+        });
+        navigate('/');
+      } finally {
+        setSigningOut(false);
+      }
     } else {
       navigate('/auth');
     }
@@ -119,8 +138,12 @@ const Header = () => {
               <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                 Dashboard
               </Button>
-              <Button variant="outline" onClick={handleAuthAction}>
-                Sign Out
+              <Button 
+                variant="outline" 
+                onClick={handleAuthAction}
+                disabled={signingOut}
+              >
+                {signingOut ? 'Signing Out...' : 'Sign Out'}
               </Button>
             </>
           ) : (
