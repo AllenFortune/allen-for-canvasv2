@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
+import { useUsageManagement } from '@/hooks/useUsageManagement';
+import { useSubscription } from '@/hooks/useSubscription';
 import GradeInput from './GradeInput';
 import FeedbackInput from './FeedbackInput';
 import SubmissionIndicator from './SubmissionIndicator';
@@ -35,6 +37,9 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   currentSubmission
 }) => {
   const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
+  const { usage, setUsage, getCurrentUsage } = useSubscription();
+  const { incrementUsage } = useUsageManagement(usage, setUsage, getCurrentUsage);
+  
   const [useRubricForAI, setUseRubricForAI] = useState(false);
   const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
@@ -44,6 +49,12 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
 
   const handleAIAssistedGrading = async () => {
     if (!currentSubmission || !assignment) return;
+
+    // Check usage limit before proceeding
+    const canProceed = await incrementUsage();
+    if (!canProceed) {
+      return; // incrementUsage will show appropriate error message
+    }
 
     const aiResult = await generateComprehensiveFeedback(
       currentSubmission,

@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
+import { useAIFeedback } from '@/hooks/useAIFeedback';
+import { useUsageManagement } from '@/hooks/useUsageManagement';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useStudentParticipation } from './StudentParticipationProcessor';
+import { buildDiscussionContent, createMockSubmission } from './DiscussionContentBuilder';
 import DiscussionStudentNavigation from './DiscussionStudentNavigation';
 import DiscussionPostsView from './DiscussionPostsView';
 import DiscussionGradingSection from './DiscussionGradingSection';
-import { useAIFeedback } from '@/hooks/useAIFeedback';
-import { useStudentParticipation } from './StudentParticipationProcessor';
-import { buildDiscussionContent, createMockSubmission } from './DiscussionContentBuilder';
 import AIGradeReview from './AIGradeReview';
 
 interface DiscussionGradingFormProps {
@@ -42,6 +44,8 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
 
   const { generateComprehensiveFeedback, isGenerating } = useAIFeedback();
+  const { usage, setUsage, getCurrentUsage } = useSubscription();
+  const { incrementUsage } = useUsageManagement(usage, setUsage, getCurrentUsage);
 
   const currentGrade = grades.find(g => g.user_id === user.id);
 
@@ -85,6 +89,12 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   };
 
   const handleAIGrading = async () => {
+    // Check usage limit before proceeding
+    const canProceed = await incrementUsage();
+    if (!canProceed) {
+      return; // incrementUsage will show appropriate error message
+    }
+
     const mockAssignment = {
       id: discussion.assignment_id || discussion.id,
       name: discussion.title,
