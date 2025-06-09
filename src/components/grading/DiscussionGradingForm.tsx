@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
-import { useUsageManagement } from '@/hooks/useUsageManagement';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStudentParticipation } from './StudentParticipationProcessor';
 import { buildDiscussionContent, createMockSubmission } from './DiscussionContentBuilder';
@@ -44,8 +43,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
 
   const { generateComprehensiveFeedback, isGenerating } = useAIFeedback();
-  const { usage, setUsage, getCurrentUsage } = useSubscription();
-  const { incrementUsage } = useUsageManagement(usage, setUsage, getCurrentUsage);
+  const { incrementUsage } = useSubscription();
 
   const currentGrade = grades.find(g => g.user_id === user.id);
 

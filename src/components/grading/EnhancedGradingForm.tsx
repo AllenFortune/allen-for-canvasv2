@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
-import { useUsageManagement } from '@/hooks/useUsageManagement';
 import { useSubscription } from '@/hooks/useSubscription';
 import GradeInput from './GradeInput';
 import FeedbackInput from './FeedbackInput';
@@ -37,8 +36,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   currentSubmission
 }) => {
   const { generateComprehensiveFeedback, isGenerating, isProcessingFiles } = useAIFeedback();
-  const { usage, setUsage, getCurrentUsage } = useSubscription();
-  const { incrementUsage } = useUsageManagement(usage, setUsage, getCurrentUsage);
+  const { incrementUsage } = useSubscription();
   
   const [useRubricForAI, setUseRubricForAI] = useState(false);
   const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
