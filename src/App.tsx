@@ -29,6 +29,7 @@ import AIPedagogyHub from "./pages/AIPedagogyHub";
 import AIAssignmentIntegration from "./pages/AIAssignmentIntegration";
 import InstitutionalInquiry from "./pages/InstitutionalInquiry";
 import AdminPortal from "./pages/AdminPortal";
+import AdminSetup from "./pages/AdminSetup";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/ai-assignment" element={<AIAssignmentIntegration />} />
             <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
             <Route path="/admin-portal" element={<AdminPortal />} />
+            <Route path="/admin-setup" element={<AdminSetup />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
