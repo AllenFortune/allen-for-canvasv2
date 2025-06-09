@@ -5,28 +5,36 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserCheck, UserX, Calendar, Mail, Search, Download } from 'lucide-react';
+import { Users, UserCheck, UserX, Calendar, Mail, Search, Download, CreditCard } from 'lucide-react';
 import { useAdminData } from '@/hooks/useAdminData';
 
 const AdminDashboard = () => {
   const { stats, users, sendCanvasSetupEmail } = useAdminData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
+  const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime' | 'super'>('all');
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.school_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterConnected === 'all' ||
+    const matchesConnectionFilter = filterConnected === 'all' ||
                          (filterConnected === 'connected' && user.canvas_connected) ||
                          (filterConnected === 'not_connected' && !user.canvas_connected);
     
-    return matchesSearch && matchesFilter;
+    const matchesPlanFilter = filterPlan === 'all' ||
+                             (filterPlan === 'trial' && user.subscription_tier === 'Free Trial') ||
+                             (filterPlan === 'lite' && user.subscription_tier === 'Lite Plan') ||
+                             (filterPlan === 'core' && user.subscription_tier === 'Core Plan') ||
+                             (filterPlan === 'fulltime' && user.subscription_tier === 'Full-Time Plan') ||
+                             (filterPlan === 'super' && user.subscription_tier === 'Super Plan');
+    
+    return matchesSearch && matchesConnectionFilter && matchesPlanFilter;
   });
 
   const exportToCSV = () => {
-    const headers = ['Email', 'Full Name', 'School', 'Canvas Connected', 'Created At', 'Last Usage', 'Total Submissions'];
+    const headers = ['Email', 'Full Name', 'School', 'Canvas Connected', 'Plan', 'Status', 'Current Usage', 'Total Submissions', 'Created At', 'Last Usage'];
     const csvContent = [
       headers.join(','),
       ...filteredUsers.map(user => [
@@ -34,9 +42,12 @@ const AdminDashboard = () => {
         user.full_name || '',
         user.school_name || '',
         user.canvas_connected ? 'Yes' : 'No',
+        user.subscription_tier,
+        user.subscription_status,
+        `${user.current_month_submissions}/${user.subscription_limit}`,
+        user.total_submissions,
         new Date(user.created_at).toLocaleDateString(),
-        user.last_usage_date ? new Date(user.last_usage_date).toLocaleDateString() : 'Never',
-        user.total_submissions
+        user.last_usage_date ? new Date(user.last_usage_date).toLocaleDateString() : 'Never'
       ].join(','))
     ].join('\n');
 
@@ -49,10 +60,38 @@ const AdminDashboard = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'Active': return 'default';
+      case 'Trial': return 'secondary';
+      case 'Expired': return 'destructive';
+      default: return 'outline';
+    }
+  };
+
+  const getPlanBadgeVariant = (plan: string) => {
+    switch (plan) {
+      case 'Free Trial': return 'outline';
+      case 'Lite Plan': return 'secondary';
+      case 'Core Plan': return 'default';
+      case 'Full-Time Plan': return 'default';
+      case 'Super Plan': return 'default';
+      default: return 'outline';
+    }
+  };
+
+  // Calculate plan distribution
+  const planDistribution = users.reduce((acc, user) => {
+    acc[user.subscription_tier] = (acc[user.subscription_tier] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalSubmissions = users.reduce((sum, user) => sum + user.total_submissions, 0);
+
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -89,15 +128,43 @@ const AdminDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Signups</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+            <CreditCard className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats?.recent_signups || 0}</div>
+            <div className="text-2xl font-bold text-blue-600">{totalSubmissions}</div>
+            <p className="text-xs text-muted-foreground">All time graded</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Signups</CardTitle>
+            <Calendar className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{stats?.recent_signups || 0}</div>
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Plan Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plan Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {Object.entries(planDistribution).map(([plan, count]) => (
+              <div key={plan} className="text-center">
+                <div className="text-2xl font-bold">{count}</div>
+                <div className="text-sm text-muted-foreground">{plan}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* User List */}
       <Card>
@@ -113,7 +180,7 @@ const AdminDashboard = () => {
                 className="pl-8"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 variant={filterConnected === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterConnected('all')}
@@ -135,6 +202,27 @@ const AdminDashboard = () => {
               >
                 Not Connected
               </Button>
+              <Button
+                variant={filterPlan === 'trial' ? 'default' : 'outline'}
+                onClick={() => setFilterPlan('trial')}
+                size="sm"
+              >
+                Trial
+              </Button>
+              <Button
+                variant={filterPlan === 'lite' ? 'default' : 'outline'}
+                onClick={() => setFilterPlan('lite')}
+                size="sm"
+              >
+                Lite
+              </Button>
+              <Button
+                variant={filterPlan === 'core' ? 'default' : 'outline'}
+                onClick={() => setFilterPlan('core')}
+                size="sm"
+              >
+                Core
+              </Button>
               <Button onClick={exportToCSV} size="sm" variant="outline">
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -148,6 +236,7 @@ const AdminDashboard = () => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>School</TableHead>
+                <TableHead>Plan</TableHead>
                 <TableHead>Canvas Status</TableHead>
                 <TableHead>Usage</TableHead>
                 <TableHead>Joined</TableHead>
@@ -165,13 +254,32 @@ const AdminDashboard = () => {
                   </TableCell>
                   <TableCell>{user.school_name || 'Not specified'}</TableCell>
                   <TableCell>
+                    <div className="space-y-1">
+                      <Badge variant={getPlanBadgeVariant(user.subscription_tier)}>
+                        {user.subscription_tier}
+                      </Badge>
+                      <div>
+                        <Badge variant={getStatusBadgeVariant(user.subscription_status)} className="text-xs">
+                          {user.subscription_status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={user.canvas_connected ? 'default' : 'destructive'}>
                       {user.canvas_connected ? 'Connected' : 'Not Connected'}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{user.total_submissions} submissions</div>
+                      <div className="font-medium">
+                        {user.current_month_submissions}/{user.subscription_limit}
+                      </div>
+                      <div className="text-muted-foreground">
+                        {user.purchased_submissions > 0 && (
+                          <span className="text-blue-600">+{user.purchased_submissions} purchased</span>
+                        )}
+                      </div>
                       <div className="text-muted-foreground">
                         Last: {user.last_usage_date ? new Date(user.last_usage_date).toLocaleDateString() : 'Never'}
                       </div>

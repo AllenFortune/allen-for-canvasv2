@@ -312,6 +312,11 @@ export type Database = {
           created_at: string
           last_usage_date: string
           total_submissions: number
+          subscription_tier: string
+          subscription_status: string
+          current_month_submissions: number
+          purchased_submissions: number
+          subscription_limit: number
         }[]
       }
       get_admin_user_stats: {
