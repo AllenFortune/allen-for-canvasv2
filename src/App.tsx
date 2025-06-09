@@ -6,12 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
-import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import PaymentSuccess from "./pages/PaymentSuccess";
 import CanvasSetup from "./pages/CanvasSetup";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -20,14 +20,15 @@ import GradeDiscussion from "./pages/GradeDiscussion";
 import GradeQuiz from "./pages/GradeQuiz";
 import Assignments from "./pages/Assignments";
 import Settings from "./pages/Settings";
-import Auth from "./pages/Auth";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import NotFound from "./pages/NotFound";
 import AILiteracy from "./pages/AILiteracy";
 import AIPedagogyHub from "./pages/AIPedagogyHub";
 import AIAssignmentIntegration from "./pages/AIAssignmentIntegration";
 import InstitutionalInquiry from "./pages/InstitutionalInquiry";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import NotFound from "./pages/NotFound";
+import AdminPortal from "./pages/AdminPortal";
 
 const queryClient = new QueryClient();
 
@@ -40,8 +41,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
@@ -54,13 +55,14 @@ const App = () => (
             <Route path="/courses/:courseId/quizzes/:quizId/grade" element={<GradeQuiz />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/ai-literacy" element={<AILiteracy />} />
             <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
-            <Route path="/ai-assignment-integration" element={<AIAssignmentIntegration />} />
+            <Route path="/ai-assignment" element={<AIAssignmentIntegration />} />
             <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/admin-portal" element={<AdminPortal />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

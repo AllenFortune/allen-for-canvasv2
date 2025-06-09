@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_email_campaigns: {
+        Row: {
+          campaign_name: string
+          email_type: string
+          id: string
+          sent_at: string | null
+          sent_by_admin_email: string
+          sent_to_email: string
+          success: boolean | null
+          template_used: string | null
+        }
+        Insert: {
+          campaign_name: string
+          email_type: string
+          id?: string
+          sent_at?: string | null
+          sent_by_admin_email: string
+          sent_to_email: string
+          success?: boolean | null
+          template_used?: string | null
+        }
+        Update: {
+          campaign_name?: string
+          email_type?: string
+          id?: string
+          sent_at?: string | null
+          sent_by_admin_email?: string
+          sent_to_email?: string
+          success?: boolean | null
+          template_used?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -234,6 +267,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -246,6 +300,28 @@ export type Database = {
       encrypt_canvas_token: {
         Args: { token: string }
         Returns: string
+      }
+      get_admin_user_list: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          school_name: string
+          canvas_connected: boolean
+          created_at: string
+          last_usage_date: string
+          total_submissions: number
+        }[]
+      }
+      get_admin_user_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_users: number
+          canvas_connected: number
+          canvas_not_connected: number
+          recent_signups: number
+        }[]
       }
       get_current_month_usage: {
         Args: { user_email: string }
@@ -267,6 +343,13 @@ export type Database = {
           days_remaining: number
         }[]
       }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       increment_usage: {
         Args: { user_email: string; user_uuid: string }
         Returns: number
@@ -285,7 +368,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -400,6 +483,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
