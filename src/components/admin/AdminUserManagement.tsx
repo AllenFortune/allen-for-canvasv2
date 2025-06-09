@@ -23,9 +23,10 @@ interface AdminUser {
 interface AdminUserManagementProps {
   users: AdminUser[];
   onSendCanvasSetupEmail: (userEmail: string, userName: string) => void;
+  onRefreshData?: () => void;
 }
 
-const AdminUserManagement = ({ users, onSendCanvasSetupEmail }: AdminUserManagementProps) => {
+const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
   const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime' | 'super'>('all');
@@ -93,7 +94,8 @@ const AdminUserManagement = ({ users, onSendCanvasSetupEmail }: AdminUserManagem
       <CardContent>
         <AdminUserTable 
           users={filteredUsers} 
-          onSendCanvasSetupEmail={onSendCanvasSetupEmail} 
+          onSendCanvasSetupEmail={onSendCanvasSetupEmail}
+          onRefreshData={onRefreshData}
         />
       </CardContent>
     </Card>

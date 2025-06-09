@@ -10,7 +10,7 @@ const corsHeaders = {
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
+  console.log(`[ADMIN-SYNC-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -25,7 +25,7 @@ serve(async (req) => {
   );
 
   try {
-    logStep("Function started");
+    logStep("Admin sync function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
@@ -36,25 +36,41 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    const adminUser = userData.user;
+    if (!adminUser?.id) throw new Error("Admin user not authenticated");
     
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    // Check if user is admin
+    const { data: isAdmin, error: adminError } = await supabaseClient.rpc('has_role', {
+      _user_id: adminUser.id,
+      _role: 'admin'
+    });
+
+    if (adminError || !isAdmin) {
+      throw new Error("Unauthorized: Admin access required");
+    }
+
+    const body = await req.json();
+    const { userEmail } = body;
+    
+    if (!userEmail) {
+      throw new Error("User email is required");
+    }
+
+    logStep("Syncing subscription for user", { userEmail });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating unsubscribed state");
+      logStep("No Stripe customer found for user", { userEmail });
       
-      // Use current date for billing_cycle_start for non-subscribers
+      // Update as non-subscriber
       const currentDate = new Date().toISOString();
       const nextResetDate = new Date();
       nextResetDate.setMonth(nextResetDate.getMonth() + 1);
       
-      const { error: upsertError } = await supabaseClient.from("subscribers").upsert({
-        email: user.email,
-        user_id: user.id,
+      await supabaseClient.from("subscribers").upsert({
+        email: userEmail,
         stripe_customer_id: null,
         subscribed: false,
         subscription_tier: "Free Trial",
@@ -64,16 +80,10 @@ serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'email' });
       
-      if (upsertError) {
-        logStep("Database upsert error for non-subscriber", { error: upsertError });
-      }
-      
       return new Response(JSON.stringify({ 
-        subscribed: false, 
-        subscription_tier: "Free Trial",
-        subscription_end: null,
-        billing_cycle_start: currentDate,
-        next_reset_date: nextResetDate.toISOString()
+        success: true,
+        message: "User has no Stripe customer record, updated to Free Trial",
+        subscription_tier: "Free Trial"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -102,8 +112,6 @@ serve(async (req) => {
       billingCycleStart = new Date(subscription.current_period_start * 1000).toISOString();
       nextResetDate = new Date(subscription.current_period_end * 1000);
       
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      
       // Determine subscription tier from price
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
@@ -121,14 +129,11 @@ serve(async (req) => {
       }
       
       logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
-    } else {
-      logStep("No active subscription found");
     }
 
-    // Update database with proper billing cycle information
+    // Update database
     const { error: upsertError } = await supabaseClient.from("subscribers").upsert({
-      email: user.email,
-      user_id: user.id,
+      email: userEmail,
       stripe_customer_id: customerId,
       subscribed: hasActiveSub,
       subscription_tier: subscriptionTier,
@@ -140,25 +145,32 @@ serve(async (req) => {
 
     if (upsertError) {
       logStep("Database upsert error", { error: upsertError });
-      // Continue execution even if database update fails
-    } else {
-      logStep("Updated database with subscription info", { subscribed: hasActiveSub, subscriptionTier });
+      throw new Error(`Failed to update database: ${upsertError.message}`);
     }
+
+    logStep("Successfully synced subscription data", { 
+      userEmail, 
+      subscriptionTier, 
+      subscribed: hasActiveSub 
+    });
     
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
+      success: true,
+      message: "Subscription data synced successfully",
       subscription_tier: subscriptionTier,
-      subscription_end: subscriptionEnd,
-      billing_cycle_start: billingCycleStart,
-      next_reset_date: nextResetDate.toISOString()
+      subscribed: hasActiveSub
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+    
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    logStep("ERROR in admin-sync-subscription", { message: errorMessage });
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: errorMessage 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -6,15 +6,24 @@ import AdminPlanDistribution from './AdminPlanDistribution';
 import AdminUserManagement from './AdminUserManagement';
 
 const AdminDashboard = () => {
-  const { stats, users, sendCanvasSetupEmail } = useAdminData();
+  const { stats, users, sendCanvasSetupEmail, fetchAdminStats, fetchUserList } = useAdminData();
 
   const totalSubmissions = users.reduce((sum, user) => sum + user.total_submissions, 0);
+
+  const handleRefreshData = () => {
+    fetchAdminStats();
+    fetchUserList();
+  };
 
   return (
     <div className="space-y-6">
       <AdminStatsCards stats={stats} totalSubmissions={totalSubmissions} />
       <AdminPlanDistribution users={users} />
-      <AdminUserManagement users={users} onSendCanvasSetupEmail={sendCanvasSetupEmail} />
+      <AdminUserManagement 
+        users={users} 
+        onSendCanvasSetupEmail={sendCanvasSetupEmail}
+        onRefreshData={handleRefreshData}
+      />
     </div>
   );
 };

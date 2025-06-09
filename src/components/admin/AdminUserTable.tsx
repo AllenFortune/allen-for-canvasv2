@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Mail } from 'lucide-react';
+import { Mail, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface AdminUser {
   id: string;
@@ -24,9 +27,60 @@ interface AdminUser {
 interface AdminUserTableProps {
   users: AdminUser[];
   onSendCanvasSetupEmail: (userEmail: string, userName: string) => void;
+  onRefreshData?: () => void;
 }
 
-const AdminUserTable = ({ users, onSendCanvasSetupEmail }: AdminUserTableProps) => {
+const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminUserTableProps) => {
+  const { session } = useAuth();
+  const [syncingUsers, setSyncingUsers] = useState<Set<string>>(new Set());
+
+  const syncUserSubscription = async (userEmail: string) => {
+    if (!session?.access_token) {
+      toast({
+        title: "Error",
+        description: "Not authenticated",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSyncingUsers(prev => new Set(prev).add(userEmail));
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-sync-subscription', {
+        body: { userEmail },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sync Complete",
+        description: `Subscription data synced for ${userEmail}`,
+      });
+
+      // Refresh the data if callback provided
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error('Error syncing subscription:', error);
+      toast({
+        title: "Sync Failed",
+        description: `Failed to sync subscription for ${userEmail}`,
+        variant: "destructive",
+      });
+    } finally {
+      setSyncingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userEmail);
+        return newSet;
+      });
+    }
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'Active': return 'default';
@@ -104,16 +158,27 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail }: AdminUserTableProps) 
             </TableCell>
             <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
             <TableCell>
-              {!user.canvas_connected && (
+              <div className="flex gap-2">
+                {!user.canvas_connected && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onSendCanvasSetupEmail(user.email, user.full_name || user.email)}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Setup Email
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onSendCanvasSetupEmail(user.email, user.full_name || user.email)}
+                  onClick={() => syncUserSubscription(user.email)}
+                  disabled={syncingUsers.has(user.email)}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Setup Email
+                  <RefreshCw className={`h-4 w-4 mr-2 ${syncingUsers.has(user.email) ? 'animate-spin' : ''}`} />
+                  Sync
                 </Button>
-              )}
+              </div>
             </TableCell>
           </TableRow>
         ))}
