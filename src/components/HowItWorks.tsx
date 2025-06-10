@@ -1,3 +1,4 @@
+
 const HowItWorks = () => {
   const steps = [
     {
@@ -39,15 +40,15 @@ const HowItWorks = () => {
                 <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white text-2xl font-bold">{step.number}</span>
                 </div>
-                <div className="text-4xl mb-4">
+                <div className="text-4xl mb-4 flex items-center justify-center h-14">
                   {step.icon.startsWith('/') ? (
                     <img 
                       src={step.icon} 
                       alt="A.L.L.E.N. Logo" 
-                      className="w-14 h-14 mx-auto object-contain"
+                      className="w-14 h-14 object-contain"
                     />
                   ) : (
-                    step.icon
+                    <span className="leading-none">{step.icon}</span>
                   )}
                 </div>
               </div>
