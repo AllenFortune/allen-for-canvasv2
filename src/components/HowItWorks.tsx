@@ -17,7 +17,7 @@ const HowItWorks = () => {
       number: "3",
       title: "Get AI Grading Assistance",
       description: "Our AI analyzes submissions against your rubrics and provides suggested grades and detailed feedback to enhance your evaluation process.",
-      icon: "🤖"
+      icon: "/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png"
     }
   ];
 
@@ -40,7 +40,17 @@ const HowItWorks = () => {
                 <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white text-2xl font-bold">{step.number}</span>
                 </div>
-                <div className="text-4xl mb-4">{step.icon}</div>
+                <div className="text-4xl mb-4">
+                  {step.icon.startsWith('/') ? (
+                    <img 
+                      src={step.icon} 
+                      alt="A.L.L.E.N. Logo" 
+                      className="w-12 h-12 mx-auto object-contain"
+                    />
+                  ) : (
+                    step.icon
+                  )}
+                </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
                 {step.title}
