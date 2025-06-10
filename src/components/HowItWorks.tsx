@@ -1,4 +1,3 @@
-
 const HowItWorks = () => {
   const steps = [
     {
@@ -45,7 +44,7 @@ const HowItWorks = () => {
                     <img 
                       src={step.icon} 
                       alt="A.L.L.E.N. Logo" 
-                      className="w-12 h-12 mx-auto object-contain"
+                      className="w-14 h-14 mx-auto object-contain"
                     />
                   ) : (
                     step.icon
