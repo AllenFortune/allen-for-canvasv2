@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +13,13 @@ interface Course {
   start_at: string | null;
   end_at: string | null;
   total_students: number;
+  sis_term_id?: string;
   term?: {
     id: number;
     name: string;
     start_at: string | null;
     end_at: string | null;
+    sis_term_id?: string;
   };
 }
 
@@ -28,6 +31,8 @@ interface CourseCardProps {
 const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }) => {
   // Debug logging for term data
   console.log(`Course ${course.id} term data:`, course.term);
+  console.log(`Course ${course.id} sis_term_id:`, course.sis_term_id);
+  console.log(`Course ${course.id} course_code:`, course.course_code);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No dates set';
@@ -48,8 +53,56 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     return nonLatinRegex.test(text);
   };
 
-  const generateEnglishTermName = (term: Course['term']): string => {
+  const parseTermFromCourseCode = (courseCode: string): string | null => {
+    // Try to extract term info from course codes like "2020/FA", "2017/SP", etc.
+    const termPatterns = [
+      /(\d{4})\/(FA|SP|SU)/i, // 2020/FA format
+      /(\d{4})\s*(Fall|Spring|Summer)/i, // 2020 Fall format
+      /(Fall|Spring|Summer)\s*(\d{4})/i, // Fall 2020 format
+      /(\d{4})-(\d{1,2})/i, // 2020-1 format (where 1=Fall, 2=Spring, 3=Summer)
+    ];
+
+    for (const pattern of termPatterns) {
+      const match = courseCode.match(pattern);
+      if (match) {
+        if (match[2] && match[1]) {
+          const year = match[1];
+          const semester = match[2].toUpperCase();
+          
+          // Convert to standard format
+          const semesterMap: { [key: string]: string } = {
+            'FA': 'Fall',
+            'SP': 'Spring',
+            'SU': 'Summer',
+            'FALL': 'Fall',
+            'SPRING': 'Spring',
+            'SUMMER': 'Summer'
+          };
+          
+          return `${semesterMap[semester] || semester} ${year}`;
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  const generateEnglishTermName = (term: Course['term'], courseCode: string): string => {
+    // First try to parse from course code
+    const parsedTerm = parseTermFromCourseCode(courseCode);
+    if (parsedTerm) {
+      console.log(`Extracted term "${parsedTerm}" from course code "${courseCode}"`);
+      return parsedTerm;
+    }
+
+    // If no term object, return unknown
     if (!term) return 'Unknown Term';
+
+    // Try using sis_term_id if available
+    if (term.sis_term_id) {
+      const sisTermParsed = parseTermFromCourseCode(term.sis_term_id);
+      if (sisTermParsed) return sisTermParsed;
+    }
 
     // If we have dates, try to generate a meaningful English name
     if (term.start_at) {
@@ -72,25 +125,36 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
   };
 
   const getTermDisplay = () => {
-    if (!course.term) return 'No term assigned';
+    // First check if we have a meaningful term name
+    const termName = course.term?.name?.trim();
     
-    const termName = course.term.name?.trim();
-    if (!termName) return 'No term assigned';
+    // Check if term name is meaningful (not "Default Term" and not non-Latin)
+    const isMeaningfulTerm = termName && 
+                            termName !== 'Default Term' && 
+                            !isNonLatinScript(termName) &&
+                            termName.length > 0;
     
-    // Check if term name is in non-Latin script (e.g., Arabic)
-    let displayName = termName;
-    if (isNonLatinScript(termName)) {
-      // Use generated English name instead
-      displayName = generateEnglishTermName(course.term);
-      console.log(`Converted non-Latin term "${termName}" to "${displayName}" for course ${course.id}`);
+    let displayName: string;
+    
+    if (isMeaningfulTerm) {
+      displayName = termName!;
+    } else {
+      // Use our enhanced term generation
+      displayName = generateEnglishTermName(course.term, course.course_code);
+      
+      if (termName && isNonLatinScript(termName)) {
+        console.log(`Converted non-Latin term "${termName}" to "${displayName}" for course ${course.id}`);
+      } else if (termName === 'Default Term') {
+        console.log(`Replaced "Default Term" with "${displayName}" for course ${course.id}`);
+      }
     }
     
     // Add term dates if available for better context
-    if (course.term.start_at && course.term.end_at) {
+    if (course.term?.start_at && course.term?.end_at) {
       return `${displayName} (${formatDate(course.term.start_at)} - ${formatDate(course.term.end_at)})`;
-    } else if (course.term.start_at) {
+    } else if (course.term?.start_at) {
       return `${displayName} (Started ${formatDate(course.term.start_at)})`;
-    } else if (course.term.end_at) {
+    } else if (course.term?.end_at) {
       return `${displayName} (Ends ${formatDate(course.term.end_at)})`;
     }
     

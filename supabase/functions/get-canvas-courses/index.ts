@@ -71,8 +71,8 @@ serve(async (req) => {
     
     console.log(`Fetching all courses from Canvas: ${canvas_instance_url}`);
 
-    // Fetch courses from Canvas API - now including locale=en parameter to force English responses
-    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&include[]=total_students&include[]=term&per_page=100&locale=en`, {
+    // Fetch courses from Canvas API with comprehensive term information
+    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&include[]=total_students&include[]=term&include[]=enrollment_term_id&include[]=sis_term_id&per_page=100&locale=en`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
@@ -104,7 +104,13 @@ serve(async (req) => {
 
     const coursesData = await response.json();
     
-    console.log(`Successfully fetched ${coursesData.length} courses from Canvas (including past courses)`);
+    // Log term information for debugging
+    console.log(`Successfully fetched ${coursesData.length} courses from Canvas`);
+    if (coursesData.length > 0) {
+      console.log('Sample course term data:', JSON.stringify(coursesData[0].term, null, 2));
+      console.log('Sample course code:', coursesData[0].course_code);
+      console.log('Sample course sis_term_id:', coursesData[0].sis_term_id);
+    }
 
     return new Response(
       JSON.stringify({ 
