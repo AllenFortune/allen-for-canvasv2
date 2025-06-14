@@ -71,12 +71,13 @@ serve(async (req) => {
     
     console.log(`Fetching all courses from Canvas: ${canvas_instance_url}`);
 
-    // Fetch courses from Canvas API - now including all enrollment states
-    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&include[]=total_students&include[]=term&per_page=100`, {
+    // Fetch courses from Canvas API - now including locale=en parameter to force English responses
+    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&include[]=total_students&include[]=term&per_page=100&locale=en`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     });
 

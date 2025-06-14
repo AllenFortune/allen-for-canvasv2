@@ -42,22 +42,59 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     return `${formatDate(startAt)} - ${formatDate(endAt)}`;
   };
 
+  const isNonLatinScript = (text: string): boolean => {
+    // Check if text contains Arabic, Chinese, Japanese, Korean, or other non-Latin scripts
+    const nonLatinRegex = /[\u0600-\u06FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0400-\u04FF]/;
+    return nonLatinRegex.test(text);
+  };
+
+  const generateEnglishTermName = (term: Course['term']): string => {
+    if (!term) return 'Unknown Term';
+
+    // If we have dates, try to generate a meaningful English name
+    if (term.start_at) {
+      const startDate = new Date(term.start_at);
+      const year = startDate.getFullYear();
+      const month = startDate.getMonth();
+
+      // Determine semester based on start month
+      if (month >= 8 || month <= 0) { // September - January
+        return `Fall ${year}`;
+      } else if (month >= 1 && month <= 4) { // February - May
+        return `Spring ${year}`;
+      } else if (month >= 5 && month <= 7) { // June - August
+        return `Summer ${year}`;
+      }
+    }
+
+    // Fallback to term ID if available
+    return `Term ${term.id}`;
+  };
+
   const getTermDisplay = () => {
     if (!course.term) return 'No term assigned';
     
     const termName = course.term.name?.trim();
     if (!termName) return 'No term assigned';
     
-    // Add term dates if available for better context
-    if (course.term.start_at && course.term.end_at) {
-      return `${termName} (${formatDate(course.term.start_at)} - ${formatDate(course.term.end_at)})`;
-    } else if (course.term.start_at) {
-      return `${termName} (Started ${formatDate(course.term.start_at)})`;
-    } else if (course.term.end_at) {
-      return `${termName} (Ends ${formatDate(course.term.end_at)})`;
+    // Check if term name is in non-Latin script (e.g., Arabic)
+    let displayName = termName;
+    if (isNonLatinScript(termName)) {
+      // Use generated English name instead
+      displayName = generateEnglishTermName(course.term);
+      console.log(`Converted non-Latin term "${termName}" to "${displayName}" for course ${course.id}`);
     }
     
-    return termName;
+    // Add term dates if available for better context
+    if (course.term.start_at && course.term.end_at) {
+      return `${displayName} (${formatDate(course.term.start_at)} - ${formatDate(course.term.end_at)})`;
+    } else if (course.term.start_at) {
+      return `${displayName} (Started ${formatDate(course.term.start_at)})`;
+    } else if (course.term.end_at) {
+      return `${displayName} (Ends ${formatDate(course.term.end_at)})`;
+    }
+    
+    return displayName;
   };
 
   const isPastCourse = (): boolean => {
