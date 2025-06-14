@@ -87,6 +87,8 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
   manualGradingQuestions
 }) => {
   const selectedQuestion = selectedQuestionId ? questions.find(q => q.id === selectedQuestionId) : null;
+  const selectedSubmissionAnswers = submissionAnswers[selectedSubmission.id] || [];
+  const selectedAnswer = selectedSubmissionAnswers.find(a => a.question_id === selectedQuestionId);
 
   const handleFetchAnswers = (submissionId: number, userId?: number) => {
     console.log(`QuizGradingLayout: Fetching answers for submission ${submissionId}, user ${userId}`);
@@ -117,7 +119,7 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
           questions={questions}
           selectedQuestionId={selectedQuestionId}
           onQuestionSelect={onQuestionSelect}
-          submissionAnswers={submissionAnswers[selectedSubmission.id] || []}
+          submissionAnswers={selectedSubmissionAnswers}
           loadingAnswers={loadingAnswers[selectedSubmission.id] || false}
           answersError={answersErrors[selectedSubmission.id] || ''}
           onFetchAnswers={handleFetchAnswers}
@@ -133,6 +135,7 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
           <QuizGradingForm
             submission={selectedSubmission}
             question={selectedQuestion}
+            submissionAnswer={selectedAnswer}
             gradeQuestion={gradeQuestion}
           />
         )}

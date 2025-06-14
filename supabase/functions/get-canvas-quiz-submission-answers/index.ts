@@ -6,6 +6,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { fetchQuizQuestions, fetchQuizDetails } from './canvas-api.ts';
 import { extractFromSubmissionData, extractFromQuestionsAPI } from './submission-extractor.ts';
 import { extractEssayAnswers } from './essay-extractor.ts';
+import { extractFromNewQuizzes } from './new-quizzes-extractor.ts';
+import { detectQuizType } from './quiz-type-detector.ts';
 import { processSubmissionHistory, mapAnswersToQuestions, ensureAllQuestionsHaveEntries } from './answer-processor.ts';
 import { CanvasCredentials } from './types.ts';
 
@@ -77,81 +79,57 @@ serve(async (req) => {
       canvas_access_token: profile.canvas_access_token
     };
 
-    // Step 1: Get quiz questions to create comprehensive ID mapping
+    // Step 1: Detect quiz type (Classic vs New Quizzes)
+    const quizTypeInfo = await detectQuizType(credentials, courseId, quizId);
+    console.log(`Quiz type: ${quizTypeInfo.quizType}, Assignment ID: ${quizTypeInfo.assignmentId}`);
+
+    // Step 2: Get quiz questions to create comprehensive ID mapping
     const questionMaps = await fetchQuizQuestions(credentials, courseId, quizId);
 
-    // Step 2: Get quiz details to determine type
-    const quizData = await fetchQuizDetails(credentials, courseId, quizId);
-    const isAssignmentBasedQuiz = !!quizData.assignment_id;
-    console.log(`Quiz type: ${isAssignmentBasedQuiz ? 'assignment-based (New Quizzes)' : 'classic Canvas quiz'}`);
+    // Step 3: Extract answers using appropriate method based on quiz type
+    let rawAnswers: any[] = [];
+    let answersSource = 'unknown';
 
-    // Step 3: Try to get quiz submission data first (works for both types)
-    const { rawAnswers, submissionData, answersSource } = await extractFromSubmissionData(
-      credentials, courseId, quizId, submissionId, questionMaps
-    );
-
-    // Step 4: Try the dedicated quiz submission questions endpoint if no answers
-    if (rawAnswers.length === 0) {
-      const questionsApiAnswers = await extractFromQuestionsAPI(credentials, submissionId, questionMaps);
-      rawAnswers.push(...questionsApiAnswers);
-    }
-
-    // Step 5: For assignment-based quizzes, also try assignment submission as fallback
-    if (isAssignmentBasedQuiz && quizData.assignment_id && userId && rawAnswers.length === 0) {
-      console.log(`Trying assignment submission as fallback for New Quizzes`);
+    if (quizTypeInfo.isNewQuizzes && quizTypeInfo.assignmentId && userId) {
+      // New Quizzes - use assignment submission API
+      console.log('Using New Quizzes extraction method');
+      const newQuizzesAnswers = await extractFromNewQuizzes(
+        credentials, courseId, quizTypeInfo.assignmentId, submissionId, userId, questionMaps
+      );
+      rawAnswers.push(...newQuizzesAnswers);
+      answersSource = 'new_quizzes';
+    } else {
+      // Classic Quiz - use traditional methods
+      console.log('Using Classic Quiz extraction methods');
+      const { rawAnswers: classicAnswers, submissionData, answersSource: classicSource } = 
+        await extractFromSubmissionData(credentials, courseId, quizId, submissionId, questionMaps);
       
-      const assignmentSubmissionUrl = `${credentials.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${quizData.assignment_id}/submissions/${userId}?include[]=submission_history&include[]=submission_comments`;
-      
-      const assignmentResponse = await fetch(assignmentSubmissionUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${credentials.canvas_access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
+      rawAnswers.push(...classicAnswers);
+      answersSource = classicSource;
 
-      if (assignmentResponse.ok) {
-        const assignmentData = await assignmentResponse.json();
-        
-        if (assignmentData.body) {
-          console.log(`Found assignment submission body, mapping to first question`);
-          
-          rawAnswers.push({
-            submission_question_id: 1,
-            original_question_id: 1,
-            position_in_quiz: 1,
-            answer: assignmentData.body,
-            question_name: 'Assignment Response',
-            question_text: 'Assignment Question Response',
-            question_type: 'essay_question',
-            points: assignmentData.score,
-            correct: null,
-            source: 'assignment_body'
-          });
-        }
+      // Fallback to questions API if no answers found
+      if (rawAnswers.length === 0) {
+        const questionsApiAnswers = await extractFromQuestionsAPI(credentials, submissionId, questionMaps);
+        rawAnswers.push(...questionsApiAnswers);
+        answersSource = 'questions_api';
+      }
+
+      // Try essay extraction for classic quizzes
+      if (submissionData) {
+        await extractEssayAnswers(credentials, courseId, quizId, submissionId, questionMaps, submissionData, rawAnswers);
+        await processSubmissionHistory(submissionData, questionMaps, rawAnswers);
       }
     }
 
-    // Step 6: Specific strategy for essay questions
-    await extractEssayAnswers(credentials, courseId, quizId, submissionId, questionMaps, submissionData, rawAnswers);
-
-    // Step 7: Try submission history for additional data
-    if (submissionData) {
-      await processSubmissionHistory(submissionData, questionMaps, rawAnswers);
-    }
-
-    // Step 8: Map raw answers to actual questions
+    // Step 4: Map raw answers to actual questions
     const mappedAnswers = mapAnswersToQuestions(rawAnswers, questionMaps);
 
-    // Step 9: Ensure we have entries for ALL questions, even if no answers
+    // Step 5: Ensure we have entries for ALL questions, even if no answers
     const finalAnswers = ensureAllQuestionsHaveEntries(mappedAnswers, questionMaps.allQuestions);
 
     console.log(`Final results: ${finalAnswers.length} total answers (including empty ones)`);
-    finalAnswers.forEach(answer => {
-      const hasAnswer = answer.answer && answer.answer.toString().trim() !== '';
-      console.log(`Question ${answer.question_id} (${answer.question_type}): ${hasAnswer ? 'HAS ANSWER' : 'NO ANSWER'} (${answer.mapping_strategy}, source: ${answer.source})`);
-    });
+    const answersWithContent = finalAnswers.filter(a => a.answer && a.answer.toString().trim() !== '');
+    console.log(`Found ${answersWithContent.length}/${finalAnswers.length} answers with actual content`);
 
     return new Response(
       JSON.stringify({ 
@@ -160,22 +138,15 @@ serve(async (req) => {
         user_id: userId,
         answers: finalAnswers,
         debug_info: {
+          quiz_type: quizTypeInfo.quizType,
+          is_new_quizzes: quizTypeInfo.isNewQuizzes,
+          assignment_id: quizTypeInfo.assignmentId,
           total_questions: questionMaps.allQuestions.length,
           total_raw_answers: rawAnswers.length,
           total_final_answers: finalAnswers.length,
-          answers_with_content: finalAnswers.filter(a => a.answer && a.answer.toString().trim() !== '').length,
+          answers_with_content: answersWithContent.length,
           answers_source: answersSource,
-          is_assignment_based_quiz: isAssignmentBasedQuiz,
-          assignment_id: quizData.assignment_id,
-          question_mapping_created: questionMaps.questionIdMap.size > 0,
-          raw_answers_summary: rawAnswers.map(a => ({
-            submission_q_id: a.submission_question_id,
-            original_q_id: a.original_question_id,
-            position: a.position_in_quiz,
-            question_type: a.question_type,
-            has_answer: !!a.answer,
-            source: a.source
-          }))
+          question_mapping_created: questionMaps.questionIdMap.size > 0
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

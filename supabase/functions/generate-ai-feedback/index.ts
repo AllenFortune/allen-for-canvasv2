@@ -21,13 +21,21 @@ serve(async (req) => {
       rubric,
       useRubric = false,
       isSummativeAssessment = true,
-      customPrompt
+      customPrompt,
+      isQuizQuestion = false,
+      questionType,
+      questionText
     } = await req.json();
 
-    console.log('Generating comprehensive AI grading for assignment:', assignmentName);
+    const gradingType = isQuizQuestion ? 'quiz question' : 'assignment';
+    console.log(`Generating comprehensive AI grading for ${gradingType}:`, assignmentName);
     console.log('Using rubric for grading:', useRubric);
     console.log('Assessment type:', isSummativeAssessment ? 'Summative' : 'Formative');
     console.log('Custom prompt provided:', !!customPrompt);
+    
+    if (isQuizQuestion) {
+      console.log('Question type:', questionType);
+    }
 
     const gradingRequest: GradingRequest = {
       submissionContent,
@@ -38,19 +46,27 @@ serve(async (req) => {
       rubric,
       useRubric,
       isSummativeAssessment,
-      customPrompt
+      customPrompt,
+      isQuizQuestion,
+      questionType,
+      questionText
     };
 
-    const systemPrompt = generateSystemPrompt(isSummativeAssessment, pointsPossible, customPrompt);
+    const systemPrompt = generateSystemPrompt(
+      isSummativeAssessment, 
+      pointsPossible, 
+      customPrompt,
+      isQuizQuestion
+    );
     const userPrompt = generateUserPrompt(gradingRequest);
 
     const aiResponseContent = await callOpenAI(systemPrompt, userPrompt);
     const parsedResponse = parseAIResponse(aiResponseContent, isSummativeAssessment);
 
-    const gradingMode = useRubric && rubric ? 'rubric criteria' : 'assignment description';
+    const gradingMode = useRubric && rubric ? 'rubric criteria' : (isQuizQuestion ? 'question context' : 'assignment description');
     const assessmentType = isSummativeAssessment ? 'summative' : 'formative';
 
-    console.log('AI grading generated successfully using:', gradingMode, 'for', assessmentType);
+    console.log(`AI grading generated successfully for ${gradingType} using:`, gradingMode, 'for', assessmentType);
     console.log('10% leniency buffer methodology applied');
     if (customPrompt) {
       console.log('Custom grading instructions applied');
