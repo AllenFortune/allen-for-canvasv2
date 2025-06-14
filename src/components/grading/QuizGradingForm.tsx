@@ -95,22 +95,32 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
         rubric: null
       };
 
-      // Create a mock submission object
+      // Create a mock submission object with all required properties
       const mockSubmission = {
         id: submission.id,
-        user_id: submission.user?.name || 'Unknown',
+        user_id: typeof submission.user?.name === 'string' ? parseInt(submission.user.name) || 1 : 1,
+        assignment_id: question.id,
         submitted_at: new Date().toISOString(),
+        graded_at: null,
+        grade: null,
+        score: null,
+        submission_comments: [],
         body: typeof submissionAnswer.answer === 'string' 
           ? submissionAnswer.answer 
           : JSON.stringify(submissionAnswer.answer),
+        url: null,
         attachments: [],
         submission_type: 'online_quiz',
         workflow_state: 'submitted',
         late: false,
         missing: false,
-        grade: null,
-        score: null,
-        submission_comments: []
+        user: {
+          id: typeof submission.user?.name === 'string' ? parseInt(submission.user.name) || 1 : 1,
+          name: submission.user?.name || 'Unknown Student',
+          email: '',
+          avatar_url: null,
+          sortable_name: submission.user?.sortable_name || 'Unknown Student'
+        }
       };
 
       const result = await generateComprehensiveFeedback(
@@ -119,7 +129,10 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
         score || undefined,
         useRubric,
         isSummativeAssessment,
-        useCustomPrompt ? customPrompt : undefined
+        useCustomPrompt ? customPrompt : undefined,
+        true, // isQuizQuestion
+        question.question_type,
+        question.question_text
       );
 
       if (result) {
