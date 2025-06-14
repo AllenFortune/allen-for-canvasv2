@@ -1,16 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIFeedback } from '@/hooks/useAIFeedback';
 import { useSubscription } from '@/hooks/useSubscription';
-import QuizAIGradingSection from './QuizAIGradingSection';
-import AIGradeReview from './AIGradeReview';
+import QuizGradingCard from './quiz-form/QuizGradingCard';
+import QuizGradingActions from './quiz-form/QuizGradingActions';
 
 interface QuizQuestion {
   id: number;
@@ -182,116 +176,35 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
     }
   };
 
-  const getQuestionTypeDisplay = (type: string) => {
-    switch (type) {
-      case 'essay_question':
-        return 'Essay';
-      case 'short_answer_question':
-        return 'Short Answer';
-      case 'fill_in_multiple_blanks_question':
-        return 'Fill in the Blanks';
-      case 'file_upload_question':
-        return 'File Upload';
-      case 'numerical_question':
-        return 'Numerical';
-      case 'text_only_question':
-        return 'Text Only';
-      default:
-        return type.replace('_', ' ');
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <Card className="sticky top-6">
-        <CardHeader>
-          <CardTitle className="text-lg">Grade Question</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {getQuestionTypeDisplay(question.question_type)}
-            </Badge>
-            <Badge variant="secondary">
-              {question.points_possible} pts
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Student</Label>
-            <p className="text-sm text-gray-600">{submission.user.sortable_name}</p>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Question</Label>
-            <p className="text-sm text-gray-600 line-clamp-3">
-              {question.question_name || `Question ${question.id}`}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="score">Score (out of {question.points_possible})</Label>
-            <Input
-              id="score"
-              type="number"
-              value={score}
-              onChange={(e) => setScore(e.target.value)}
-              placeholder="Enter score"
-              min="0"
-              max={question.points_possible}
-              step="0.5"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="comment">Feedback (optional)</Label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Enter feedback for the student..."
-              rows={4}
-            />
-          </div>
-
-          <Button 
-            onClick={handleSave} 
-            disabled={saving || !score}
-            className="w-full"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Grade
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <QuizAIGradingSection
+      <QuizGradingCard
+        submission={submission}
         question={question}
-        submissionAnswer={submissionAnswer}
-        onAIGrade={handleAIGrade}
-        isGenerating={isGenerating}
-        useRubric={useRubric}
-        setUseRubric={setUseRubric}
-        isSummativeAssessment={isSummativeAssessment}
-        setIsSummativeAssessment={setIsSummativeAssessment}
-        useCustomPrompt={useCustomPrompt}
-        setUseCustomPrompt={setUseCustomPrompt}
-        customPrompt={customPrompt}
-        setCustomPrompt={setCustomPrompt}
-      />
-
-      <AIGradeReview 
-        gradeReview={aiGradeReview}
-        isVisible={!!aiGradeReview}
-      />
+        score={score}
+        setScore={setScore}
+        comment={comment}
+        setComment={setComment}
+      >
+        <QuizGradingActions
+          score={score}
+          saving={saving}
+          onSave={handleSave}
+          question={question}
+          submissionAnswer={submissionAnswer}
+          onAIGrade={handleAIGrade}
+          isGenerating={isGenerating}
+          useRubric={useRubric}
+          setUseRubric={setUseRubric}
+          isSummativeAssessment={isSummativeAssessment}
+          setIsSummativeAssessment={setIsSummativeAssessment}
+          useCustomPrompt={useCustomPrompt}
+          setUseCustomPrompt={setUseCustomPrompt}
+          customPrompt={customPrompt}
+          setCustomPrompt={setCustomPrompt}
+          aiGradeReview={aiGradeReview}
+        />
+      </QuizGradingCard>
     </div>
   );
 };
