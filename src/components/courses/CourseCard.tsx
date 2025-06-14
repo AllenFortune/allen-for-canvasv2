@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +26,9 @@ interface CourseCardProps {
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }) => {
+  // Debug logging for term data
+  console.log(`Course ${course.id} term data:`, course.term);
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No dates set';
     const date = new Date(dateString);
@@ -38,6 +40,24 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     if (!startAt) return `Ends ${formatDate(endAt)}`;
     if (!endAt) return `Started ${formatDate(startAt)}`;
     return `${formatDate(startAt)} - ${formatDate(endAt)}`;
+  };
+
+  const getTermDisplay = () => {
+    if (!course.term) return 'No term assigned';
+    
+    const termName = course.term.name?.trim();
+    if (!termName) return 'No term assigned';
+    
+    // Add term dates if available for better context
+    if (course.term.start_at && course.term.end_at) {
+      return `${termName} (${formatDate(course.term.start_at)} - ${formatDate(course.term.end_at)})`;
+    } else if (course.term.start_at) {
+      return `${termName} (Started ${formatDate(course.term.start_at)})`;
+    } else if (course.term.end_at) {
+      return `${termName} (Ends ${formatDate(course.term.end_at)})`;
+    }
+    
+    return termName;
   };
 
   const isPastCourse = (): boolean => {
@@ -117,9 +137,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
           </div>
         </div>
         <p className="text-gray-600 text-sm">{course.course_code}</p>
-        {course.term && (
-          <p className="text-gray-500 text-xs">Term: {course.term.name}</p>
-        )}
+        <p className="text-gray-500 text-xs">Term: {getTermDisplay()}</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
