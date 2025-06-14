@@ -12,6 +12,12 @@ interface Course {
   start_at: string | null;
   end_at: string | null;
   total_students: number;
+  term?: {
+    id: number;
+    name: string;
+    start_at: string | null;
+    end_at: string | null;
+  };
 }
 
 interface CoursesGridProps {
@@ -39,8 +45,14 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
 
     const counts: Record<number, number> = {};
     
-    // Fetch grading counts for all filtered courses
-    const promises = filteredCourses.map(async (course) => {
+    // Only fetch grading counts for non-past courses
+    const activeCourses = filteredCourses.filter(course => {
+      const isPast = isPastCourse(course);
+      return !isPast;
+    });
+    
+    // Fetch grading counts for active courses only
+    const promises = activeCourses.map(async (course) => {
       try {
         const { data, error } = await supabase.functions.invoke('get-canvas-assignments', {
           body: { courseId: course.id },
@@ -64,6 +76,29 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
 
     await Promise.all(promises);
     setGradingCounts(counts);
+  };
+
+  const isPastCourse = (course: Course): boolean => {
+    const now = new Date();
+    
+    // Check term end date first
+    if (course.term?.end_at) {
+      const termEndDate = new Date(course.term.end_at);
+      if (termEndDate < now) return true;
+    }
+    
+    // Check course end date
+    if (course.end_at) {
+      const courseEndDate = new Date(course.end_at);
+      if (courseEndDate < now) return true;
+    }
+    
+    // Check workflow state for concluded courses
+    if (course.workflow_state === 'completed' || course.workflow_state === 'concluded') {
+      return true;
+    }
+    
+    return false;
   };
 
   if (loading) {

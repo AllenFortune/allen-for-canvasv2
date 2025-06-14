@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, Info } from 'lucide-react';
+import { Clock, Users, Info, Archive } from 'lucide-react';
 
 interface Course {
   id: number;
@@ -13,6 +13,12 @@ interface Course {
   start_at: string | null;
   end_at: string | null;
   total_students: number;
+  term?: {
+    id: number;
+    name: string;
+    start_at: string | null;
+    end_at: string | null;
+  };
 }
 
 interface CourseCardProps {
@@ -34,7 +40,34 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     return `${formatDate(startAt)} - ${formatDate(endAt)}`;
   };
 
-  const getStatusBadgeColor = (status: string) => {
+  const isPastCourse = (): boolean => {
+    const now = new Date();
+    
+    // Check term end date first
+    if (course.term?.end_at) {
+      const termEndDate = new Date(course.term.end_at);
+      if (termEndDate < now) return true;
+    }
+    
+    // Check course end date
+    if (course.end_at) {
+      const courseEndDate = new Date(course.end_at);
+      if (courseEndDate < now) return true;
+    }
+    
+    // Check workflow state for concluded courses
+    if (course.workflow_state === 'completed' || course.workflow_state === 'concluded') {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const getStatusBadgeColor = (status: string, isPast: boolean) => {
+    if (isPast) {
+      return 'bg-gray-500 text-white';
+    }
+    
     switch (status) {
       case 'available':
         return 'bg-green-600 text-white';
@@ -45,7 +78,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, isPast: boolean) => {
+    if (isPast) {
+      return 'Past';
+    }
+    
     switch (status) {
       case 'available':
         return 'Active';
@@ -56,23 +93,33 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
     }
   };
 
+  const isCoursePast = isPastCourse();
+
   return (
-    <Card className="hover:shadow-md transition-shadow relative">
-      {needsGradingCount > 0 && (
+    <Card className={`hover:shadow-md transition-shadow relative ${isCoursePast ? 'opacity-75' : ''}`}>
+      {needsGradingCount > 0 && !isCoursePast && (
         <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-6 h-6 flex items-center justify-center z-10">
           {needsGradingCount}
         </div>
       )}
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{course.name}</CardTitle>
+          <CardTitle className={`text-lg ${isCoursePast ? 'text-gray-600' : ''}`}>
+            <div className="flex items-center gap-2">
+              {isCoursePast && <Archive className="w-4 h-4" />}
+              {course.name}
+            </div>
+          </CardTitle>
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state)}`}>
-              {getStatusLabel(course.workflow_state)}
+            <span className={`text-xs px-2 py-1 rounded ${getStatusBadgeColor(course.workflow_state, isCoursePast)}`}>
+              {getStatusLabel(course.workflow_state, isCoursePast)}
             </span>
           </div>
         </div>
         <p className="text-gray-600 text-sm">{course.course_code}</p>
+        {course.term && (
+          <p className="text-gray-500 text-xs">Term: {course.term.name}</p>
+        )}
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -84,12 +131,20 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, needsGradingCount = 0 }
             <Users className="w-4 h-4 mr-2" />
             {course.total_students > 0 ? `${course.total_students} students` : 'Unknown students'}
           </div>
-          <div className="flex items-start gap-2 text-gray-500 text-xs bg-blue-50 p-2 rounded">
-            <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-            <span>To manage favorites, use the star icon in your Canvas course list</span>
-          </div>
+          {isCoursePast && (
+            <div className="flex items-start gap-2 text-gray-500 text-xs bg-gray-50 p-2 rounded">
+              <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <span>This course has ended. Some features may be limited.</span>
+            </div>
+          )}
+          {!isCoursePast && (
+            <div className="flex items-start gap-2 text-gray-500 text-xs bg-blue-50 p-2 rounded">
+              <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <span>To manage favorites, use the star icon in your Canvas course list</span>
+            </div>
+          )}
           <Link to={`/courses/${course.id}`}>
-            <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white mt-4">
+            <Button className={`w-full mt-4 ${isCoursePast ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-900 hover:bg-gray-800'} text-white`}>
               View Course
             </Button>
           </Link>

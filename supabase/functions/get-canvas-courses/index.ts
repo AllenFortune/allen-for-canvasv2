@@ -69,10 +69,10 @@ serve(async (req) => {
 
     const { canvas_instance_url, canvas_access_token } = profile;
     
-    console.log(`Fetching courses from Canvas: ${canvas_instance_url}`);
+    console.log(`Fetching all courses from Canvas: ${canvas_instance_url}`);
 
-    // Fetch courses from Canvas API
-    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&enrollment_state=active&include[]=total_students&per_page=100`, {
+    // Fetch courses from Canvas API - now including all enrollment states
+    const response = await fetch(`${canvas_instance_url}/api/v1/courses?enrollment_type=teacher&include[]=total_students&include[]=term&per_page=100`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
@@ -103,7 +103,7 @@ serve(async (req) => {
 
     const coursesData = await response.json();
     
-    console.log(`Successfully fetched ${coursesData.length} courses from Canvas`);
+    console.log(`Successfully fetched ${coursesData.length} courses from Canvas (including past courses)`);
 
     return new Response(
       JSON.stringify({ 

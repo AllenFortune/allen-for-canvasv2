@@ -28,6 +28,8 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
+              <SelectItem value="current">Current Courses</SelectItem>
+              <SelectItem value="past">Past Courses</SelectItem>
               <SelectItem value="favorites">Favorites</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="unpublished">Unpublished</SelectItem>
@@ -50,6 +52,16 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
           <div>
             <p className="font-medium">Canvas Favorites</p>
             <p>Favorites are managed in your Canvas LMS. Use the star icon next to courses in Canvas to add them to favorites.</p>
+          </div>
+        </div>
+      )}
+      
+      {filter === 'past' && (
+        <div className="flex items-start gap-2 text-gray-600 text-sm bg-amber-50 p-3 rounded-lg">
+          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Past Courses</p>
+            <p>These are courses that have ended or concluded. Some grading features may be limited for past courses.</p>
           </div>
         </div>
       )}

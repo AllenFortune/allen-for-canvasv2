@@ -11,6 +11,12 @@ interface Course {
   start_at: string | null;
   end_at: string | null;
   total_students: number;
+  term?: {
+    id: number;
+    name: string;
+    start_at: string | null;
+    end_at: string | null;
+  };
 }
 
 export const useCourses = () => {
@@ -20,7 +26,7 @@ export const useCourses = () => {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>('current');
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -66,6 +72,33 @@ export const useCourses = () => {
     }
   };
 
+  const isPastCourse = (course: Course): boolean => {
+    const now = new Date();
+    
+    // Check term end date first
+    if (course.term?.end_at) {
+      const termEndDate = new Date(course.term.end_at);
+      if (termEndDate < now) return true;
+    }
+    
+    // Check course end date
+    if (course.end_at) {
+      const courseEndDate = new Date(course.end_at);
+      if (courseEndDate < now) return true;
+    }
+    
+    // Check workflow state for concluded courses
+    if (course.workflow_state === 'completed' || course.workflow_state === 'concluded') {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const isCurrentCourse = (course: Course): boolean => {
+    return course.workflow_state === 'available' && !isPastCourse(course);
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchFavoriteCourses();
@@ -74,7 +107,11 @@ export const useCourses = () => {
   useEffect(() => {
     let filtered = courses;
     
-    if (filter === 'active') {
+    if (filter === 'current') {
+      filtered = courses.filter(course => isCurrentCourse(course));
+    } else if (filter === 'past') {
+      filtered = courses.filter(course => isPastCourse(course));
+    } else if (filter === 'active') {
       filtered = courses.filter(course => course.workflow_state === 'available');
     } else if (filter === 'unpublished') {
       filtered = courses.filter(course => course.workflow_state === 'unpublished');
