@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,11 +81,11 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
     }
 
     try {
-      // Create a mock assignment object for the AI grading
+      // Create a mock assignment object for the AI grading with quiz context
       const mockAssignment = {
         id: question.id,
         name: question.question_name || `Question ${question.id}`,
-        description: question.question_text,
+        description: `Quiz Question (${question.question_type}): ${question.question_text}`,
         due_at: null,
         points_possible: question.points_possible,
         course_id: null,
@@ -129,10 +128,7 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
         score || undefined,
         useRubric,
         isSummativeAssessment,
-        useCustomPrompt ? customPrompt : undefined,
-        true, // isQuizQuestion
-        question.question_type,
-        question.question_text
+        useCustomPrompt ? customPrompt : undefined
       );
 
       if (result) {
