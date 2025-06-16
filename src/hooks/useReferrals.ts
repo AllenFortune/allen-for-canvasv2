@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,18 +28,36 @@ export const useReferrals = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchReferralStats = async () => {
-    if (!user?.email) return;
+    if (!user?.email) {
+      console.log('No user email available for fetchReferralStats');
+      return;
+    }
 
     try {
+      console.log('Fetching referral stats for user:', user.email);
       const { data, error } = await supabase.rpc('get_user_referral_stats', {
         user_email_param: user.email
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from get_user_referral_stats:', error);
+        throw error;
+      }
+
+      console.log('Referral stats response:', data);
 
       if (data && data.length > 0) {
-        setStats(data[0]);
+        const statsData = data[0];
+        console.log('Setting stats:', statsData);
+        setStats(statsData);
+        
+        // If no referral code exists, try to create one
+        if (!statsData.referral_code) {
+          console.log('No referral code found, attempting to create one');
+          await createReferralCode();
+        }
       } else {
+        console.log('No referral stats found, creating initial referral code');
         // Create initial referral code if none exists
         await createReferralCode();
       }
@@ -53,32 +72,51 @@ export const useReferrals = () => {
   };
 
   const fetchReferrals = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID available for fetchReferrals');
+      return;
+    }
 
     try {
+      console.log('Fetching referrals for user ID:', user.id);
       const { data, error } = await supabase
         .from('referrals')
         .select('id, referee_email, status, canvas_connected_at, rewards_granted_at, created_at')
         .eq('referrer_user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching referrals:', error);
+        throw error;
+      }
+      
+      console.log('Referrals data:', data);
       setReferrals(data || []);
     } catch (error) {
       console.error('Error fetching referrals:', error);
     }
   };
 
-  const createReferralCode = async () => {
-    if (!user?.email || !user?.id) return;
+  const createReferralCode = async (retryCount = 0) => {
+    if (!user?.email || !user?.id) {
+      console.log('Missing user data for createReferralCode');
+      return;
+    }
 
     try {
+      console.log('Creating referral code for user:', user.email, 'ID:', user.id);
+      
       // Use the new function that takes user_id parameter
       const { data: code, error: codeError } = await supabase.rpc('generate_referral_code', {
         user_id_param: user.id
       });
 
-      if (codeError) throw codeError;
+      if (codeError) {
+        console.error('Error generating referral code:', codeError);
+        throw codeError;
+      }
+
+      console.log('Generated referral code:', code);
 
       const { error: insertError } = await supabase
         .from('referrals')
@@ -89,15 +127,33 @@ export const useReferrals = () => {
           status: 'pending'
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting referral:', insertError);
+        throw insertError;
+      }
 
-      // Refresh stats
+      console.log('Successfully created referral code:', code);
+      
+      // Refresh stats after creating code
       await fetchReferralStats();
+      
+      toast({
+        title: "Success",
+        description: `Your referral code ${code} has been created!`,
+      });
     } catch (error) {
-      console.error('Error creating referral code:', error);
+      console.error('Error creating referral code (attempt', retryCount + 1, '):', error);
+      
+      // Retry once if this is the first attempt
+      if (retryCount === 0) {
+        console.log('Retrying referral code creation...');
+        setTimeout(() => createReferralCode(1), 1000);
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create referral code",
+        description: "Failed to create referral code. Try the 'Generate Code' button.",
         variant: "destructive",
       });
     }
@@ -149,8 +205,16 @@ export const useReferrals = () => {
     return `${window.location.origin}/auth?ref=${stats.referral_code}`;
   };
 
+  const manualGenerateCode = async () => {
+    console.log('Manual referral code generation triggered');
+    setLoading(true);
+    await createReferralCode();
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (user && session?.access_token) {
+      console.log('useReferrals effect triggered for user:', user.email);
       setLoading(true);
       Promise.all([fetchReferralStats(), fetchReferrals()]).finally(() => {
         setLoading(false);
@@ -164,6 +228,7 @@ export const useReferrals = () => {
     loading,
     sendInvitations,
     getReferralUrl,
+    manualGenerateCode,
     refetch: () => {
       fetchReferralStats();
       fetchReferrals();
