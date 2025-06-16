@@ -1,5 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,21 @@ const Settings = () => {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get the tab from URL parameters, default to "account"
+  const activeTab = searchParams.get('tab') || 'account';
+
+  const handleTabChange = (value: string) => {
+    // Update URL parameters when tab changes
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (value === 'account') {
+      newSearchParams.delete('tab');
+    } else {
+      newSearchParams.set('tab', value);
+    }
+    setSearchParams(newSearchParams);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -66,7 +81,7 @@ const Settings = () => {
               <p className="text-xl text-gray-600">Manage your account, Canvas integration, and referrals</p>
             </div>
 
-            <Tabs defaultValue="account" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="subscription">Subscription</TabsTrigger>
