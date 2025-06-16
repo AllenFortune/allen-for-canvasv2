@@ -1,33 +1,22 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AccountActionsCardProps {
   onSignOut: () => Promise<void>;
 }
 
 const AccountActionsCard: React.FC<AccountActionsCardProps> = ({ onSignOut }) => {
-  const [signingOut, setSigningOut] = useState(false);
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    setSigningOut(true);
     try {
       await onSignOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account.",
-      });
+      navigate('/auth');
     } catch (error) {
-      console.error('Sign out error:', error);
-      toast({
-        title: "Signed out",
-        description: "You have been logged out of your account.",
-      });
-    } finally {
-      setSigningOut(false);
+      console.error('Error signing out:', error);
     }
   };
 
@@ -37,12 +26,8 @@ const AccountActionsCard: React.FC<AccountActionsCardProps> = ({ onSignOut }) =>
         <CardTitle>Account Actions</CardTitle>
       </CardHeader>
       <CardContent>
-        <Button 
-          variant="destructive" 
-          onClick={handleSignOut}
-          disabled={signingOut}
-        >
-          {signingOut ? 'Signing Out...' : 'Sign Out'}
+        <Button variant="destructive" onClick={handleSignOut}>
+          Sign Out
         </Button>
       </CardContent>
     </Card>

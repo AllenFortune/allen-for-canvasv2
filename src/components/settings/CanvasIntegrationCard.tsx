@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -126,11 +127,11 @@ const CanvasIntegrationCard: React.FC<CanvasIntegrationCardProps> = ({ profile }
 
       // Check for referral rewards (new Canvas connection)
       try {
-        const { session } = await supabase.auth.getSession();
-        if (session?.data?.session?.access_token) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.access_token) {
           await supabase.functions.invoke('check-canvas-connection-rewards', {
             headers: {
-              Authorization: `Bearer ${session.data.session.access_token}`,
+              Authorization: `Bearer ${sessionData.session.access_token}`,
             },
           });
         }

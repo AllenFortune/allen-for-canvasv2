@@ -1,8 +1,8 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +20,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
@@ -116,7 +115,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     try {
       setLoading(true);
       await supabase.auth.signOut();
-      navigate('/auth');
+      // Navigation will be handled by the component calling signOut
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
