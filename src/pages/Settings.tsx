@@ -8,6 +8,8 @@ import ProfileCard from '@/components/settings/ProfileCard';
 import CanvasIntegrationCard from '@/components/settings/CanvasIntegrationCard';
 import SubscriptionCard from '@/components/settings/SubscriptionCard';
 import AccountActionsCard from '@/components/settings/AccountActionsCard';
+import ReferralDashboard from '@/components/referrals/ReferralDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface UserProfile {
   canvas_instance_url?: string;
@@ -61,15 +63,30 @@ const Settings = () => {
           <div className="max-w-4xl mx-auto px-6">
             <div className="mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Settings</h1>
-              <p className="text-xl text-gray-600">Manage your account and Canvas integration</p>
+              <p className="text-xl text-gray-600">Manage your account, Canvas integration, and referrals</p>
             </div>
 
-            <div className="space-y-6">
-              <ProfileCard loading={loading} profile={profile} user={user} />
-              <CanvasIntegrationCard profile={profile} />
-              <SubscriptionCard />
-              <AccountActionsCard onSignOut={handleSignOut} />
-            </div>
+            <Tabs defaultValue="account" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="account">Account</TabsTrigger>
+                <TabsTrigger value="subscription">Subscription</TabsTrigger>
+                <TabsTrigger value="referrals">Referrals</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="account" className="space-y-6">
+                <ProfileCard loading={loading} profile={profile} user={user} />
+                <CanvasIntegrationCard profile={profile} />
+                <AccountActionsCard onSignOut={handleSignOut} />
+              </TabsContent>
+              
+              <TabsContent value="subscription" className="space-y-6">
+                <SubscriptionCard />
+              </TabsContent>
+              
+              <TabsContent value="referrals" className="space-y-6">
+                <ReferralDashboard />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

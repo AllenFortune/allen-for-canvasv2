@@ -114,6 +114,108 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_rewards: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          referral_id: string
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          submissions_granted: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          referral_id: string
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          submissions_granted?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          referral_id?: string
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          submissions_granted?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          canvas_connected_at: string | null
+          created_at: string
+          id: string
+          referee_email: string | null
+          referee_user_id: string | null
+          referral_code: string
+          referrer_email: string
+          referrer_user_id: string
+          rewards_granted_at: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          updated_at: string
+        }
+        Insert: {
+          canvas_connected_at?: string | null
+          created_at?: string
+          id?: string
+          referee_email?: string | null
+          referee_user_id?: string | null
+          referral_code: string
+          referrer_email: string
+          referrer_user_id: string
+          rewards_granted_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          updated_at?: string
+        }
+        Update: {
+          canvas_connected_at?: string | null
+          created_at?: string
+          id?: string
+          referee_email?: string | null
+          referee_user_id?: string | null
+          referral_code?: string
+          referrer_email?: string
+          referrer_user_id?: string
+          rewards_granted_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referee_user_id_fkey"
+            columns: ["referee_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_user_id_fkey"
+            columns: ["referrer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submission_purchases: {
         Row: {
           amount: number
@@ -301,6 +403,10 @@ export type Database = {
         Args: { token: string }
         Returns: string
       }
+      generate_referral_code: {
+        Args: { user_email: string }
+        Returns: string
+      }
       get_admin_user_list: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -348,6 +454,16 @@ export type Database = {
           days_remaining: number
         }[]
       }
+      get_user_referral_stats: {
+        Args: { user_email_param: string }
+        Returns: {
+          total_referrals: number
+          completed_referrals: number
+          pending_referrals: number
+          total_rewards_earned: number
+          referral_code: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -363,6 +479,10 @@ export type Database = {
         Args: { user_email: string; user_uuid: string }
         Returns: number
       }
+      process_referral_rewards: {
+        Args: { referee_user_id_param: string; referee_email_param: string }
+        Returns: undefined
+      }
       reset_user_submissions: {
         Args: { user_email: string }
         Returns: undefined
@@ -374,6 +494,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      referral_status: "pending" | "completed" | "rewarded"
+      reward_type: "referrer_bonus" | "referee_bonus"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -490,6 +612,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      referral_status: ["pending", "completed", "rewarded"],
+      reward_type: ["referrer_bonus", "referee_bonus"],
     },
   },
 } as const
