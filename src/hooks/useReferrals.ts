@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,8 +73,9 @@ export const useReferrals = () => {
     if (!user?.email || !user?.id) return;
 
     try {
+      // Use the new function that takes user_id parameter
       const { data: code, error: codeError } = await supabase.rpc('generate_referral_code', {
-        user_email: user.email
+        user_id_param: user.id
       });
 
       if (codeError) throw codeError;

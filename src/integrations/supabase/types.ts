@@ -404,7 +404,7 @@ export type Database = {
         Returns: string
       }
       generate_referral_code: {
-        Args: { user_email: string }
+        Args: { user_email: string } | { user_id_param: string }
         Returns: string
       }
       get_admin_user_list: {
