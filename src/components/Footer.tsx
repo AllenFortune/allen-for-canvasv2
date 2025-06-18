@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -7,8 +8,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AI</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png" 
+                  alt="A.L.L.E.N. Logo" 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <span className="text-xl font-bold">A.L.L.E.N.</span>
             </div>
