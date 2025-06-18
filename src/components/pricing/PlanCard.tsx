@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { getPlanButtonText } from "@/utils/planHierarchy";
 
 interface Plan {
   name: string;
@@ -19,9 +20,16 @@ interface PlanCardProps {
   isYearly: boolean;
   onSelect: (plan: Plan) => void;
   isCurrentPlan: boolean;
+  planComparison?: 'current' | 'upgrade' | 'downgrade';
 }
 
-const PlanCard: React.FC<PlanCardProps> = ({ plan, isYearly, onSelect, isCurrentPlan }) => {
+const PlanCard: React.FC<PlanCardProps> = ({ 
+  plan, 
+  isYearly, 
+  onSelect, 
+  isCurrentPlan, 
+  planComparison = 'upgrade' 
+}) => {
   const getDisplayPrice = () => {
     if (plan.monthlyPrice === 0) return "$0.00";
     
@@ -43,13 +51,15 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, isYearly, onSelect, isCurrent
     return `Save $${savings.toFixed(2)}`;
   };
 
+  const buttonText = getPlanButtonText(planComparison, plan.buttonText);
+
   return (
     <div className={`bg-white rounded-lg shadow-sm border ${
       plan.popular ? 'border-indigo-200 relative ring-2 ring-indigo-100' : 
       isCurrentPlan ? 'border-green-200 ring-2 ring-green-100' : 
       'border-gray-200'
     } p-8`}>
-      {plan.popular && (
+      {plan.popular && !isCurrentPlan && (
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
           <span className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium">
             Most Popular
@@ -98,12 +108,14 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, isYearly, onSelect, isCurrent
         className={`w-full ${
           isCurrentPlan 
             ? 'bg-green-600 hover:bg-green-700' 
-            : 'bg-gray-900 hover:bg-gray-800'
+            : planComparison === 'upgrade'
+            ? 'bg-gray-900 hover:bg-gray-800'
+            : 'bg-blue-600 hover:bg-blue-700'
         } text-white`}
         onClick={() => onSelect(plan)}
         disabled={isCurrentPlan}
       >
-        {isCurrentPlan ? 'Current Plan' : plan.buttonText}
+        {buttonText}
       </Button>
     </div>
   );

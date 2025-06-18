@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import PricingToggle from "@/components/pricing/PricingToggle";
 import PlanCard from "@/components/pricing/PlanCard";
 import InstitutionalPlan from "@/components/pricing/InstitutionalPlan";
+import { comparePlans } from "@/utils/planHierarchy";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -112,6 +113,11 @@ const Pricing = () => {
     return subscription?.subscription_tier === planName;
   };
 
+  const getPlanComparison = (planName: string) => {
+    const currentPlan = subscription?.subscription_tier || 'Free Trial';
+    return comparePlans(currentPlan, planName);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -128,6 +134,7 @@ const Pricing = () => {
                 isYearly={isYearly}
                 onSelect={handlePlanSelection}
                 isCurrentPlan={isCurrentPlan(plan.name)}
+                planComparison={getPlanComparison(plan.name)}
               />
             ))}
           </div>
@@ -140,6 +147,7 @@ const Pricing = () => {
                 isYearly={isYearly}
                 onSelect={handlePlanSelection}
                 isCurrentPlan={isCurrentPlan(plan.name)}
+                planComparison={getPlanComparison(plan.name)}
               />
             ))}
           </div>
