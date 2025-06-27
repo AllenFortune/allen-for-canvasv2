@@ -12,6 +12,7 @@ const Courses = () => {
     filteredCourses,
     loading,
     refreshing,
+    error,
     filter,
     setFilter,
     handleRefresh
@@ -33,6 +34,7 @@ const Courses = () => {
                 setFilter={setFilter}
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
+                error={error}
               />
             </div>
 
@@ -40,6 +42,7 @@ const Courses = () => {
               courses={courses}
               filteredCourses={filteredCourses}
               loading={loading}
+              error={error}
             />
           </div>
         </div>

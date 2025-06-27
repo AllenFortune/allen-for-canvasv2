@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -9,16 +10,7 @@ import CourseHeader from '@/components/course-detail/CourseHeader';
 import CourseInfoCards from '@/components/course-detail/CourseInfoCards';
 import GradingAlert from '@/components/course-detail/GradingAlert';
 import CourseDetailTabs from '@/components/course-detail/CourseDetailTabs';
-
-interface Course {
-  id: number;
-  name: string;
-  course_code: string;
-  workflow_state: string;
-  start_at: string | null;
-  end_at: string | null;
-  total_students: number;
-}
+import { Course, getCachedSession, withRetry } from '@/utils/courseUtils';
 
 interface Assignment {
   id: number;
@@ -65,6 +57,7 @@ const CourseDetail = () => {
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [discussionsLoading, setDiscussionsLoading] = useState(false);
   const [quizzesLoading, setQuizzesLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   console.log('CourseDetail component loaded with courseId:', courseId);
 
@@ -81,20 +74,41 @@ const CourseDetail = () => {
     if (!user || !courseId) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('get-canvas-courses', {
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      setLoading(true);
+      setError(null);
+      
+      console.log(`Fetching details for course ${courseId}`);
+      
+      const sessionResult = await getCachedSession();
+      if (!sessionResult.data.session?.access_token) {
+        throw new Error('No valid session');
+      }
+
+      const { data, error } = await withRetry(() =>
+        supabase.functions.invoke('get-canvas-courses', {
+          headers: {
+            Authorization: `Bearer ${sessionResult.data.session.access_token}`,
+          },
+        })
+      );
       
       if (error) throw error;
       
       if (data.courses) {
         const foundCourse = data.courses.find((c: Course) => c.id === parseInt(courseId));
-        setCourse(foundCourse || null);
+        if (foundCourse) {
+          console.log(`Found course: ${foundCourse.name}`);
+          setCourse(foundCourse);
+        } else {
+          console.warn(`Course ${courseId} not found in ${data.courses.length} courses`);
+          setError(`Course with ID ${courseId} was not found. It may have been removed or you may not have access to it.`);
+        }
+      } else {
+        setError('No courses data received from Canvas');
       }
     } catch (error) {
       console.error('Error fetching course details:', error);
+      setError('Failed to load course details. Please check your Canvas connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -105,20 +119,30 @@ const CourseDetail = () => {
 
     setAssignmentsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-canvas-assignments', {
-        body: { courseId: parseInt(courseId) },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      const sessionResult = await getCachedSession();
+      if (!sessionResult.data.session?.access_token) {
+        console.warn('No valid session for assignments');
+        return;
+      }
+
+      const { data, error } = await withRetry(() =>
+        supabase.functions.invoke('get-canvas-assignments', {
+          body: { courseId: parseInt(courseId) },
+          headers: {
+            Authorization: `Bearer ${sessionResult.data.session.access_token}`,
+          },
+        })
+      );
       
       if (error) throw error;
       
       if (data.assignments) {
         setAssignments(data.assignments);
+        console.log(`Loaded ${data.assignments.length} assignments`);
       }
     } catch (error) {
       console.error('Error fetching assignments:', error);
+      // Don't set error state for individual components, just log
     } finally {
       setAssignmentsLoading(false);
     }
@@ -129,17 +153,26 @@ const CourseDetail = () => {
 
     setDiscussionsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-canvas-discussions', {
-        body: { courseId: parseInt(courseId) },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      const sessionResult = await getCachedSession();
+      if (!sessionResult.data.session?.access_token) {
+        console.warn('No valid session for discussions');
+        return;
+      }
+
+      const { data, error } = await withRetry(() =>
+        supabase.functions.invoke('get-canvas-discussions', {
+          body: { courseId: parseInt(courseId) },
+          headers: {
+            Authorization: `Bearer ${sessionResult.data.session.access_token}`,
+          },
+        })
+      );
       
       if (error) throw error;
       
       if (data.discussions) {
         setDiscussions(data.discussions);
+        console.log(`Loaded ${data.discussions.length} discussions`);
       }
     } catch (error) {
       console.error('Error fetching discussions:', error);
@@ -153,17 +186,26 @@ const CourseDetail = () => {
 
     setQuizzesLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-canvas-quizzes', {
-        body: { courseId: parseInt(courseId) },
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      const sessionResult = await getCachedSession();
+      if (!sessionResult.data.session?.access_token) {
+        console.warn('No valid session for quizzes');
+        return;
+      }
+
+      const { data, error } = await withRetry(() =>
+        supabase.functions.invoke('get-canvas-quizzes', {
+          body: { courseId: parseInt(courseId) },
+          headers: {
+            Authorization: `Bearer ${sessionResult.data.session.access_token}`,
+          },
+        })
+      );
       
       if (error) throw error;
       
       if (data.quizzes) {
         setQuizzes(data.quizzes);
+        console.log(`Loaded ${data.quizzes.length} quizzes`);
       }
     } catch (error) {
       console.error('Error fetching quizzes:', error);
@@ -194,7 +236,7 @@ const CourseDetail = () => {
     );
   }
 
-  if (!course) {
+  if (error || !course) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-gray-50">
@@ -202,10 +244,21 @@ const CourseDetail = () => {
           <div className="py-20">
             <div className="max-w-7xl mx-auto px-6">
               <div className="text-center py-8">
-                <p className="text-gray-600">Course not found.</p>
-                <Link to="/courses">
-                  <Button className="mt-4">Back to Courses</Button>
-                </Link>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+                  <p className="text-red-600 mb-4">{error || 'Course not found'}</p>
+                  <div className="space-y-3">
+                    <Link to="/courses">
+                      <Button className="w-full">Back to Courses</Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.reload()}
+                      className="w-full"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

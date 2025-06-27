@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Submission } from '@/types/grading';
 import { useCanvasCredentials } from './useCanvasCredentials';
+import { getCachedSession, withRetry } from '@/utils/courseUtils';
 
 export const useSubmissionsData = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -16,18 +17,20 @@ export const useSubmissionsData = () => {
       
       // First, fetch all enrolled students in the course
       console.log('Fetching enrolled students...');
-      const { data: enrollmentsData, error: enrollmentsError } = await supabase.functions.invoke('canvas-proxy', {
-        body: {
-          canvasUrl: credentials.canvasUrl,
-          canvasToken: credentials.canvasToken,
-          endpoint: `courses/${courseId}/enrollments`,
-          queryParams: {
-            'type[]': 'StudentEnrollment',
-            'state[]': 'active',
-            per_page: 100
+      const { data: enrollmentsData, error: enrollmentsError } = await withRetry(() =>
+        supabase.functions.invoke('canvas-proxy', {
+          body: {
+            canvasUrl: credentials.canvasUrl,
+            canvasToken: credentials.canvasToken,
+            endpoint: `courses/${courseId}/enrollments`,
+            queryParams: {
+              'type[]': 'StudentEnrollment',
+              'state[]': 'active',
+              per_page: 100
+            }
           }
-        }
-      });
+        })
+      );
 
       if (enrollmentsError) {
         console.warn('Failed to fetch enrollments:', enrollmentsError);
@@ -38,17 +41,19 @@ export const useSubmissionsData = () => {
       
       // Then fetch submissions with student information
       console.log('Fetching submissions...');
-      const { data: submissionsData, error: submissionsError } = await supabase.functions.invoke('canvas-proxy', {
-        body: {
-          canvasUrl: credentials.canvasUrl,
-          canvasToken: credentials.canvasToken,
-          endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions`,
-          queryParams: {
-            'include[]': ['user', 'submission_comments', 'submission_history', 'attachments'],
-            per_page: 100
+      const { data: submissionsData, error: submissionsError } = await withRetry(() =>
+        supabase.functions.invoke('canvas-proxy', {
+          body: {
+            canvasUrl: credentials.canvasUrl,
+            canvasToken: credentials.canvasToken,
+            endpoint: `courses/${courseId}/assignments/${assignmentId}/submissions`,
+            queryParams: {
+              'include[]': ['user', 'submission_comments', 'submission_history', 'attachments'],
+              per_page: 100
+            }
           }
-        }
-      });
+        })
+      );
       
       if (submissionsError) {
         console.error('Error fetching submissions:', submissionsError);
