@@ -15,6 +15,79 @@ export interface Course {
   };
 }
 
+// Get the current academic semester based on the current date
+export const getCurrentAcademicSemester = (): string => {
+  const now = new Date();
+  const month = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
+  const year = now.getFullYear();
+  
+  let semesterCode: string;
+  let semesterYear: number;
+  
+  if (month >= 8 && month <= 12) {
+    // August-December: Fall semester
+    semesterCode = 'FA';
+    semesterYear = year;
+  } else if (month >= 1 && month <= 5) {
+    // January-May: Spring semester
+    semesterCode = 'SP';
+    semesterYear = year;
+  } else {
+    // June-July: Summer semester
+    semesterCode = 'SU';
+    semesterYear = year;
+  }
+  
+  console.log(`Current academic semester determined: ${semesterCode}/${semesterYear} (current month: ${month})`);
+  return `${semesterCode}/${semesterYear}`;
+};
+
+// Check if a term name matches the current academic semester
+export const isCurrentSemesterTerm = (termName: string): boolean => {
+  if (!termName) return false;
+  
+  const currentSemester = getCurrentAcademicSemester();
+  console.log(`Checking if term "${termName}" matches current semester "${currentSemester}"`);
+  
+  // Check for various term name formats that might contain the semester
+  const termUpper = termName.toUpperCase();
+  const semesterUpper = currentSemester.toUpperCase();
+  
+  // Direct match (e.g., "SU/2025")
+  if (termUpper.includes(semesterUpper)) {
+    console.log(`✓ Term "${termName}" matches current semester (direct match)`);
+    return true;
+  }
+  
+  // Reverse format match (e.g., "2025/SU")
+  const [semCode, semYear] = currentSemester.split('/');
+  const reverseFormat = `${semYear}/${semCode}`;
+  if (termUpper.includes(reverseFormat.toUpperCase())) {
+    console.log(`✓ Term "${termName}" matches current semester (reverse format)`);
+    return true;
+  }
+  
+  // Check for full semester names
+  const semesterNames = {
+    'FA': ['FALL', 'AUTUMN'],
+    'SP': ['SPRING'],
+    'SU': ['SUMMER']
+  };
+  
+  const currentSemesterNames = semesterNames[semCode as keyof typeof semesterNames] || [];
+  const currentYear = semYear;
+  
+  for (const semesterName of currentSemesterNames) {
+    if (termUpper.includes(semesterName) && termUpper.includes(currentYear)) {
+      console.log(`✓ Term "${termName}" matches current semester (full name match: ${semesterName} ${currentYear})`);
+      return true;
+    }
+  }
+  
+  console.log(`✗ Term "${termName}" does not match current semester`);
+  return false;
+};
+
 export const isPastCourse = (course: Course): boolean => {
   const now = new Date();
   
@@ -39,10 +112,36 @@ export const isPastCourse = (course: Course): boolean => {
 };
 
 export const isCurrentCourse = (course: Course): boolean => {
-  return course.workflow_state === 'available' && !isPastCourse(course);
+  console.log(`Checking if course "${course.name}" (ID: ${course.id}) is current...`);
+  console.log(`Course workflow_state: ${course.workflow_state}`);
+  console.log(`Course term: ${course.term ? JSON.stringify(course.term, null, 2) : 'No term data'}`);
+  
+  // First check if the course is available/active
+  if (course.workflow_state !== 'available') {
+    console.log(`✗ Course "${course.name}" is not current (workflow_state: ${course.workflow_state})`);
+    return false;
+  }
+  
+  // Don't include past courses
+  if (isPastCourse(course)) {
+    console.log(`✗ Course "${course.name}" is not current (marked as past course)`);
+    return false;
+  }
+  
+  // Check if the course term matches the current academic semester
+  if (course.term?.name && isCurrentSemesterTerm(course.term.name)) {
+    console.log(`✓ Course "${course.name}" is current (term matches current semester)`);
+    return true;
+  }
+  
+  // If no term data or term doesn't match current semester, it's not current
+  console.log(`✗ Course "${course.name}" is not current (term doesn't match current semester)`);
+  return false;
 };
 
 export const filterCourses = (courses: Course[], favoriteCourses: Course[], filter: string): Course[] => {
+  console.log(`Filtering ${courses.length} courses with filter: ${filter}`);
+  
   let filtered = courses;
   
   switch (filter) {
@@ -51,6 +150,7 @@ export const filterCourses = (courses: Course[], favoriteCourses: Course[], filt
       break;
     case 'current':
       filtered = courses.filter(course => isCurrentCourse(course));
+      console.log(`Current courses filter result: ${filtered.length} courses`);
       break;
     case 'past':
       filtered = courses.filter(course => isPastCourse(course));
@@ -68,6 +168,7 @@ export const filterCourses = (courses: Course[], favoriteCourses: Course[], filt
       filtered = courses;
   }
   
+  console.log(`Filter "${filter}" returned ${filtered.length} courses`);
   return filtered;
 };
 
