@@ -61,7 +61,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/ai-literacy" element={<AILiteracy />} />
             <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
-            <Route path="/ai-assignment" element={<AIAssignmentIntegration />} />
+            <Route path="/ai-assignment-integration" element={<AIAssignmentIntegration />} />
             <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
             <Route path="/admin-portal" element={<AdminPortal />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
