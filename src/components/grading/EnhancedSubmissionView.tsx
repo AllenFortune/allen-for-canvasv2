@@ -1,16 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, FileText, Link, AlertCircle, MessageCircle, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, FileText, Link, AlertCircle, MessageCircle, Download, Eye } from 'lucide-react';
 import { Submission } from '@/types/grading';
+import FilePreviewModal from './FilePreviewModal';
+import { getFilePreviewability, getFileTypeIcon } from '@/utils/filePreviewUtils';
 
 interface EnhancedSubmissionViewProps {
   submission: Submission;
 }
 
 const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submission }) => {
+  const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; attachment: any | null }>({
+    isOpen: false,
+    attachment: null
+  });
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not submitted';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -36,31 +44,18 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
     }
   };
 
-  const getFileTypeIcon = (filename: string) => {
-    const ext = filename.toLowerCase().split('.').pop();
-    switch (ext) {
-      case 'docx':
-      case 'doc':
-        return '📄';
-      case 'pdf':
-        return '📕';
-      case 'txt':
-        return '📝';
-      case 'xlsx':
-      case 'xls':
-        return '📊';
-      case 'pptx':
-      case 'ppt':
-        return '📊';
-      default:
-        return '📎';
-    }
-  };
-
   const getFileSize = (size: number) => {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handlePreviewFile = (attachment: any) => {
+    setPreviewModal({ isOpen: true, attachment });
+  };
+
+  const handleClosePreview = () => {
+    setPreviewModal({ isOpen: false, attachment: null });
   };
 
   return (
@@ -143,38 +138,67 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                 </Badge>
               </div>
               <div className="grid gap-3">
-                {submission.attachments.map((attachment: any, index: number) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg"
-                  >
-                    <div className="text-2xl">
-                      {getFileTypeIcon(attachment.filename || attachment.display_name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {attachment.filename || attachment.display_name}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        {attachment.size && (
-                          <span>{getFileSize(attachment.size)}</span>
+                {submission.attachments.map((attachment: any, index: number) => {
+                  const filename = attachment.filename || attachment.display_name;
+                  const { canPreview } = getFilePreviewability(filename, attachment['content-type']);
+                  
+                  return (
+                    <div 
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg"
+                    >
+                      <div className="text-2xl">
+                        {getFileTypeIcon(filename, attachment['content-type'])}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {filename}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          {attachment.size && (
+                            <span>{getFileSize(attachment.size)}</span>
+                          )}
+                          {attachment['content-type'] && (
+                            <span>{attachment['content-type']}</span>
+                          )}
+                          {canPreview && (
+                            <Badge variant="outline" className="text-xs">
+                              Previewable
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {canPreview && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewFile(attachment)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Preview
+                          </Button>
                         )}
-                        {attachment['content-type'] && (
-                          <span>{attachment['content-type']}</span>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <a 
+                            href={attachment.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                    <a 
-                      href={attachment.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download
-                    </a>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded border border-blue-200">
                 <strong>AI Processing:</strong> .docx and .txt files will be automatically processed for content analysis. 
@@ -219,6 +243,15 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* File Preview Modal */}
+      {previewModal.attachment && (
+        <FilePreviewModal
+          isOpen={previewModal.isOpen}
+          onClose={handleClosePreview}
+          attachment={previewModal.attachment}
+        />
       )}
     </div>
   );
