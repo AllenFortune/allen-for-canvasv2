@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import HorizontalStudentNav from './HorizontalStudentNav';
@@ -58,15 +59,17 @@ const GradeAssignmentContent: React.FC<GradeAssignmentContentProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Horizontal Student Navigation */}
-      <HorizontalStudentNav
-        submissions={submissions}
-        currentSubmissionIndex={currentSubmissionIndex}
-        onSubmissionChange={handleSubmissionChange}
-        assignment={assignment}
-      />
+      {/* Horizontal Student Navigation - Positioned as sticky below header */}
+      <div className="sticky top-16 z-40 bg-white shadow-sm">
+        <HorizontalStudentNav
+          submissions={submissions}
+          currentSubmissionIndex={currentSubmissionIndex}
+          onSubmissionChange={handleSubmissionChange}
+          assignment={assignment}
+        />
+      </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - Added top padding to account for sticky nav */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Submission Content - Takes up 2/3 of the width */}

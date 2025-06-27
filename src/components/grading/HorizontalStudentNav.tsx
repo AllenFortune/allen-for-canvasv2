@@ -49,7 +49,7 @@ const HorizontalStudentNav: React.FC<HorizontalStudentNavProps> = ({
   if (!currentSubmission) return null;
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="px-6 py-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         {/* Left: Navigation Controls */}
         <div className="flex items-center gap-4">
