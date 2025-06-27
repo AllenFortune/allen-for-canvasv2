@@ -32,7 +32,10 @@ const Header = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user) return;
+      if (!user) {
+        setProfile(null);
+        return;
+      }
 
       setProfileLoading(true);
       try {
@@ -62,6 +65,8 @@ const Header = () => {
       setSigningOut(true);
       try {
         await signOut();
+        // Clear profile state immediately after sign out
+        setProfile(null);
         toast({
           title: "Signed out successfully",
           description: "You have been logged out of your account.",
