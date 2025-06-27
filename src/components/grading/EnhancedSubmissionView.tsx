@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, FileText, Link, AlertCircle, MessageCircle, Download, Eye } from 'lucide-react';
+import { Clock, FileText, Link, AlertCircle, MessageCircle, Download } from 'lucide-react';
 import { Submission } from '@/types/grading';
-import FilePreviewModal from './FilePreviewModal';
+import InlineFilePreview from './InlineFilePreview';
 import { getFilePreviewability, getFileTypeIcon } from '@/utils/filePreviewUtils';
 
 interface EnhancedSubmissionViewProps {
@@ -14,10 +14,7 @@ interface EnhancedSubmissionViewProps {
 }
 
 const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submission }) => {
-  const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; attachment: any | null }>({
-    isOpen: false,
-    attachment: null
-  });
+  const [expandedFiles, setExpandedFiles] = useState<{ [key: number]: boolean }>({});
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not submitted';
@@ -50,12 +47,11 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const handlePreviewFile = (attachment: any) => {
-    setPreviewModal({ isOpen: true, attachment });
-  };
-
-  const handleClosePreview = () => {
-    setPreviewModal({ isOpen: false, attachment: null });
+  const toggleFileExpansion = (index: number) => {
+    setExpandedFiles(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
   };
 
   return (
@@ -129,7 +125,7 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
           ) : null}
 
           {submission.attachments && submission.attachments.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center gap-2 text-gray-700 font-medium">
                 <FileText className="w-4 h-4" />
                 File Attachments ({submission.attachments.length})
@@ -137,7 +133,7 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                   AI Processable
                 </Badge>
               </div>
-              <div className="grid gap-4">
+              <div className="space-y-6">
                 {submission.attachments.map((attachment: any, index: number) => {
                   const filename = attachment.filename || attachment.display_name;
                   const { canPreview } = getFilePreviewability(filename, attachment['content-type']);
@@ -145,57 +141,54 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                   return (
                     <div 
                       key={index}
-                      className="flex items-start gap-3 p-4 bg-gray-50 border rounded-lg"
+                      className="border rounded-lg p-4 bg-gray-50"
                     >
-                      <div className="text-2xl mt-1">
-                        {getFileTypeIcon(filename, attachment['content-type'])}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate mb-1">
-                          {filename}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                          {attachment.size && (
-                            <span>{getFileSize(attachment.size)}</span>
-                          )}
-                          {attachment['content-type'] && (
-                            <span>{attachment['content-type']}</span>
-                          )}
-                          {canPreview && (
-                            <Badge variant="outline" className="text-xs">
-                              Previewable
-                            </Badge>
-                          )}
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="text-2xl mt-1">
+                          {getFileTypeIcon(filename, attachment['content-type'])}
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          {canPreview && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handlePreviewFile(attachment)}
-                              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                            >
-                              <Eye className="w-4 h-4" />
-                              Preview
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                            className="flex items-center gap-2 text-green-600 hover:text-green-800 hover:bg-green-50"
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate mb-1">
+                            {filename}
+                          </p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                            {attachment.size && (
+                              <span>{getFileSize(attachment.size)}</span>
+                            )}
+                            {attachment['content-type'] && (
+                              <span>{attachment['content-type']}</span>
+                            )}
+                            {canPreview && (
+                              <Badge variant="outline" className="text-xs">
+                                Previewable
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex items-center gap-2 text-green-600 hover:text-green-800 hover:bg-green-50"
+                        >
+                          <a 
+                            href={attachment.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
                           >
-                            <a 
-                              href={attachment.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                            >
-                              <Download className="w-4 h-4" />
-                              Download
-                            </a>
-                          </Button>
-                        </div>
+                            <Download className="w-4 h-4" />
+                            Download
+                          </a>
+                        </Button>
                       </div>
+                      
+                      {canPreview && (
+                        <InlineFilePreview
+                          attachment={attachment}
+                          isExpanded={expandedFiles[index] || false}
+                          onToggle={() => toggleFileExpansion(index)}
+                        />
+                      )}
                     </div>
                   );
                 })}
@@ -243,15 +236,6 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* File Preview Modal */}
-      {previewModal.attachment && (
-        <FilePreviewModal
-          isOpen={previewModal.isOpen}
-          onClose={handleClosePreview}
-          attachment={previewModal.attachment}
-        />
       )}
     </div>
   );
