@@ -17,7 +17,7 @@ const GradeInput: React.FC<GradeInputProps> = ({
   maxPoints,
   currentScore
 }) => {
-  const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(1) : '';
+  const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(0) : '';
 
   const getGradeColor = (grade: string) => {
     const score = parseFloat(grade);
