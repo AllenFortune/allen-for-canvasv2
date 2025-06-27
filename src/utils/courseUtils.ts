@@ -1,4 +1,3 @@
-
 export interface Course {
   id: number;
   name: string;
@@ -139,6 +138,26 @@ export const isCurrentCourse = (course: Course): boolean => {
   return false;
 };
 
+export const isActiveCourse = (course: Course): boolean => {
+  console.log(`Checking if course "${course.name}" (ID: ${course.id}) is active...`);
+  console.log(`Course workflow_state: ${course.workflow_state}`);
+  
+  // Must be available workflow state
+  if (course.workflow_state !== 'available') {
+    console.log(`✗ Course "${course.name}" is not active (workflow_state: ${course.workflow_state})`);
+    return false;
+  }
+  
+  // Must not be a past course (concluded or ended)
+  if (isPastCourse(course)) {
+    console.log(`✗ Course "${course.name}" is not active (marked as past course)`);
+    return false;
+  }
+  
+  console.log(`✓ Course "${course.name}" is active (available and not past)`);
+  return true;
+};
+
 export const filterCourses = (courses: Course[], favoriteCourses: Course[], filter: string): Course[] => {
   console.log(`Filtering ${courses.length} courses with filter: ${filter}`);
   
@@ -154,15 +173,19 @@ export const filterCourses = (courses: Course[], favoriteCourses: Course[], filt
       break;
     case 'past':
       filtered = courses.filter(course => isPastCourse(course));
+      console.log(`Past courses filter result: ${filtered.length} courses`);
       break;
     case 'active':
-      filtered = courses.filter(course => course.workflow_state === 'available');
+      filtered = courses.filter(course => isActiveCourse(course));
+      console.log(`Active courses filter result: ${filtered.length} courses`);
       break;
     case 'unpublished':
       filtered = courses.filter(course => course.workflow_state === 'unpublished');
+      console.log(`Unpublished courses filter result: ${filtered.length} courses`);
       break;
     case 'favorites':
       filtered = favoriteCourses;
+      console.log(`Favorites filter result: ${filtered.length} courses`);
       break;
     default:
       filtered = courses;
