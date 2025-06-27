@@ -11,7 +11,7 @@ export const useCourses = () => {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<string>('current');
+  const [filter, setFilter] = useState<string>('active');
   const [error, setError] = useState<string | null>(null);
 
   const fetchCourses = useCallback(async () => {

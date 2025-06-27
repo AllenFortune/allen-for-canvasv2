@@ -167,10 +167,6 @@ export const filterCourses = (courses: Course[], favoriteCourses: Course[], filt
     case 'all':
       filtered = courses;
       break;
-    case 'current':
-      filtered = courses.filter(course => isCurrentCourse(course));
-      console.log(`Current courses filter result: ${filtered.length} courses`);
-      break;
     case 'past':
       filtered = courses.filter(course => isPastCourse(course));
       console.log(`Past courses filter result: ${filtered.length} courses`);

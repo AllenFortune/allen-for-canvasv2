@@ -30,7 +30,6 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              <SelectItem value="current">Current Courses</SelectItem>
               <SelectItem value="past">Past Courses</SelectItem>
               <SelectItem value="favorites">Favorites</SelectItem>
               <SelectItem value="active">Active</SelectItem>
