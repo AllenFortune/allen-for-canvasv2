@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,10 +37,18 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     getSession();
 
-    supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log('Auth state change:', event, session?.user?.email);
       setUser(session?.user ?? null);
       setSession(session);
+      
+      // Only set loading to false after we've processed the auth change
+      if (!loading) {
+        setLoading(false);
+      }
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
@@ -113,13 +120,22 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const signOut = async () => {
     try {
-      setLoading(true);
-      await supabase.auth.signOut();
-      // Navigation will be handled by the component calling signOut
+      console.log('Starting sign out process...');
+      
+      // Clear state immediately
+      setUser(null);
+      setSession(null);
+      
+      // Then call Supabase signOut
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error signing out:', error);
+      }
+      
+      console.log('Sign out completed');
     } catch (error) {
       console.error('Error signing out:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
