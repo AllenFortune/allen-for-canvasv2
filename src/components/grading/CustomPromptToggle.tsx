@@ -18,19 +18,19 @@ const CustomPromptToggle: React.FC<CustomPromptToggleProps> = ({
 }) => {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
             Custom Grading Instructions
           </label>
-          <p className="text-xs text-gray-500">
-            Add specific focus areas or grading preferences for AI
-          </p>
+          <Switch
+            checked={useCustomPrompt}
+            onCheckedChange={setUseCustomPrompt}
+          />
         </div>
-        <Switch
-          checked={useCustomPrompt}
-          onCheckedChange={setUseCustomPrompt}
-        />
+        <p className="text-xs text-gray-500 leading-relaxed">
+          Add specific focus areas or grading preferences for AI
+        </p>
       </div>
       
       {useCustomPrompt && (

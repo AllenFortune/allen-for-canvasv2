@@ -31,7 +31,7 @@ const AIGradingSection: React.FC<AIGradingSectionProps> = ({
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
 
   return (
-    <div className="space-y-4 p-3 bg-gray-50 rounded-lg border">
+    <div className="space-y-6 p-4 bg-gray-50 rounded-lg border">
       <AssessmentTypeToggle
         isSummativeAssessment={isSummativeAssessment}
         setIsSummativeAssessment={setIsSummativeAssessment}

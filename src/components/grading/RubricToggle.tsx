@@ -17,26 +17,24 @@ const RubricToggle: React.FC<RubricToggleProps> = ({
 
   return (
     <div className="space-y-3 pt-3 border-t border-gray-200">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">
-            Grading Criteria
-          </label>
-          <p className="text-xs text-gray-500">
-            {useRubricForAI 
-              ? "AI will use the assignment rubric for grading" 
-              : "AI will use the assignment description for grading"
-            }
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600">Description</span>
-          <Switch
-            checked={useRubricForAI}
-            onCheckedChange={setUseRubricForAI}
-          />
-          <span className="text-xs text-gray-600">Rubric</span>
-        </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">
+          Grading Criteria
+        </label>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          {useRubricForAI 
+            ? "AI will use assignment rubric for grading" 
+            : "AI will use assignment description for grading"
+          }
+        </p>
+      </div>
+      <div className="flex items-center justify-center gap-3 p-2 bg-white rounded-md border">
+        <span className="text-xs text-gray-600">Description</span>
+        <Switch
+          checked={useRubricForAI}
+          onCheckedChange={setUseRubricForAI}
+        />
+        <span className="text-xs text-gray-600">Rubric</span>
       </div>
     </div>
   );
