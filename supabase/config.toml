@@ -1,1 +1,200 @@
+
 project_id = "fnxbysvezshnikqboplh"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_parameter_status = {}
+
+[realtime]
+enabled = true
+ip_version = "ipv4"
+port = 54323
+
+[studio]
+enabled = true
+port = 54324
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54325
+smtp_port = 54326
+pop3_port = 54327
+
+[storage]
+enabled = true
+port = 54328
+image_transformation = { enabled = true }
+
+[auth]
+enabled = true
+port = 54329
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://lovable.app"]
+jwt_expiry = 3600
+enable_signup = true
+enable_email_confirmations = false
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[edge-runtime]
+enabled = true
+port = 54330
+
+[[edge-runtime.functions]]
+name = "canvas-proxy"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "check-canvas-connection-rewards"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "check-subscription"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "create-checkout"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "create-submission-purchase"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "customer-portal"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "daily-usage-reset"
+verify_jwt = false
+
+[[edge-runtime.functions]]
+name = "generate-ai-assignment-integration"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "generate-ai-feedback"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "generate-revised-assignment"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-all-assignments-needing-grading"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-assignment-details"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-assignment-submissions"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-assignments"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-course-by-id"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-courses"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-discussion-details"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-discussion-entries"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-discussion-grades"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-discussions"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-favorite-courses"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-quiz-questions"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-quiz-submission-answers"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-quiz-submissions"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-canvas-quizzes"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "grade-canvas-discussion-entry"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "grade-canvas-quiz-question"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "grade-canvas-submission"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "process-document-content"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "process-referral-signup"
+verify_jwt = false
+
+[[edge-runtime.functions]]
+name = "send-canvas-setup-email"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "send-contact-email"
+verify_jwt = false
+
+[[edge-runtime.functions]]
+name = "send-referral-invitation"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "send-welcome-email"
+verify_jwt = false
+
+[[edge-runtime.functions]]
+name = "test-canvas-connection"
+verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "verify-submission-purchase"
+verify_jwt = true

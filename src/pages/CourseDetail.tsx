@@ -84,6 +84,29 @@ const CourseDetail = () => {
         throw new Error('No valid session');
       }
 
+      // First try to fetch the course directly by ID
+      try {
+        const { data, error } = await withRetry(() =>
+          supabase.functions.invoke('get-canvas-course-by-id', {
+            body: { courseId: parseInt(courseId) },
+            headers: {
+              Authorization: `Bearer ${sessionResult.data.session.access_token}`,
+            },
+          })
+        );
+        
+        if (!error && data.course) {
+          console.log(`Found course via direct fetch: ${data.course.name}`);
+          setCourse(data.course);
+          return;
+        }
+        
+        console.log('Direct course fetch failed, trying fallback method');
+      } catch (directError) {
+        console.warn('Direct course fetch error:', directError);
+      }
+
+      // Fallback: fetch all courses and search
       const { data, error } = await withRetry(() =>
         supabase.functions.invoke('get-canvas-courses', {
           headers: {
@@ -97,11 +120,16 @@ const CourseDetail = () => {
       if (data.courses) {
         const foundCourse = data.courses.find((c: Course) => c.id === parseInt(courseId));
         if (foundCourse) {
-          console.log(`Found course: ${foundCourse.name}`);
+          console.log(`Found course via fallback: ${foundCourse.name}`);
           setCourse(foundCourse);
         } else {
           console.warn(`Course ${courseId} not found in ${data.courses.length} courses`);
-          setError(`Course with ID ${courseId} was not found. It may have been removed or you may not have access to it.`);
+          setError(`Course with ID ${courseId} was not found. This could mean:
+          • The course doesn't exist or has been deleted
+          • You don't have access to this course
+          • The course is in a different Canvas instance
+          
+          Please check the course URL and your Canvas permissions.`);
         }
       } else {
         setError('No courses data received from Canvas');
@@ -244,8 +272,11 @@ const CourseDetail = () => {
           <div className="py-20">
             <div className="max-w-7xl mx-auto px-6">
               <div className="text-center py-8">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
-                  <p className="text-red-600 mb-4">{error || 'Course not found'}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-2xl mx-auto">
+                  <h3 className="text-lg font-semibold text-red-800 mb-4">Course Not Found</h3>
+                  <div className="text-red-600 mb-6 text-left whitespace-pre-line">
+                    {error || 'Course not found'}
+                  </div>
                   <div className="space-y-3">
                     <Link to="/courses">
                       <Button className="w-full">Back to Courses</Button>
