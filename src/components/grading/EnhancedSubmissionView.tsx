@@ -137,7 +137,7 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                   AI Processable
                 </Badge>
               </div>
-              <div className="grid gap-3">
+              <div className="grid gap-4">
                 {submission.attachments.map((attachment: any, index: number) => {
                   const filename = attachment.filename || attachment.display_name;
                   const { canPreview } = getFilePreviewability(filename, attachment['content-type']);
@@ -145,16 +145,16 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                   return (
                     <div 
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg"
+                      className="flex items-start gap-3 p-4 bg-gray-50 border rounded-lg"
                     >
-                      <div className="text-2xl">
+                      <div className="text-2xl mt-1">
                         {getFileTypeIcon(filename, attachment['content-type'])}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
+                        <p className="font-medium truncate mb-1">
                           {filename}
                         </p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                           {attachment.size && (
                             <span>{getFileSize(attachment.size)}</span>
                           )}
@@ -167,34 +167,34 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
                             </Badge>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {canPreview && (
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          {canPreview && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePreviewFile(attachment)}
+                              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Preview
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handlePreviewFile(attachment)}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                            asChild
+                            className="flex items-center gap-2 text-green-600 hover:text-green-800 hover:bg-green-50"
                           >
-                            <Eye className="w-4 h-4" />
-                            Preview
+                            <a 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <Download className="w-4 h-4" />
+                              Download
+                            </a>
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                        >
-                          <a 
-                            href={attachment.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            <Download className="w-4 h-4" />
-                            Download
-                          </a>
-                        </Button>
+                        </div>
                       </div>
                     </div>
                   );
