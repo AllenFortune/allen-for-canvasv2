@@ -3,8 +3,7 @@ export const PLAN_HIERARCHY = {
   'Free Trial': 0,
   'Lite Plan': 1,
   'Core Plan': 2,
-  'Full-Time Plan': 3,
-  'Super Plan': 4
+  'Full-Time Plan': 3
 } as const;
 
 export type PlanName = keyof typeof PLAN_HIERARCHY;

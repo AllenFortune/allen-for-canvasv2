@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminTableFilters from './AdminTableFilters';
@@ -29,7 +28,7 @@ interface AdminUserManagementProps {
 const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
-  const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime' | 'super'>('all');
+  const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime'>('all');
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,8 +43,7 @@ const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onRefreshData }: A
                              (filterPlan === 'trial' && user.subscription_tier === 'Free Trial') ||
                              (filterPlan === 'lite' && user.subscription_tier === 'Lite Plan') ||
                              (filterPlan === 'core' && user.subscription_tier === 'Core Plan') ||
-                             (filterPlan === 'fulltime' && user.subscription_tier === 'Full-Time Plan') ||
-                             (filterPlan === 'super' && user.subscription_tier === 'Super Plan');
+                             (filterPlan === 'fulltime' && user.subscription_tier === 'Full-Time Plan');
     
     return matchesSearch && matchesConnectionFilter && matchesPlanFilter;
   });

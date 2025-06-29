@@ -35,6 +35,6 @@ export const useSubscription = () => {
     createCheckout,
     purchaseAdditionalSubmissions,
     openCustomerPortal,
-    canGrade: usage ? usage.submissions_used < usage.total_limit : false
+    canGrade: usage ? (usage.total_limit === -1 ? true : usage.submissions_used < usage.total_limit) : false
   };
 };

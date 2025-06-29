@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,7 +95,6 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminU
       case 'Lite Plan': return 'secondary';
       case 'Core Plan': return 'default';
       case 'Full-Time Plan': return 'default';
-      case 'Super Plan': return 'default';
       default: return 'outline';
     }
   };

@@ -101,8 +101,10 @@ export const useSubscriptionData = () => {
       const base_limit = PLAN_LIMITS[subscriptionTier as keyof typeof PLAN_LIMITS] || 10;
       console.log('Base limit determined:', base_limit, 'for tier:', subscriptionTier);
       
-      const total_limit = base_limit + purchased_submissions;
-      const percentage = total_limit > 0 ? (submissions_used / total_limit) * 100 : 0;
+      // Handle unlimited plans (Full-Time Plan has -1 limit)
+      const isUnlimited = base_limit === -1;
+      const total_limit = isUnlimited ? -1 : base_limit + purchased_submissions;
+      const percentage = isUnlimited ? 0 : (total_limit > 0 ? (submissions_used / total_limit) * 100 : 0);
 
       // Get billing period for display
       const { data: trackingData } = await supabase
@@ -114,8 +116,8 @@ export const useSubscriptionData = () => {
 
       const newUsageData = { 
         submissions_used, 
-        limit: base_limit,
-        purchased_submissions,
+        limit: isUnlimited ? -1 : base_limit,
+        purchased_submissions: isUnlimited ? 0 : purchased_submissions,
         total_limit, 
         percentage,
         billing_period: trackingData?.billing_period || null

@@ -69,24 +69,16 @@ const Pricing = () => {
       name: "Full-Time Plan", 
       monthlyPrice: 69.99,
       yearlyPrice: 699.90,
-      description: "Designed for educators with heavy grading responsibilities.",
+      description: "Unlimited grading for professional educators",
+      tagline: "Perfect for educators with extensive grading responsibilities who need unlimited submissions.",
       features: [
-        "2,000 graded submissions per month",
-        "All Core Plan features",
+        "Unlimited graded submissions per month",
+        "AI-powered grading",
+        "Canvas LMS integration",
+        "PDF, Word & text document support",
         "Advanced analytics",
-        "Priority support"
-      ],
-      buttonText: "Get Started",
-      popular: false
-    },
-    {
-      name: "Super Plan",
-      monthlyPrice: 99.99,
-      yearlyPrice: 999.90,
-      description: "Our most comprehensive plan for educators with extensive grading needs.",
-      features: [
-        "3,000 graded submissions per month",
-        "All Full-Time Plan features", 
+        "Priority support",
+        "Customizable feedback templates",
         "Dedicated account manager",
         "Custom AI training"
       ],
@@ -139,17 +131,16 @@ const Pricing = () => {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {plans.slice(3).map((plan, index) => (
+          <div className="flex justify-center mb-12">
+            <div className="w-full max-w-md">
               <PlanCard
-                key={index}
-                plan={plan}
+                plan={plans[3]}
                 isYearly={isYearly}
                 onSelect={handlePlanSelection}
-                isCurrentPlan={isCurrentPlan(plan.name)}
-                planComparison={getPlanComparison(plan.name)}
+                isCurrentPlan={isCurrentPlan(plans[3].name)}
+                planComparison={getPlanComparison(plans[3].name)}
               />
-            ))}
+            </div>
           </div>
 
           <InstitutionalPlan />
