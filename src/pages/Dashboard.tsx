@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -113,11 +114,6 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
-            
-            {/* Horizontal Billing Usage Section */}
-            <div className="mb-8">
-              <SubmissionPurchaseCard />
-            </div>
 
             {/* Referral Promotion Section */}
             <div className="mb-8">
@@ -142,7 +138,7 @@ const Dashboard = () => {
             </div>
             
             {/* Dashboard Cards Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* Courses Card */}
               <div className="bg-white rounded-lg shadow-sm border p-6 flex flex-col">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Courses</h3>
@@ -189,6 +185,11 @@ const Dashboard = () => {
                   </Button>
                 </Link>
               </div>
+            </div>
+
+            {/* Billing Period Usage Section */}
+            <div className="mb-8">
+              <SubmissionPurchaseCard />
             </div>
           </div>
         </div>
