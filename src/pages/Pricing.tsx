@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -118,8 +117,8 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto px-6">
           <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
-            {plans.slice(0, 3).map((plan, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            {plans.map((plan, index) => (
               <PlanCard
                 key={index}
                 plan={plan}
@@ -129,18 +128,6 @@ const Pricing = () => {
                 planComparison={getPlanComparison(plan.name)}
               />
             ))}
-          </div>
-
-          <div className="flex justify-center mb-12">
-            <div className="w-full max-w-md">
-              <PlanCard
-                plan={plans[3]}
-                isYearly={isYearly}
-                onSelect={handlePlanSelection}
-                isCurrentPlan={isCurrentPlan(plans[3].name)}
-                planComparison={getPlanComparison(plans[3].name)}
-              />
-            </div>
           </div>
 
           <InstitutionalPlan />
