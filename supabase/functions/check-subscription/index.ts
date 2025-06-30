@@ -111,20 +111,30 @@ serve(async (req) => {
       
       logStep("Price details retrieved", { priceId, amount, currency: price.currency });
       
-      // Map prices to tiers (monthly amounts in cents) - FIXED MAPPING
-      if (amount >= 9999) { // $99.99
-        subscriptionTier = "Super Plan";
-      } else if (amount >= 6999) { // $69.99
-        subscriptionTier = "Full-Time Plan";
-      } else if (amount >= 1999) { // $19.99
-        subscriptionTier = "Core Plan";
-      } else if (amount >= 900) { // $9.00 - FIXED: Was 999, now 900
-        subscriptionTier = "Lite Plan";
-      } else {
-        subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
-      }
+      // First try explicit price ID mapping for known price IDs
+      const priceIdToTierMap: { [key: string]: string } = {
+        'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan', // Known Lite Plan price ID
+        'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan', // Another Lite Plan price ID
+      };
       
-      logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
+      if (priceIdToTierMap[priceId]) {
+        subscriptionTier = priceIdToTierMap[priceId];
+        logStep("Tier determined by price ID mapping", { priceId, subscriptionTier });
+      } else {
+        // Fallback to amount-based mapping
+        if (amount >= 9999) { // $99.99
+          subscriptionTier = "Super Plan";
+        } else if (amount >= 6999) { // $69.99
+          subscriptionTier = "Full-Time Plan";
+        } else if (amount >= 1999) { // $19.99
+          subscriptionTier = "Core Plan";
+        } else if (amount >= 900) { // $9.00 and above
+          subscriptionTier = "Lite Plan";
+        } else {
+          subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
+        }
+        logStep("Tier determined by amount mapping", { priceId, amount, subscriptionTier });
+      }
     } else {
       logStep("No active subscription found");
     }
