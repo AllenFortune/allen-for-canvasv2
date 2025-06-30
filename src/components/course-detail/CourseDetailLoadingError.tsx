@@ -72,7 +72,7 @@ const CourseDetailLoadingError: React.FC<CourseDetailStateProps> = (props) => {
         </div>
       </ProtectedRoute>
     );
-  );
+  </div>
 };
 
 export default CourseDetailLoadingError;
