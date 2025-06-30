@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -13,8 +12,7 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
     planName: string, 
     monthlyPrice: number, 
     yearlyPrice: number, 
-    isYearly: boolean = false,
-    couponCode?: string | null
+    isYearly: boolean = false
   ) => {
     if (!session?.access_token) {
       toast({
@@ -34,8 +32,7 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
           plan_name: planName,
           is_yearly: isYearly,
           monthly_price: monthlyPrice,
-          yearly_price: yearlyPrice,
-          coupon_code: couponCode
+          yearly_price: yearlyPrice
         }
       });
 
@@ -44,8 +41,7 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
           planName, 
           monthlyPrice, 
           yearlyPrice, 
-          isYearly,
-          couponCode 
+          isYearly
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,

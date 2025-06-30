@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import PricingToggle from "@/components/pricing/PricingToggle";
 import PlanCard from "@/components/pricing/PlanCard";
 import InstitutionalPlan from "@/components/pricing/InstitutionalPlan";
-import CouponInput from "@/components/pricing/CouponInput";
 import { comparePlans } from "@/utils/planHierarchy";
 
 const Pricing = () => {
@@ -16,8 +15,6 @@ const Pricing = () => {
   const { user } = useAuth();
   const { createCheckout, subscription } = useSubscription();
   const [isYearly, setIsYearly] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-  const [couponDiscount, setCouponDiscount] = useState<any>(null);
 
   const plans = [
     {
@@ -101,17 +98,7 @@ const Pricing = () => {
       return;
     }
 
-    createCheckout(plan.name, plan.monthlyPrice, plan.yearlyPrice, isYearly, appliedCoupon);
-  };
-
-  const handleCouponApplied = (couponCode: string, discount: any) => {
-    setAppliedCoupon(couponCode);
-    setCouponDiscount(discount);
-  };
-
-  const handleCouponRemoved = () => {
-    setAppliedCoupon(null);
-    setCouponDiscount(null);
+    createCheckout(plan.name, plan.monthlyPrice, plan.yearlyPrice, isYearly);
   };
 
   const isCurrentPlan = (planName: string) => {
@@ -123,20 +110,6 @@ const Pricing = () => {
     return comparePlans(currentPlan, planName);
   };
 
-  const getDiscountedPrice = (originalPrice: number) => {
-    if (!couponDiscount) return originalPrice;
-    
-    if (couponDiscount.percent_off) {
-      return originalPrice * (1 - couponDiscount.percent_off / 100);
-    }
-    
-    if (couponDiscount.amount_off) {
-      return Math.max(0, originalPrice - (couponDiscount.amount_off / 100));
-    }
-    
-    return originalPrice;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -145,29 +118,15 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto px-6">
           <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
 
-          <CouponInput
-            onCouponApplied={handleCouponApplied}
-            onCouponRemoved={handleCouponRemoved}
-            appliedCoupon={appliedCoupon}
-            isYearly={isYearly}
-          />
-
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {plans.map((plan, index) => (
               <PlanCard
                 key={index}
-                plan={{
-                  ...plan,
-                  monthlyPrice: getDiscountedPrice(plan.monthlyPrice),
-                  yearlyPrice: getDiscountedPrice(plan.yearlyPrice),
-                }}
-                originalPlan={plan}
+                plan={plan}
                 isYearly={isYearly}
                 onSelect={handlePlanSelection}
                 isCurrentPlan={isCurrentPlan(plan.name)}
                 planComparison={getPlanComparison(plan.name)}
-                appliedCoupon={appliedCoupon}
-                couponDiscount={couponDiscount}
               />
             ))}
           </div>

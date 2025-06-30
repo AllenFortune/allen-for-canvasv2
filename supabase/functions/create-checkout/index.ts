@@ -37,7 +37,7 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const body = await req.json();
-    const { planName, monthlyPrice, yearlyPrice, isYearly, couponCode } = body;
+    const { planName, monthlyPrice, yearlyPrice, isYearly } = body;
     
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2023-10-16" });
     
@@ -52,23 +52,7 @@ serve(async (req) => {
     const price = isYearly ? yearlyPrice : monthlyPrice;
     const interval = isYearly ? "year" : "month";
     
-    logStep("Creating checkout session", { planName, price, interval, couponCode });
-
-    // Validate coupon if provided
-    let validCoupon = null;
-    if (couponCode) {
-      try {
-        validCoupon = await stripe.coupons.retrieve(couponCode);
-        logStep("Coupon validated", { couponId: validCoupon.id, valid: validCoupon.valid });
-        
-        if (!validCoupon.valid) {
-          throw new Error("Coupon is not valid");
-        }
-      } catch (couponError) {
-        logStep("Coupon validation failed", { error: couponError.message });
-        throw new Error(`Invalid coupon code: ${couponError.message}`);
-      }
-    }
+    logStep("Creating checkout session", { planName, price, interval });
 
     const sessionData: any = {
       customer: customerId,
@@ -88,25 +72,19 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
+      allow_promotion_codes: true,
       success_url: `${req.headers.get("origin")}/dashboard?checkout=success`,
       cancel_url: `${req.headers.get("origin")}/pricing?checkout=cancelled`,
       metadata: {
         plan_name: planName,
         user_id: user.id,
-        user_email: user.email,
-        coupon_code: couponCode || ''
+        user_email: user.email
       }
     };
 
-    // Apply coupon discount if valid
-    if (validCoupon) {
-      sessionData.discounts = [{ coupon: couponCode }];
-      logStep("Coupon applied to session", { couponCode });
-    }
-
     const session = await stripe.checkout.sessions.create(sessionData);
 
-    logStep("Checkout session created", { sessionId: session.id });
+    logStep("Checkout session created with promotion codes enabled", { sessionId: session.id });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

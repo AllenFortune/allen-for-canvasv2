@@ -17,37 +17,24 @@ interface Plan {
 
 interface PlanCardProps {
   plan: Plan;
-  originalPlan?: Plan;
   isYearly: boolean;
   onSelect: (plan: Plan) => void;
   isCurrentPlan: boolean;
   planComparison?: 'current' | 'upgrade' | 'downgrade';
-  appliedCoupon?: string | null;
-  couponDiscount?: any;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({ 
   plan, 
-  originalPlan,
   isYearly, 
   onSelect, 
   isCurrentPlan, 
-  planComparison = 'upgrade',
-  appliedCoupon,
-  couponDiscount
+  planComparison = 'upgrade'
 }) => {
   const getDisplayPrice = () => {
     if (plan.monthlyPrice === 0) return "$0.00";
     
     const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     return `$${price.toFixed(2)}`;
-  };
-
-  const getOriginalPrice = () => {
-    if (!originalPlan || !couponDiscount || plan.monthlyPrice === 0) return null;
-    
-    const originalPrice = isYearly ? originalPlan.yearlyPrice : originalPlan.monthlyPrice;
-    return `$${originalPrice.toFixed(2)}`;
   };
 
   const getPeriod = () => {
@@ -91,17 +78,9 @@ const PlanCard: React.FC<PlanCardProps> = ({
       <div className="mb-8">
         <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
         <div className="flex items-baseline mb-2">
-          {getOriginalPrice() && (
-            <span className="text-2xl text-gray-400 line-through mr-2">{getOriginalPrice()}</span>
-          )}
           <span className="text-4xl font-bold text-gray-900">{getDisplayPrice()}</span>
           <span className="text-gray-600 ml-1">{getPeriod()}</span>
         </div>
-        {appliedCoupon && couponDiscount && plan.monthlyPrice > 0 && (
-          <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
-            {couponDiscount.percent_off && `${couponDiscount.percent_off}% off with ${appliedCoupon}`}
-          </div>
-        )}
         {getSavings() && (
           <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-2">
             {getSavings()}
@@ -133,7 +112,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
             ? 'bg-gray-900 hover:bg-gray-800'
             : 'bg-blue-600 hover:bg-blue-700'
         } text-white`}
-        onClick={() => onSelect(originalPlan || plan)}
+        onClick={() => onSelect(plan)}
         disabled={isCurrentPlan}
       >
         {buttonText}
