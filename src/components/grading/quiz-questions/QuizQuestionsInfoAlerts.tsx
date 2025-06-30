@@ -33,8 +33,8 @@ const QuizQuestionsInfoAlerts: React.FC<QuizQuestionsInfoAlertsProps> = ({
       {questionsToShow.length > 0 && questionsToShow.length < totalQuestions && (
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            Showing only questions that require manual grading. 
-            {totalQuestions - questionsToShow.length} auto-graded questions are hidden.
+            Showing only essay questions that require manual grading. 
+            {totalQuestions - questionsToShow.length} other questions are auto-graded and hidden.
           </p>
         </div>
       )}

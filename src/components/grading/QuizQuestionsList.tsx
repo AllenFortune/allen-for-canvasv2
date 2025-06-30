@@ -52,12 +52,9 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
     return manualGradingQuestions.some(q => q.id === questionId);
   };
 
-  // Filter to show only manual grading questions in the main list
+  // Filter to show only essay questions
   const questionsToShow = questions.filter(question => 
-    question.question_type === 'essay_question' || 
-    question.question_type === 'fill_in_multiple_blanks_question' ||
-    question.question_type === 'file_upload_question' ||
-    question.question_type === 'short_answer_question'
+    question.question_type === 'essay_question'
   );
 
   return (

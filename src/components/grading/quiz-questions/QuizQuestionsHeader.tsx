@@ -18,7 +18,7 @@ const QuizQuestionsHeader: React.FC<QuizQuestionsHeaderProps> = ({
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <FileText className="w-5 h-5" />
-        Questions Requiring Manual Grading ({questionsCount})
+        Essay Questions ({questionsCount})
         {loadingAnswers && <Loader2 className="w-4 h-4 animate-spin" />}
         {answersError && <AlertCircle className="w-4 h-4 text-red-500" />}
       </CardTitle>
