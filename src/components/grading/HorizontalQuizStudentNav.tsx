@@ -53,57 +53,9 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
 
   return (
     <div className="bg-white border rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between">
-        {/* Left side - Current student info */}
-        <div className="flex items-center gap-4">
-          <User className="w-5 h-5 text-gray-500" />
-          <div className="flex items-center gap-3">
-            <span className="font-medium text-gray-900">
-              {selectedSubmission.user.name}
-            </span>
-            {getStatusBadge(selectedSubmission)}
-            {selectedSubmission.score !== null && (
-              <Badge variant="outline" className="text-xs">
-                {selectedSubmission.score} pts
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Center - Student selector */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
-            {selectedSubmissionIndex + 1} of {sortedSubmissions.length}
-          </span>
-          <Select
-            value={selectedSubmissionIndex.toString()}
-            onValueChange={(value) => onSubmissionSelect(parseInt(value))}
-          >
-            <SelectTrigger className="w-64">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sortedSubmissions.map((submission, index) => (
-                <SelectItem key={submission.id} value={index.toString()}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="truncate">{submission.user.sortable_name}</span>
-                    <div className="flex items-center gap-2 ml-2">
-                      {submission.workflow_state === 'complete' && (
-                        <Badge variant="destructive" className="text-xs">Needs Grading</Badge>
-                      )}
-                      {submission.score !== null && (
-                        <span className="text-xs text-gray-500">{submission.score} pts</span>
-                      )}
-                    </div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Right side - Navigation buttons */}
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-6">
+        {/* Left side - Navigation buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -122,6 +74,54 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
             Next
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
+        </div>
+
+        {/* Center - Student selector (now wider) */}
+        <div className="flex-1 flex items-center justify-center gap-4">
+          <span className="text-sm text-gray-500 flex-shrink-0">
+            {selectedSubmissionIndex + 1} of {sortedSubmissions.length}
+          </span>
+          <Select
+            value={selectedSubmissionIndex.toString()}
+            onValueChange={(value) => onSubmissionSelect(parseInt(value))}
+          >
+            <SelectTrigger className="w-96 min-w-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="w-96">
+              {sortedSubmissions.map((submission, index) => (
+                <SelectItem key={submission.id} value={index.toString()}>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex-1 text-left">{submission.user.sortable_name}</span>
+                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                      {submission.workflow_state === 'complete' && (
+                        <Badge variant="destructive" className="text-xs">Needs Grading</Badge>
+                      )}
+                      {submission.score !== null && (
+                        <span className="text-xs text-gray-500">{submission.score} pts</span>
+                      )}
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right side - Current student info */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <User className="w-5 h-5 text-gray-500" />
+          <div className="flex items-center gap-3">
+            <span className="font-medium text-gray-900">
+              {selectedSubmission.user.name}
+            </span>
+            {getStatusBadge(selectedSubmission)}
+            {selectedSubmission.score !== null && (
+              <Badge variant="outline" className="text-xs">
+                {selectedSubmission.score} pts
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </div>
