@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
@@ -87,12 +86,17 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
 
   const selectedSubmission = sortedSubmissions[selectedSubmissionIndex];
 
-  // Auto-select first question when submission changes
+  // Get essay questions only
+  const essayQuestions = useMemo(() => {
+    return questions.filter(q => q.question_type === 'essay_question');
+  }, [questions]);
+
+  // Auto-select first essay question when submission changes or questions load
   useEffect(() => {
-    if (questions.length > 0 && !selectedQuestionId) {
-      setSelectedQuestionId(questions[0].id);
+    if (essayQuestions.length > 0 && !selectedQuestionId) {
+      setSelectedQuestionId(essayQuestions[0].id);
     }
-  }, [questions, selectedQuestionId]);
+  }, [essayQuestions, selectedQuestionId]);
 
   const navigateSubmission = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && selectedSubmissionIndex > 0) {
@@ -103,11 +107,8 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   };
 
   const getManualGradingQuestions = () => {
-    return questions.filter(q => 
-      q.question_type === 'essay_question' || 
-      q.question_type === 'fill_in_multiple_blanks_question' ||
-      q.question_type === 'file_upload_question'
-    );
+    // Only return essay questions to match the filtering in QuizQuestionsList
+    return questions.filter(q => q.question_type === 'essay_question');
   };
 
   if (!quiz) {
