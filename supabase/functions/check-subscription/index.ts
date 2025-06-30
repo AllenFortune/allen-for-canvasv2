@@ -109,15 +109,19 @@ serve(async (req) => {
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
       
-      // Map prices to tiers (monthly amounts in cents)
+      logStep("Price details retrieved", { priceId, amount, currency: price.currency });
+      
+      // Map prices to tiers (monthly amounts in cents) - FIXED MAPPING
       if (amount >= 9999) { // $99.99
         subscriptionTier = "Super Plan";
       } else if (amount >= 6999) { // $69.99
         subscriptionTier = "Full-Time Plan";
       } else if (amount >= 1999) { // $19.99
         subscriptionTier = "Core Plan";
-      } else if (amount >= 999) { // $9.99
+      } else if (amount >= 900) { // $9.00 - FIXED: Was 999, now 900
         subscriptionTier = "Lite Plan";
+      } else {
+        subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
       }
       
       logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
