@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { CreditCard, ExternalLink, RefreshCw, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
-import { toast } from '@/hooks/use-toast';
 
 const SubscriptionCard: React.FC = () => {
   const { 
@@ -17,25 +16,8 @@ const SubscriptionCard: React.FC = () => {
     openCustomerPortal 
   } = useSubscription();
 
-  const handleRefresh = async () => {
-    toast({
-      title: "Refreshing subscription...",
-      description: "Please wait while we sync your subscription status.",
-    });
-    
-    try {
-      await checkSubscription();
-      toast({
-        title: "Subscription refreshed",
-        description: "Your subscription status has been updated.",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh failed",
-        description: "Unable to refresh subscription status. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleRefresh = () => {
+    checkSubscription();
   };
 
   if (loading) {
@@ -79,35 +61,13 @@ const SubscriptionCard: React.FC = () => {
             <CreditCard className="w-5 h-5 mr-2" />
             Subscription & Credits
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Subscription Status Alert */}
-          {currentPlan === 'Free Trial' && isSubscribed && (
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-yellow-800 font-medium text-sm">
-                    Subscription Status Issue Detected
-                  </p>
-                  <p className="text-yellow-600 text-xs">
-                    You appear to have an active subscription but it's showing as Free Trial
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleRefresh}>
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Sync
-                </Button>
-              </div>
-            </div>
-          )}
-
           {/* Current Plan */}
           <div>
             <label className="text-sm font-medium text-gray-700">Current Plan</label>
@@ -158,30 +118,21 @@ const SubscriptionCard: React.FC = () => {
                   Current Period Usage
                 </label>
                 <span className="text-sm text-gray-600">
-                  {usage.submissions_used} / {usage.total_limit === -1 ? '∞' : usage.total_limit} submissions
+                  {usage.submissions_used} / {usage.total_limit} submissions
                 </span>
               </div>
-              {usage.total_limit !== -1 && (
-                <>
-                  <Progress 
-                    value={usagePercentage} 
-                    className={`w-full h-2 ${isNearLimit ? 'bg-red-100' : 'bg-gray-100'}`}
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Plan: {usage.limit === -1 ? 'Unlimited' : usage.limit}</span>
-                    {usage.purchased_submissions > 0 && <span>Purchased: +{usage.purchased_submissions}</span>}
-                  </div>
-                  {isNearLimit && (
-                    <p className="text-sm text-red-600 mt-1">
-                      ⚠️ You're approaching your billing period limit
-                    </p>
-                  )}
-                </>
-              )}
-              {usage.total_limit === -1 && (
-                <div className="bg-green-50 p-2 rounded text-center">
-                  <p className="text-sm text-green-800 font-medium">Unlimited submissions</p>
-                </div>
+              <Progress 
+                value={usagePercentage} 
+                className={`w-full h-2 ${isNearLimit ? 'bg-red-100' : 'bg-gray-100'}`}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Plan: {usage.limit}</span>
+                {usage.purchased_submissions > 0 && <span>Purchased: +{usage.purchased_submissions}</span>}
+              </div>
+              {isNearLimit && (
+                <p className="text-sm text-red-600 mt-1">
+                  ⚠️ You're approaching your billing period limit
+                </p>
               )}
             </div>
           )}

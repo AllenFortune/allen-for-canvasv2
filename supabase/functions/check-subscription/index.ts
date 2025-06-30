@@ -83,33 +83,13 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Get ALL subscriptions for this customer (not just active ones)
-    const allSubscriptions = await stripe.subscriptions.list({
+    const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      limit: 10, // Get more subscriptions to see the full picture
+      status: "active",
+      limit: 1,
     });
     
-    logStep("All subscriptions found", { 
-      total: allSubscriptions.data.length,
-      subscriptions: allSubscriptions.data.map(sub => ({
-        id: sub.id,
-        status: sub.status,
-        created: new Date(sub.created * 1000).toISOString(),
-        current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        priceId: sub.items.data[0]?.price?.id,
-        amount: sub.items.data[0]?.price?.unit_amount
-      }))
-    });
-
-    // Find the most recent active subscription - FIXED: use allSubscriptions.data instead of activeSubscriptions.data
-    const activeSubscriptions = allSubscriptions.data.filter(sub => 
-      sub.status === "active" || sub.status === "trialing"
-    );
-    
-    logStep("Active subscriptions", { count: activeSubscriptions.length });
-
-    const hasActiveSub = activeSubscriptions.length > 0;
+    const hasActiveSub = subscriptions.data.length > 0;
     let subscriptionTier = "Free Trial";
     let subscriptionEnd = null;
     let billingCycleStart = new Date().toISOString();
@@ -117,51 +97,30 @@ serve(async (req) => {
     nextResetDate.setMonth(nextResetDate.getMonth() + 1);
 
     if (hasActiveSub) {
-      // Get the most recent active subscription
-      const subscription = activeSubscriptions.sort((a, b) => b.created - a.created)[0];
+      const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       billingCycleStart = new Date(subscription.current_period_start * 1000).toISOString();
       nextResetDate = new Date(subscription.current_period_end * 1000);
       
-      logStep("Active subscription found", { 
-        subscriptionId: subscription.id, 
-        status: subscription.status,
-        endDate: subscriptionEnd 
-      });
+      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       
-      // Get price details - add safety checks
-      if (subscription.items && subscription.items.data && subscription.items.data.length > 0) {
-        const priceId = subscription.items.data[0].price.id;
-        const price = await stripe.prices.retrieve(priceId);
-        const amount = price.unit_amount || 0;
-        
-        logStep("Price details", { priceId, amount, interval: price.recurring?.interval });
-        
-        // Enhanced price mapping - check both monthly and yearly amounts
-        if (price.recurring?.interval === 'year') {
-          // Yearly pricing
-          if (amount >= 59000) { // $590/year = Full-Time Plan
-            subscriptionTier = "Full-Time Plan";
-          } else if (amount >= 19000) { // $190/year = Core Plan  
-            subscriptionTier = "Core Plan";
-          } else if (amount >= 9000) { // $90/year = Lite Plan
-            subscriptionTier = "Lite Plan";
-          }
-        } else {
-          // Monthly pricing
-          if (amount >= 5900) { // $59/month = Full-Time Plan
-            subscriptionTier = "Full-Time Plan";
-          } else if (amount >= 1900) { // $19/month = Core Plan
-            subscriptionTier = "Core Plan";
-          } else if (amount >= 900) { // $9/month = Lite Plan
-            subscriptionTier = "Lite Plan";
-          }
-        }
-        
-        logStep("Determined subscription tier", { priceId, amount, interval: price.recurring?.interval, subscriptionTier });
-      } else {
-        logStep("Warning: No price items found in subscription", { subscriptionId: subscription.id });
+      // Determine subscription tier from price
+      const priceId = subscription.items.data[0].price.id;
+      const price = await stripe.prices.retrieve(priceId);
+      const amount = price.unit_amount || 0;
+      
+      // Map prices to tiers (monthly amounts in cents)
+      if (amount >= 9999) { // $99.99
+        subscriptionTier = "Super Plan";
+      } else if (amount >= 6999) { // $69.99
+        subscriptionTier = "Full-Time Plan";
+      } else if (amount >= 1999) { // $19.99
+        subscriptionTier = "Core Plan";
+      } else if (amount >= 999) { // $9.99
+        subscriptionTier = "Lite Plan";
       }
+      
+      logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
     } else {
       logStep("No active subscription found");
     }
