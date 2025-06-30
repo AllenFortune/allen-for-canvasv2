@@ -9,7 +9,13 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
   const { session } = useAuth();
   const { logAction } = useAuditLog();
 
-  const createCheckout = async (planName: string, monthlyPrice: number, yearlyPrice: number, isYearly: boolean = false) => {
+  const createCheckout = async (
+    planName: string, 
+    monthlyPrice: number, 
+    yearlyPrice: number, 
+    isYearly: boolean = false,
+    couponCode?: string | null
+  ) => {
     if (!session?.access_token) {
       toast({
         title: "Authentication Required",
@@ -28,12 +34,19 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
           plan_name: planName,
           is_yearly: isYearly,
           monthly_price: monthlyPrice,
-          yearly_price: yearlyPrice
+          yearly_price: yearlyPrice,
+          coupon_code: couponCode
         }
       });
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planName, monthlyPrice, yearlyPrice, isYearly },
+        body: { 
+          planName, 
+          monthlyPrice, 
+          yearlyPrice, 
+          isYearly,
+          couponCode 
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

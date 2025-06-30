@@ -37,7 +37,7 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const body = await req.json();
-    const { planName, monthlyPrice, yearlyPrice, isYearly } = body;
+    const { planName, monthlyPrice, yearlyPrice, isYearly, couponCode } = body;
     
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2023-10-16" });
     
@@ -52,9 +52,25 @@ serve(async (req) => {
     const price = isYearly ? yearlyPrice : monthlyPrice;
     const interval = isYearly ? "year" : "month";
     
-    logStep("Creating checkout session", { planName, price, interval });
+    logStep("Creating checkout session", { planName, price, interval, couponCode });
 
-    const session = await stripe.checkout.sessions.create({
+    // Validate coupon if provided
+    let validCoupon = null;
+    if (couponCode) {
+      try {
+        validCoupon = await stripe.coupons.retrieve(couponCode);
+        logStep("Coupon validated", { couponId: validCoupon.id, valid: validCoupon.valid });
+        
+        if (!validCoupon.valid) {
+          throw new Error("Coupon is not valid");
+        }
+      } catch (couponError) {
+        logStep("Coupon validation failed", { error: couponError.message });
+        throw new Error(`Invalid coupon code: ${couponError.message}`);
+      }
+    }
+
+    const sessionData: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -77,9 +93,18 @@ serve(async (req) => {
       metadata: {
         plan_name: planName,
         user_id: user.id,
-        user_email: user.email
+        user_email: user.email,
+        coupon_code: couponCode || ''
       }
-    });
+    };
+
+    // Apply coupon discount if valid
+    if (validCoupon) {
+      sessionData.discounts = [{ coupon: couponCode }];
+      logStep("Coupon applied to session", { couponCode });
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionData);
 
     logStep("Checkout session created", { sessionId: session.id });
 
