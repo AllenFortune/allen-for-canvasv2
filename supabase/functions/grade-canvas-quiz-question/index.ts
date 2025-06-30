@@ -44,14 +44,14 @@ serve(async (req) => {
     const body = await req.json();
     const { courseId, quizId, submissionId, questionId, score, comment } = body;
     
-    if (!courseId || !quizId || !submissionId || !questionId) {
+    if (!courseId || !quizId || !submissionId) {
       return new Response(
-        JSON.stringify({ error: 'Course ID, Quiz ID, Submission ID, and Question ID are required' }),
+        JSON.stringify({ error: 'Course ID, Quiz ID, and Submission ID are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Grading quiz question for course ${courseId}, quiz ${quizId}, submission ${submissionId}, question ${questionId}, user: ${user.email}`);
+    console.log(`Grading quiz for course ${courseId}, quiz ${quizId}, submission ${submissionId}, user: ${user.email}`);
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -67,57 +67,129 @@ serve(async (req) => {
     }
 
     const { canvas_instance_url, canvas_access_token } = profile;
-    
-    // Grade quiz question via Canvas API
-    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}`;
-    
-    console.log(`Making request to Canvas API: ${canvasUrl}`);
 
-    const gradeData: any = {};
-    if (score !== undefined && score !== null) {
-      gradeData.question_score = parseFloat(score);
-    }
-    if (comment) {
-      gradeData.comment = comment;
-    }
+    // First, detect quiz type by fetching quiz details
+    const quizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}`;
+    console.log(`Fetching quiz details: ${quizUrl}`);
 
-    const response = await fetch(canvasUrl, {
-      method: 'PUT',
+    const quizResponse = await fetch(quizUrl, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify(gradeData),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Canvas API error: ${response.status} - ${errorText}`);
+    if (!quizResponse.ok) {
+      const errorText = await quizResponse.text();
+      console.error(`Failed to fetch quiz details: ${quizResponse.status} - ${errorText}`);
+      return new Response(
+        JSON.stringify({ error: `Failed to fetch quiz details: ${quizResponse.status}` }),
+        { status: quizResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const quizData = await quizResponse.json();
+    const isNewQuizzes = !!quizData.assignment_id;
+    const assignmentId = quizData.assignment_id;
+
+    console.log(`Quiz type: ${isNewQuizzes ? 'New Quizzes' : 'Classic Quiz'}`);
+    if (isNewQuizzes) {
+      console.log(`Assignment ID: ${assignmentId}`);
+    }
+
+    let gradeResponse;
+
+    if (isNewQuizzes) {
+      // For New Quizzes, grade the entire assignment submission
+      const assignmentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`;
+      console.log(`Grading New Quizzes assignment: ${assignmentUrl}`);
+
+      const gradeData: any = {};
+      if (score !== undefined && score !== null) {
+        gradeData.submission = {
+          posted_grade: parseFloat(score)
+        };
+      }
+      if (comment) {
+        gradeData.comment = {
+          text_comment: comment
+        };
+      }
+
+      gradeResponse = await fetch(assignmentUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(gradeData),
+      });
+    } else {
+      // For Classic Quizzes, grade individual questions (existing logic)
+      if (!questionId) {
+        return new Response(
+          JSON.stringify({ error: 'Question ID is required for Classic Quiz grading' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const classicQuizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}`;
+      console.log(`Grading Classic Quiz question: ${classicQuizUrl}`);
+
+      const gradeData: any = {};
+      if (score !== undefined && score !== null) {
+        gradeData.question_score = parseFloat(score);
+      }
+      if (comment) {
+        gradeData.comment = comment;
+      }
+
+      gradeResponse = await fetch(classicQuizUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(gradeData),
+      });
+    }
+
+    if (!gradeResponse.ok) {
+      const errorText = await gradeResponse.text();
+      console.error(`Canvas API error: ${gradeResponse.status} - ${errorText}`);
       
-      let errorMessage = `Canvas API returned ${response.status}: ${response.statusText}`;
-      if (response.status === 401) {
+      let errorMessage = `Canvas API returned ${gradeResponse.status}: ${gradeResponse.statusText}`;
+      if (gradeResponse.status === 401) {
         errorMessage = 'Invalid Canvas API token. Please check your Canvas settings.';
-      } else if (response.status === 404) {
-        errorMessage = 'Quiz submission not found or access denied.';
-      } else if (response.status === 400) {
+      } else if (gradeResponse.status === 404) {
+        errorMessage = `Quiz submission not found or access denied. Quiz type: ${isNewQuizzes ? 'New Quizzes' : 'Classic Quiz'}`;
+      } else if (gradeResponse.status === 400) {
         errorMessage = 'Invalid grading data provided.';
       }
 
       return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: errorMessage,
+          quizType: isNewQuizzes ? 'new_quizzes' : 'classic',
+          assignmentId: assignmentId 
+        }),
+        { status: gradeResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const result = await response.json();
+    const result = await gradeResponse.json();
     
-    console.log(`Successfully graded quiz question ${questionId} for submission ${submissionId}`);
+    console.log(`Successfully graded ${isNewQuizzes ? 'New Quizzes assignment' : 'Classic Quiz question'}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Quiz question graded successfully',
+        message: `Quiz ${isNewQuizzes ? 'assignment' : 'question'} graded successfully`,
+        quizType: isNewQuizzes ? 'new_quizzes' : 'classic',
         result: result
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
