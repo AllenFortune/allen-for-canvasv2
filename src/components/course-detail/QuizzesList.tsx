@@ -38,17 +38,10 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
   };
 
   const getQuizTypeBadge = (quizType: string) => {
-    const type = quizType || 'practice_quiz';
-    const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-      'practice_quiz': 'secondary',
-      'assignment': 'default',
-      'graded_survey': 'outline',
-      'survey': 'outline'
-    };
-    
+    // Always show "Quiz" for items in the QuizzesList, regardless of Canvas quiz_type
     return (
-      <Badge variant={variants[type] || 'secondary'}>
-        {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      <Badge variant="default">
+        Quiz
       </Badge>
     );
   };
@@ -109,8 +102,6 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
               <TableHead>Type</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Points</TableHead>
-              <TableHead>Time Limit</TableHead>
-              <TableHead>Attempts</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -122,12 +113,6 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
                 <TableCell>{getQuizTypeBadge(quiz.quiz_type)}</TableCell>
                 <TableCell>{formatDate(quiz.due_at)}</TableCell>
                 <TableCell>{quiz.points_possible || 'Ungraded'}</TableCell>
-                <TableCell>
-                  {quiz.time_limit ? `${quiz.time_limit} min` : 'No limit'}
-                </TableCell>
-                <TableCell>
-                  {quiz.allowed_attempts === -1 ? 'Unlimited' : quiz.allowed_attempts || '1'}
-                </TableCell>
                 <TableCell>
                   <Badge variant={quiz.published ? 'default' : 'secondary'}>
                     {quiz.published ? 'Published' : 'Unpublished'}
