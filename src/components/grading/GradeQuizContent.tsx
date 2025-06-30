@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import QuizGradingLayout from './QuizGradingLayout';
+import HorizontalQuizStudentNav from './HorizontalQuizStudentNav';
 import ErrorDisplay from './ErrorDisplay';
 
 interface Quiz {
@@ -131,15 +132,20 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* Horizontal Student Navigation */}
+      <HorizontalQuizStudentNav
+        sortedSubmissions={sortedSubmissions}
+        selectedSubmissionIndex={selectedSubmissionIndex}
+        onSubmissionSelect={setSelectedSubmissionIndex}
+        onNavigate={navigateSubmission}
+      />
+
+      {/* Main Grading Layout */}
       <QuizGradingLayout
         quiz={quiz}
         questions={questions}
-        sortedSubmissions={sortedSubmissions}
-        selectedSubmissionIndex={selectedSubmissionIndex}
         selectedQuestionId={selectedQuestionId}
         selectedSubmission={selectedSubmission}
-        onSubmissionSelect={setSelectedSubmissionIndex}
-        onNavigate={navigateSubmission}
         onQuestionSelect={setSelectedQuestionId}
         gradeQuestion={gradeQuestion}
         submissionAnswers={submissionAnswers}

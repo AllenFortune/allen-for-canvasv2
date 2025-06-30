@@ -2,7 +2,6 @@
 import React from 'react';
 import QuizSubmissionView from './QuizSubmissionView';
 import QuizGradingForm from './QuizGradingForm';
-import QuizNavigationPanel from './QuizNavigationPanel';
 
 interface Quiz {
   id: number;
@@ -52,12 +51,8 @@ interface SubmissionAnswer {
 interface QuizGradingLayoutProps {
   quiz: Quiz;
   questions: QuizQuestion[];
-  sortedSubmissions: QuizSubmission[];
-  selectedSubmissionIndex: number;
   selectedQuestionId: number | null;
   selectedSubmission: QuizSubmission;
-  onSubmissionSelect: (index: number) => void;
-  onNavigate: (direction: 'prev' | 'next') => void;
   onQuestionSelect: (questionId: number) => void;
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
@@ -71,12 +66,8 @@ interface QuizGradingLayoutProps {
 const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
   quiz,
   questions,
-  sortedSubmissions,
-  selectedSubmissionIndex,
   selectedQuestionId,
   selectedSubmission,
-  onSubmissionSelect,
-  onNavigate,
   onQuestionSelect,
   gradeQuestion,
   submissionAnswers,
@@ -101,18 +92,8 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Panel - Submission Navigation */}
-      <div className="lg:col-span-1">
-        <QuizNavigationPanel
-          sortedSubmissions={sortedSubmissions}
-          selectedSubmissionIndex={selectedSubmissionIndex}
-          onSubmissionSelect={onSubmissionSelect}
-          onNavigate={onNavigate}
-        />
-      </div>
-
-      {/* Center Panel - Questions and Answers */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Left Panel - Questions and Answers (now wider) */}
       <div className="lg:col-span-1">
         <QuizSubmissionView
           submission={selectedSubmission}
@@ -129,7 +110,7 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
         />
       </div>
 
-      {/* Right Panel - Grading Form */}
+      {/* Right Panel - Grading Form (now wider) */}
       <div className="lg:col-span-1">
         {selectedQuestion && (
           <QuizGradingForm
