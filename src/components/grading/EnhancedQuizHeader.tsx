@@ -1,8 +1,9 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, FileText, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, Users, FileText, CheckCircle, ArrowLeft } from 'lucide-react';
 
 interface Quiz {
   id: number;
@@ -69,6 +70,16 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Back Navigation Button */}
+        <div className="mb-4">
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/courses/${courseId}`} className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Course
+            </Link>
+          </Button>
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
