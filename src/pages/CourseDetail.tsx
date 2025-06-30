@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -11,6 +10,7 @@ import CourseInfoCards from '@/components/course-detail/CourseInfoCards';
 import GradingAlert from '@/components/course-detail/GradingAlert';
 import CourseDetailTabs from '@/components/course-detail/CourseDetailTabs';
 import { Course, getCachedSession, withRetry } from '@/utils/courseUtils';
+import { useQuizSubmissionsData } from '@/hooks/useQuizSubmissionsData';
 
 interface Assignment {
   id: number;
@@ -58,6 +58,10 @@ const CourseDetail = () => {
   const [discussionsLoading, setDiscussionsLoading] = useState(false);
   const [quizzesLoading, setQuizzesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Add quiz submissions data hook
+  const quizIds = quizzes.map(quiz => quiz.id);
+  const { submissionsMap: quizSubmissionsMap, loading: quizSubmissionsLoading } = useQuizSubmissionsData(courseId, quizIds);
 
   console.log('CourseDetail component loaded with courseId:', courseId);
 
@@ -355,6 +359,8 @@ const CourseDetail = () => {
               totalNeedsGrading={totalNeedsGrading}
               totalUnread={totalUnread}
               courseId={courseId}
+              quizSubmissionsMap={quizSubmissionsMap}
+              quizSubmissionsLoading={quizSubmissionsLoading}
             />
           </div>
         </div>

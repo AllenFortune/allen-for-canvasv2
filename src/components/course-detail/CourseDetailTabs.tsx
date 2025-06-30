@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +49,8 @@ interface CourseDetailTabsProps {
   totalNeedsGrading: number;
   totalUnread: number;
   courseId?: string;
+  quizSubmissionsMap?: { [quizId: number]: any };
+  quizSubmissionsLoading?: boolean;
 }
 
 const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({ 
@@ -61,15 +62,20 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
   quizzesLoading,
   totalNeedsGrading,
   totalUnread,
-  courseId
+  courseId,
+  quizSubmissionsMap = {},
+  quizSubmissionsLoading = false
 }) => {
   console.log('CourseDetailTabs rendered with courseId:', courseId);
 
   // Calculate grading counts for each category
   const assignmentsNeedingGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
   const discussionsNeedingGrading = discussions.reduce((total, discussion) => total + (discussion.needs_grading_count || 0), 0);
-  // TODO: Add quiz grading count when quiz grading data is available
-  const quizzesNeedingGrading = 0; // Placeholder for when quiz grading is implemented
+  
+  // Calculate quiz grading count from submission data
+  const quizzesNeedingGrading = Object.values(quizSubmissionsMap).reduce((total, submission: any) => {
+    return total + (submission?.needsGrading || 0);
+  }, 0);
 
   return (
     <Tabs defaultValue="assignments" className="w-full">
@@ -115,7 +121,11 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="quizzes" className="mt-6">
-        <QuizzesList quizzes={quizzes} quizzesLoading={quizzesLoading} />
+        <QuizzesList 
+          quizzes={quizzes} 
+          quizzesLoading={quizzesLoading} 
+          submissionsMap={quizSubmissionsMap}
+        />
       </TabsContent>
       
       <TabsContent value="students">

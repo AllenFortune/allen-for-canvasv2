@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import QuizGradingStatusBadge from './QuizGradingStatusBadge';
+import { QuizSubmissionSummary } from '@/hooks/useQuizSubmissionsData';
 
 interface Quiz {
   id: number;
@@ -20,9 +22,10 @@ interface Quiz {
 interface QuizzesListProps {
   quizzes: Quiz[];
   quizzesLoading: boolean;
+  submissionsMap?: { [quizId: number]: QuizSubmissionSummary };
 }
 
-const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) => {
+const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading, submissionsMap = {} }) => {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
 
@@ -54,6 +57,11 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
   const gradeableQuizzes = quizzes.filter(quiz => 
     quiz.quiz_type === 'assignment' || quiz.quiz_type === 'graded_survey'
   );
+
+  // Calculate total grading count from submission data
+  const totalNeedsGrading = Object.values(submissionsMap).reduce((total, submission) => {
+    return total + (submission?.needsGrading || 0);
+  }, 0);
 
   if (quizzesLoading) {
     return (
@@ -88,9 +96,14 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
     <Card>
       <CardHeader>
         <CardTitle>Quizzes ({quizzes.length})</CardTitle>
-        {gradeableQuizzes.length > 0 && (
-          <p className="text-sm text-gray-600">
-            {gradeableQuizzes.length} quiz{gradeableQuizzes.length !== 1 ? 'es' : ''} may require grading
+        {totalNeedsGrading > 0 && (
+          <p className="text-sm text-red-600 font-medium">
+            {totalNeedsGrading} quiz submission{totalNeedsGrading !== 1 ? 's' : ''} need grading
+          </p>
+        )}
+        {gradeableQuizzes.length > 0 && totalNeedsGrading === 0 && (
+          <p className="text-sm text-green-600">
+            All quiz submissions are graded
           </p>
         )}
       </CardHeader>
@@ -102,6 +115,7 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
               <TableHead>Type</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Points</TableHead>
+              <TableHead>Grading Status</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -113,6 +127,9 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading }) =>
                 <TableCell>{getQuizTypeBadge(quiz.quiz_type)}</TableCell>
                 <TableCell>{formatDate(quiz.due_at)}</TableCell>
                 <TableCell>{quiz.points_possible || 'Ungraded'}</TableCell>
+                <TableCell>
+                  <QuizGradingStatusBadge submissionData={submissionsMap[quiz.id]} />
+                </TableCell>
                 <TableCell>
                   <Badge variant={quiz.published ? 'default' : 'secondary'}>
                     {quiz.published ? 'Published' : 'Unpublished'}
