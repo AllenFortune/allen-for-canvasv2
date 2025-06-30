@@ -91,13 +91,13 @@ serve(async (req) => {
     let answersSource = 'unknown';
 
     if (quizTypeInfo.isNewQuizzes && quizTypeInfo.assignmentId && userId) {
-      // New Quizzes - use assignment submission API
-      console.log('Using New Quizzes extraction method');
+      // New Quizzes - use enhanced extraction method
+      console.log('Using enhanced New Quizzes extraction method');
       const newQuizzesAnswers = await extractFromNewQuizzes(
         credentials, courseId, quizTypeInfo.assignmentId, submissionId, userId, questionMaps
       );
       rawAnswers.push(...newQuizzesAnswers);
-      answersSource = 'new_quizzes';
+      answersSource = 'new_quizzes_enhanced';
     } else {
       // Classic Quiz - use traditional methods
       console.log('Using Classic Quiz extraction methods');
