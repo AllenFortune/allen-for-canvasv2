@@ -102,12 +102,12 @@ serve(async (req) => {
       }))
     });
 
-    // Find the most recent active subscription
+    // Find the most recent active subscription - FIXED: use allSubscriptions.data instead of activeSubscriptions.data
     const activeSubscriptions = allSubscriptions.data.filter(sub => 
       sub.status === "active" || sub.status === "trialing"
     );
     
-    logStep("Active subscriptions", { count: activeSubscriptions.data.length });
+    logStep("Active subscriptions", { count: activeSubscriptions.length });
 
     const hasActiveSub = activeSubscriptions.length > 0;
     let subscriptionTier = "Free Trial";
@@ -129,35 +129,39 @@ serve(async (req) => {
         endDate: subscriptionEnd 
       });
       
-      // Get price details
-      const priceId = subscription.items.data[0].price.id;
-      const price = await stripe.prices.retrieve(priceId);
-      const amount = price.unit_amount || 0;
-      
-      logStep("Price details", { priceId, amount, interval: price.recurring?.interval });
-      
-      // Enhanced price mapping - check both monthly and yearly amounts
-      if (price.recurring?.interval === 'year') {
-        // Yearly pricing
-        if (amount >= 59000) { // $590/year = Full-Time Plan
-          subscriptionTier = "Full-Time Plan";
-        } else if (amount >= 19000) { // $190/year = Core Plan  
-          subscriptionTier = "Core Plan";
-        } else if (amount >= 9000) { // $90/year = Lite Plan
-          subscriptionTier = "Lite Plan";
+      // Get price details - add safety checks
+      if (subscription.items && subscription.items.data && subscription.items.data.length > 0) {
+        const priceId = subscription.items.data[0].price.id;
+        const price = await stripe.prices.retrieve(priceId);
+        const amount = price.unit_amount || 0;
+        
+        logStep("Price details", { priceId, amount, interval: price.recurring?.interval });
+        
+        // Enhanced price mapping - check both monthly and yearly amounts
+        if (price.recurring?.interval === 'year') {
+          // Yearly pricing
+          if (amount >= 59000) { // $590/year = Full-Time Plan
+            subscriptionTier = "Full-Time Plan";
+          } else if (amount >= 19000) { // $190/year = Core Plan  
+            subscriptionTier = "Core Plan";
+          } else if (amount >= 9000) { // $90/year = Lite Plan
+            subscriptionTier = "Lite Plan";
+          }
+        } else {
+          // Monthly pricing
+          if (amount >= 5900) { // $59/month = Full-Time Plan
+            subscriptionTier = "Full-Time Plan";
+          } else if (amount >= 1900) { // $19/month = Core Plan
+            subscriptionTier = "Core Plan";
+          } else if (amount >= 900) { // $9/month = Lite Plan
+            subscriptionTier = "Lite Plan";
+          }
         }
+        
+        logStep("Determined subscription tier", { priceId, amount, interval: price.recurring?.interval, subscriptionTier });
       } else {
-        // Monthly pricing
-        if (amount >= 5900) { // $59/month = Full-Time Plan
-          subscriptionTier = "Full-Time Plan";
-        } else if (amount >= 1900) { // $19/month = Core Plan
-          subscriptionTier = "Core Plan";
-        } else if (amount >= 900) { // $9/month = Lite Plan
-          subscriptionTier = "Lite Plan";
-        }
+        logStep("Warning: No price items found in subscription", { subscriptionId: subscription.id });
       }
-      
-      logStep("Determined subscription tier", { priceId, amount, interval: price.recurring?.interval, subscriptionTier });
     } else {
       logStep("No active subscription found");
     }
