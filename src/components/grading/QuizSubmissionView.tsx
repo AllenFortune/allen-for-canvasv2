@@ -68,6 +68,16 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   quiz
 }) => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+  const [lastSubmissionId, setLastSubmissionId] = useState<number | null>(null);
+
+  // Reset hasAttemptedFetch when submission changes
+  useEffect(() => {
+    if (submission.id !== lastSubmissionId) {
+      console.log(`Submission changed from ${lastSubmissionId} to ${submission.id}, resetting fetch attempt flag`);
+      setHasAttemptedFetch(false);
+      setLastSubmissionId(submission.id);
+    }
+  }, [submission.id, lastSubmissionId]);
 
   // Fetch answers when submission changes, but only once per submission load
   useEffect(() => {
@@ -84,6 +94,7 @@ const QuizSubmissionView: React.FC<QuizSubmissionViewProps> = ({
   }, [submission.id, submissionAnswers.length, loadingAnswers, hasAttemptedFetch, answersError, onFetchAnswers, quiz?.is_assignment_based, quiz?.assignment_id, submission.user_id]);
 
   const handleRetryAnswers = () => {
+    console.log(`Retrying answers for submission ${submission.id}`);
     setHasAttemptedFetch(false);
     
     // For assignment-based quizzes (New Quizzes), pass the user_id
