@@ -131,13 +131,22 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
               const needsManualGrading = isManualGradingQuestion(question.id);
               const status = getAnswerStatus(question, answer);
               
+              // Custom styling for selected questions that need manual grading
+              const getButtonStyling = () => {
+                if (isSelected && needsManualGrading) {
+                  return "w-full justify-start p-4 h-auto border-l-4 border-l-orange-400 bg-blue-50/80 hover:bg-blue-100/80 border-blue-200 text-gray-900";
+                } else if (needsManualGrading) {
+                  return "w-full justify-start p-4 h-auto border-l-4 border-l-orange-400";
+                } else {
+                  return "w-full justify-start p-4 h-auto";
+                }
+              };
+              
               return (
                 <Button
                   key={question.id}
-                  variant={isSelected ? "default" : "outline"}
-                  className={`w-full justify-start p-4 h-auto ${
-                    needsManualGrading ? 'border-l-4 border-l-orange-400' : ''
-                  }`}
+                  variant={isSelected && !needsManualGrading ? "default" : "outline"}
+                  className={getButtonStyling()}
                   onClick={() => onQuestionSelect(question.id)}
                 >
                   <div className="flex flex-col items-start gap-2 w-full">
