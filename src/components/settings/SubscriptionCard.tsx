@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CreditCard, ExternalLink, RefreshCw, Calendar, Sync } from 'lucide-react';
+import { CreditCard, ExternalLink, RefreshCw, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from '@/hooks/use-toast';
@@ -101,7 +101,7 @@ const SubscriptionCard: React.FC = () => {
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleRefresh}>
-                  <Sync className="w-4 h-4 mr-1" />
+                  <RefreshCw className="w-4 h-4 mr-1" />
                   Sync
                 </Button>
               </div>
