@@ -7,6 +7,8 @@ interface GradingAlertProps {
 }
 
 const GradingAlert: React.FC<GradingAlertProps> = ({ totalNeedsGrading }) => {
+  console.log('GradingAlert received totalNeedsGrading:', totalNeedsGrading);
+  
   if (totalNeedsGrading === 0) return null;
 
   return (

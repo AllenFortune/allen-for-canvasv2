@@ -277,9 +277,22 @@ const CourseDetail = () => {
     }
   };
 
-  const totalNeedsGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0) + 
-                           discussions.reduce((total, discussion) => total + (discussion.needs_grading_count || 0), 0);
+  // Calculate total grading count including quiz submissions
+  const assignmentsNeedingGrading = assignments.reduce((total, assignment) => total + assignment.needs_grading_count, 0);
+  const discussionsNeedingGrading = discussions.reduce((total, discussion) => total + (discussion.needs_grading_count || 0), 0);
+  const quizzesNeedingGrading = Object.values(quizSubmissionsMap).reduce((total, submission: any) => {
+    return total + (submission?.needsGrading || 0);
+  }, 0);
+
+  const totalNeedsGrading = assignmentsNeedingGrading + discussionsNeedingGrading + quizzesNeedingGrading;
   const totalUnread = discussions.reduce((total, discussion) => total + discussion.unread_count, 0);
+
+  console.log('Grading counts:', {
+    assignmentsNeedingGrading,
+    discussionsNeedingGrading,
+    quizzesNeedingGrading,
+    totalNeedsGrading
+  });
 
   if (loading) {
     return (
