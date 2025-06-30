@@ -59,7 +59,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching quiz submission answers for course ${courseId}, quiz ${quizId}, submission ${submissionId}, user: ${user.email}`);
+    console.log(`[MainFunction] Fetching quiz submission answers for course ${courseId}, quiz ${quizId}, submission ${submissionId}, user: ${user.email}`);
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -81,7 +81,7 @@ serve(async (req) => {
 
     // Step 1: Detect quiz type (Classic vs New Quizzes)
     const quizTypeInfo = await detectQuizType(credentials, courseId, quizId);
-    console.log(`Quiz type: ${quizTypeInfo.quizType}, Assignment ID: ${quizTypeInfo.assignmentId}`);
+    console.log(`[MainFunction] Quiz type: ${quizTypeInfo.quizType}, Assignment ID: ${quizTypeInfo.assignmentId}`);
 
     // Step 2: Get quiz questions to create comprehensive ID mapping
     const questionMaps = await fetchQuizQuestions(credentials, courseId, quizId);
@@ -92,7 +92,7 @@ serve(async (req) => {
 
     if (quizTypeInfo.isNewQuizzes && quizTypeInfo.assignmentId && userId) {
       // New Quizzes - use enhanced extraction method
-      console.log('Using enhanced New Quizzes extraction method');
+      console.log('[MainFunction] Using enhanced New Quizzes extraction method');
       const newQuizzesAnswers = await extractFromNewQuizzes(
         credentials, courseId, quizTypeInfo.assignmentId, submissionId, userId, questionMaps
       );
@@ -100,7 +100,7 @@ serve(async (req) => {
       answersSource = 'new_quizzes_enhanced';
     } else {
       // Classic Quiz - use traditional methods
-      console.log('Using Classic Quiz extraction methods');
+      console.log('[MainFunction] Using Classic Quiz extraction methods');
       const { rawAnswers: classicAnswers, submissionData, answersSource: classicSource } = 
         await extractFromSubmissionData(credentials, courseId, quizId, submissionId, questionMaps);
       
@@ -127,9 +127,24 @@ serve(async (req) => {
     // Step 5: Ensure we have entries for ALL questions, even if no answers
     const finalAnswers = ensureAllQuestionsHaveEntries(mappedAnswers, questionMaps.allQuestions);
 
-    console.log(`Final results: ${finalAnswers.length} total answers (including empty ones)`);
-    const answersWithContent = finalAnswers.filter(a => a.answer && a.answer.toString().trim() !== '');
-    console.log(`Found ${answersWithContent.length}/${finalAnswers.length} answers with actual content`);
+    console.log(`[MainFunction] Final results: ${finalAnswers.length} total answers (including empty ones)`);
+    const answersWithContent = finalAnswers.filter(a => {
+      if (a.answer === null || a.answer === undefined) return false;
+      if (typeof a.answer === 'string') {
+        const trimmed = a.answer.trim();
+        return trimmed !== '' && trimmed !== '<p></p>' && trimmed !== '<br>' && trimmed !== '&nbsp;' && trimmed.length >= 10;
+      }
+      return true;
+    });
+    console.log(`[MainFunction] Found ${answersWithContent.length}/${finalAnswers.length} answers with substantial content`);
+
+    // Filter to show only manual grading questions in debug info
+    const manualGradingQuestions = questionMaps.allQuestions.filter(q => 
+      q.question_type === 'essay_question' || 
+      q.question_type === 'fill_in_multiple_blanks_question' ||
+      q.question_type === 'file_upload_question' ||
+      q.question_type === 'short_answer_question'
+    );
 
     return new Response(
       JSON.stringify({ 
@@ -142,18 +157,20 @@ serve(async (req) => {
           is_new_quizzes: quizTypeInfo.isNewQuizzes,
           assignment_id: quizTypeInfo.assignmentId,
           total_questions: questionMaps.allQuestions.length,
+          manual_grading_questions: manualGradingQuestions.length,
           total_raw_answers: rawAnswers.length,
           total_final_answers: finalAnswers.length,
           answers_with_content: answersWithContent.length,
           answers_source: answersSource,
-          question_mapping_created: questionMaps.questionIdMap.size > 0
+          question_mapping_created: questionMaps.questionIdMap.size > 0,
+          manual_grading_question_types: manualGradingQuestions.map(q => q.question_type)
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in get-canvas-quiz-submission-answers function:', error);
+    console.error('[MainFunction] Error in get-canvas-quiz-submission-answers function:', error);
     
     return new Response(
       JSON.stringify({ 

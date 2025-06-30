@@ -51,6 +51,14 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
     return manualGradingQuestions.some(q => q.id === questionId);
   };
 
+  // Filter to show only manual grading questions in the main list
+  const questionsToShow = questions.filter(question => 
+    question.question_type === 'essay_question' || 
+    question.question_type === 'fill_in_multiple_blanks_question' ||
+    question.question_type === 'file_upload_question' ||
+    question.question_type === 'short_answer_question'
+  );
+
   const getAnswerStatus = (question: QuizQuestion, answer: SubmissionAnswer | undefined) => {
     if (answersError) return null;
     
@@ -93,7 +101,7 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5" />
-          All Quiz Questions ({questions.length})
+          Questions Requiring Manual Grading ({questionsToShow.length})
           {loadingAnswers && <Loader2 className="w-4 h-4 animate-spin" />}
           {answersError && <AlertCircle className="w-4 h-4 text-red-500" />}
         </CardTitle>
@@ -119,17 +127,24 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
           </div>
         )}
 
-        {questions.length === 0 ? (
-          <p className="text-gray-600 text-center py-4">
-            No questions found for this quiz.
-          </p>
+        {questionsToShow.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Manual Grading Required</h3>
+            <p className="text-gray-600">
+              This quiz contains only auto-graded questions (multiple choice, true/false, etc.).
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {questions.map((question, index) => {
+            {questionsToShow.map((question, index) => {
               const answer = getAnswerForQuestion(question.id);
               const isSelected = selectedQuestionId === question.id;
               const needsManualGrading = isManualGradingQuestion(question.id);
               const status = getAnswerStatus(question, answer);
+              
+              // Find the original position of this question in the full quiz
+              const originalPosition = questions.findIndex(q => q.id === question.id) + 1;
               
               // Custom styling for selected questions that need manual grading
               const getButtonStyling = () => {
@@ -152,7 +167,7 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
                   <div className="flex flex-col items-start gap-2 w-full">
                     <div className="flex items-center justify-between w-full">
                       <span className="font-medium">
-                        Question {index + 1}
+                        Question {originalPosition}
                         {needsManualGrading && <span className="ml-1 text-orange-600">*</span>}
                       </span>
                       <div className="flex items-center gap-2">
@@ -182,6 +197,15 @@ const QuizQuestionsList: React.FC<QuizQuestionsListProps> = ({
           <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <p className="text-sm text-orange-800">
               <span className="text-orange-600">*</span> Questions marked with an asterisk require manual grading
+            </p>
+          </div>
+        )}
+
+        {questionsToShow.length > 0 && questionsToShow.length < questions.length && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              Showing only questions that require manual grading. 
+              {questions.length - questionsToShow.length} auto-graded questions are hidden.
             </p>
           </div>
         )}
