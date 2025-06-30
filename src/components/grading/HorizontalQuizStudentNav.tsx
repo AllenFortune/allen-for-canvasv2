@@ -37,6 +37,20 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
 }) => {
   const selectedSubmission = sortedSubmissions[selectedSubmissionIndex];
 
+  const getSubmissionStatusColor = (submission: QuizSubmission) => {
+    switch (submission.workflow_state) {
+      case 'complete':
+      case 'pending_review':
+        return 'bg-blue-500'; // Needs grading
+      case 'graded':
+        return 'bg-green-500'; // Graded
+      case 'untaken':
+        return 'bg-gray-400'; // Not taken
+      default:
+        return 'bg-gray-400'; // Default
+    }
+  };
+
   const getStatusBadge = (submission: QuizSubmission) => {
     switch (submission.workflow_state) {
       case 'graded':
@@ -92,7 +106,10 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
               {sortedSubmissions.map((submission, index) => (
                 <SelectItem key={submission.id} value={index.toString()}>
                   <div className="flex items-center justify-between w-full">
-                    <span className="flex-1 text-left">{submission.user.sortable_name}</span>
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getSubmissionStatusColor(submission)}`} />
+                      <span className="flex-1 text-left">{submission.user.sortable_name}</span>
+                    </div>
                     <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                       {submission.workflow_state === 'complete' && (
                         <Badge variant="destructive" className="text-xs">Needs Grading</Badge>
@@ -112,6 +129,7 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
         <div className="flex items-center gap-4 flex-shrink-0">
           <User className="w-5 h-5 text-gray-500" />
           <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getSubmissionStatusColor(selectedSubmission)}`} />
             <span className="font-medium text-gray-900">
               {selectedSubmission.user.name}
             </span>

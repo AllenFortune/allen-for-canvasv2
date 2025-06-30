@@ -28,6 +28,20 @@ const QuizStudentNavigation: React.FC<QuizStudentNavigationProps> = ({
   currentIndex,
   onStudentSelect
 }) => {
+  const getSubmissionStatusColor = (submission: QuizSubmission) => {
+    switch (submission.workflow_state) {
+      case 'complete':
+      case 'pending_review':
+        return 'bg-blue-500'; // Needs grading
+      case 'graded':
+        return 'bg-green-500'; // Graded
+      case 'untaken':
+        return 'bg-gray-400'; // Not taken
+      default:
+        return 'bg-gray-400'; // Default
+    }
+  };
+
   const getStatusBadge = (submission: QuizSubmission) => {
     switch (submission.workflow_state) {
       case 'graded':
@@ -64,17 +78,20 @@ const QuizStudentNavigation: React.FC<QuizStudentNavigationProps> = ({
               className="w-full justify-between p-4 h-auto rounded-none border-b last:border-b-0"
               onClick={() => onStudentSelect(originalIndex)}
             >
-              <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
-                <span className="font-medium text-sm truncate w-full text-left">
-                  {submission.user.sortable_name}
-                </span>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(submission)}
-                  {submission.score !== null && (
-                    <span className="text-xs text-gray-600">
-                      Score: {submission.score}
-                    </span>
-                  )}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getSubmissionStatusColor(submission)}`} />
+                <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
+                  <span className="font-medium text-sm truncate w-full text-left">
+                    {submission.user.sortable_name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(submission)}
+                    {submission.score !== null && (
+                      <span className="text-xs text-gray-600">
+                        Score: {submission.score}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               {originalIndex === currentIndex && (
