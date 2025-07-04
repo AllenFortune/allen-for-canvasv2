@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, CheckCircle } from 'lucide-react';
 import QuizGradingLayout from './QuizGradingLayout';
 import HorizontalQuizStudentNav from './HorizontalQuizStudentNav';
 import ErrorDisplay from './ErrorDisplay';
@@ -113,6 +113,14 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
     return questions.filter(q => q.question_type === 'essay_question');
   };
 
+  const manualGradingQuestions = useMemo(() => {
+    return questions.filter(q => 
+      q.question_type === 'essay_question' || 
+      q.question_type === 'fill_in_multiple_blanks_question' ||
+      q.question_type === 'file_upload_question'
+    );
+  }, [questions]);
+
   if (!quiz) {
     return <ErrorDisplay error="Quiz data not found" onRetry={() => {}} />;
   }
@@ -126,6 +134,26 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Submissions Found</h3>
             <p className="text-gray-600">
               This quiz doesn't have any submissions to grade yet.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show message if there are no manual grading questions
+  if (manualGradingQuestions.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <Card>
+          <CardContent className="text-center py-12">
+            <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Manual Grading Required</h3>
+            <p className="text-gray-600 mb-4">
+              This quiz contains only auto-graded questions. All {sortedSubmissions.length} submissions have been automatically scored by Canvas.
+            </p>
+            <p className="text-sm text-gray-500">
+              You can review the submissions, but no manual grading is needed.
             </p>
           </CardContent>
         </Card>

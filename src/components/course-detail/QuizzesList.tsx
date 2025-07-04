@@ -128,7 +128,10 @@ const QuizzesList: React.FC<QuizzesListProps> = ({ quizzes, quizzesLoading, subm
                 <TableCell>{formatDate(quiz.due_at)}</TableCell>
                 <TableCell>{quiz.points_possible || 'Ungraded'}</TableCell>
                 <TableCell>
-                  <QuizGradingStatusBadge submissionData={submissionsMap[quiz.id]} />
+                  <QuizGradingStatusBadge 
+                    submissionData={submissionsMap[quiz.id]} 
+                    hasManualGradingQuestions={submissionsMap[quiz.id]?.hasManualGradingQuestions}
+                  />
                 </TableCell>
                 <TableCell>
                   <Badge variant={quiz.published ? 'default' : 'secondary'}>

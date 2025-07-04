@@ -5,9 +5,10 @@ import { QuizSubmissionSummary } from '@/hooks/useQuizSubmissionsData';
 
 interface QuizGradingStatusBadgeProps {
   submissionData?: QuizSubmissionSummary;
+  hasManualGradingQuestions?: boolean;
 }
 
-const QuizGradingStatusBadge: React.FC<QuizGradingStatusBadgeProps> = ({ submissionData }) => {
+const QuizGradingStatusBadge: React.FC<QuizGradingStatusBadgeProps> = ({ submissionData, hasManualGradingQuestions = true }) => {
   if (!submissionData) {
     return (
       <div className="animate-pulse">
@@ -38,6 +39,15 @@ const QuizGradingStatusBadge: React.FC<QuizGradingStatusBadgeProps> = ({ submiss
     return (
       <Badge variant="secondary" className="text-gray-600">
         No submissions
+      </Badge>
+    );
+  }
+
+  // If no manual grading questions, show auto-graded status
+  if (!hasManualGradingQuestions) {
+    return (
+      <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+        Auto-graded
       </Badge>
     );
   }

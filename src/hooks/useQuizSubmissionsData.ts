@@ -8,6 +8,8 @@ export interface QuizSubmissionSummary {
   totalSubmissions: number;
   needsGrading: number;
   graded: number;
+  autoGraded: number;
+  hasManualGradingQuestions: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -32,26 +34,58 @@ export const useQuizSubmissionsData = (courseId: string | undefined, quizIds: nu
         } as QuizSubmissionSummary
       }));
 
-      const { data, error: submissionError } = await supabase.functions.invoke(
-        'get-canvas-quiz-submissions',
-        {
-          body: { courseId, quizId: quizId.toString() },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      // Fetch both submissions and questions in parallel
+      const [submissionsResponse, questionsResponse] = await Promise.all([
+        supabase.functions.invoke(
+          'get-canvas-quiz-submissions',
+          {
+            body: { courseId, quizId: quizId.toString() },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        ),
+        supabase.functions.invoke(
+          'get-canvas-quiz-questions',
+          {
+            body: { courseId, quizId: quizId.toString() },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        )
+      ]);
 
-      if (submissionError) {
-        throw new Error(`Failed to fetch submissions for quiz ${quizId}: ${submissionError.message}`);
+      if (submissionsResponse.error) {
+        throw new Error(`Failed to fetch submissions for quiz ${quizId}: ${submissionsResponse.error.message}`);
       }
 
-      const submissionsList = data?.submissions || [];
+      if (questionsResponse.error) {
+        throw new Error(`Failed to fetch questions for quiz ${quizId}: ${questionsResponse.error.message}`);
+      }
+
+      const submissionsList = submissionsResponse.data?.submissions || [];
+      const questionsList = questionsResponse.data?.questions || [];
       
-      // Calculate grading statistics
-      const needsGrading = submissionsList.filter((s: any) => 
-        s.workflow_state === 'complete' || s.workflow_state === 'pending_review'
-      ).length;
+      // Check if quiz has manual grading questions
+      const hasManualGradingQuestions = questionsList.some((q: any) => 
+        q.question_type === 'essay_question' || 
+        q.question_type === 'fill_in_multiple_blanks_question' ||
+        q.question_type === 'file_upload_question'
+      );
+      
+      // Calculate grading statistics with intelligent logic
+      const needsGrading = hasManualGradingQuestions 
+        ? submissionsList.filter((s: any) => 
+            s.workflow_state === 'complete' || s.workflow_state === 'pending_review'
+          ).length
+        : 0;
+      
+      const autoGraded = !hasManualGradingQuestions 
+        ? submissionsList.filter((s: any) => 
+            s.workflow_state === 'complete' && s.score !== null
+          ).length
+        : 0;
       
       const graded = submissionsList.filter((s: any) => 
         s.workflow_state === 'graded' && s.score !== null
@@ -64,13 +98,15 @@ export const useQuizSubmissionsData = (courseId: string | undefined, quizIds: nu
           totalSubmissions: submissionsList.length,
           needsGrading,
           graded,
+          autoGraded,
+          hasManualGradingQuestions,
           loading: false,
           error: null
         }
       }));
 
     } catch (err) {
-      console.error(`Error fetching submissions for quiz ${quizId}:`, err);
+      console.error(`Error fetching data for quiz ${quizId}:`, err);
       setSubmissions(prev => ({
         ...prev,
         [quizId]: {
@@ -78,8 +114,10 @@ export const useQuizSubmissionsData = (courseId: string | undefined, quizIds: nu
           totalSubmissions: 0,
           needsGrading: 0,
           graded: 0,
+          autoGraded: 0,
+          hasManualGradingQuestions: false,
           loading: false,
-          error: err instanceof Error ? err.message : 'Failed to fetch submissions'
+          error: err instanceof Error ? err.message : 'Failed to fetch quiz data'
         }
       }));
     }

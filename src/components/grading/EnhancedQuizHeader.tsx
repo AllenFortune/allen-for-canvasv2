@@ -64,9 +64,20 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
     q.question_type === 'file_upload_question'
   );
 
-  const needsGradingCount = submissions.filter(s => 
-    s.workflow_state === 'complete' || s.workflow_state === 'pending_review'
-  ).length;
+  // Smart status detection - only show "needs grading" if there are manual questions
+  const hasManualGradingQuestions = manualGradingQuestions.length > 0;
+  
+  const needsGradingCount = hasManualGradingQuestions 
+    ? submissions.filter(s => 
+        (s.workflow_state === 'complete' || s.workflow_state === 'pending_review')
+      ).length
+    : 0;
+
+  const autoGradedCount = !hasManualGradingQuestions 
+    ? submissions.filter(s => 
+        s.workflow_state === 'complete' && s.score !== null
+      ).length
+    : 0;
 
   const gradedCount = submissions.filter(s => 
     s.workflow_state === 'graded' && s.score !== null
@@ -164,23 +175,47 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Card className="flex-1">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-gray-600">Needs Grading</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{needsGradingCount}</div>
-              </CardContent>
-            </Card>
+            {hasManualGradingQuestions ? (
+              <>
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Needs Grading</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600">{needsGradingCount}</div>
+                  </CardContent>
+                </Card>
 
-            <Card className="flex-1">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-gray-600">Graded</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{gradedCount}</div>
-              </CardContent>
-            </Card>
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Graded</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">{gradedCount}</div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Auto-Graded</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-600">{autoGradedCount}</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Total Submissions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-gray-600">{submissions.length}</div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         </div>
 
