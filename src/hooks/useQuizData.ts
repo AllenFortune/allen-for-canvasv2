@@ -4,6 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Quiz, QuizQuestion, QuizSubmission } from '@/types/quizGrading';
 
+// Track locally graded submissions to preserve status
+interface LocalGradingState {
+  [submissionId: number]: {
+    [questionId: number]: boolean; // true if question has been graded locally
+  };
+}
+
 export const useQuizData = (courseId: string | undefined, quizId: string | undefined) => {
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -11,6 +18,7 @@ export const useQuizData = (courseId: string | undefined, quizId: string | undef
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+  const [localGradingState, setLocalGradingState] = useState<LocalGradingState>({});
 
   const fetchQuizData = async () => {
     if (!courseId || !quizId || !session?.access_token) {
@@ -88,13 +96,50 @@ export const useQuizData = (courseId: string | undefined, quizId: string | undef
       }
 
       console.log('Quiz submissions refreshed from Canvas');
-      setSubmissions(submissionsData.submissions || []);
+      
+      // Smart merge: preserve local grading state
+      const freshSubmissions = submissionsData.submissions || [];
+      const mergedSubmissions = freshSubmissions.map((canvasSubmission: QuizSubmission) => {
+        // If we have local grading state for this submission, preserve it
+        const localState = localGradingState[canvasSubmission.id];
+        if (localState && Object.keys(localState).length > 0) {
+          // Check if all manual questions are graded locally
+          const manualQuestions = questions.filter(q => 
+            q.question_type === 'essay_question' || 
+            q.question_type === 'fill_in_multiple_blanks_question' ||
+            q.question_type === 'file_upload_question'
+          );
+          
+          const allManualQuestionsGraded = manualQuestions.every(q => localState[q.id]);
+          
+          if (allManualQuestionsGraded && canvasSubmission.workflow_state !== 'graded') {
+            // Preserve local "graded" status if all manual questions are graded
+            return {
+              ...canvasSubmission,
+              workflow_state: 'graded'
+            };
+          }
+        }
+        return canvasSubmission;
+      });
+
+      setSubmissions(mergedSubmissions);
       setQuiz(submissionsData.quiz || null);
       return true;
     } catch (err) {
       console.error('Error refreshing submissions:', err);
       return false;
     }
+  };
+
+  const markQuestionAsGraded = (submissionId: number, questionId: number) => {
+    setLocalGradingState(prev => ({
+      ...prev,
+      [submissionId]: {
+        ...prev[submissionId],
+        [questionId]: true
+      }
+    }));
   };
 
   const retryFetch = () => {
@@ -116,6 +161,8 @@ export const useQuizData = (courseId: string | undefined, quizId: string | undef
     error,
     retryFetch,
     refreshSubmissions,
-    setSubmissions
+    setSubmissions,
+    markQuestionAsGraded,
+    localGradingState
   };
 };

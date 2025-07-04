@@ -12,7 +12,9 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     error,
     retryFetch,
     refreshSubmissions,
-    setSubmissions
+    setSubmissions,
+    markQuestionAsGraded,
+    localGradingState
   } = useQuizData(courseId, quizId);
 
   const {
@@ -41,6 +43,8 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     retryFetch,
     retryAnswersFetch,
     refreshSubmissions,
-    setSubmissions
+    setSubmissions,
+    markQuestionAsGraded,
+    localGradingState
   };
 };

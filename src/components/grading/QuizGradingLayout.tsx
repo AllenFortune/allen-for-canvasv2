@@ -1,7 +1,7 @@
 
 import React from 'react';
 import QuizSubmissionView from './QuizSubmissionView';
-import QuizGradingForm from './QuizGradingForm';
+import QuizGradingFormWithLocalState from './QuizGradingFormWithLocalState';
 
 interface Quiz {
   id: number;
@@ -55,13 +55,14 @@ interface QuizGradingLayoutProps {
   selectedSubmission: QuizSubmission;
   onQuestionSelect: (questionId: number) => void;
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
-  onGradeUpdate?: (submissionId: number, score: string) => void;
+  onGradeUpdate?: (submissionId: number, score: string, questionId?: number) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};
   answersErrors: {[submissionId: number]: string};
   fetchSubmissionAnswers: (submissionId: number, userId?: number) => Promise<SubmissionAnswer[] | null>;
   retryAnswersFetch: (submissionId: number, userId?: number) => void;
   manualGradingQuestions: QuizQuestion[];
+  localGradingState?: {[submissionId: number]: {[questionId: number]: boolean}};
 }
 
 const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
@@ -77,7 +78,8 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
   answersErrors,
   fetchSubmissionAnswers,
   retryAnswersFetch,
-  manualGradingQuestions
+  manualGradingQuestions,
+  localGradingState = {}
 }) => {
   const selectedQuestion = selectedQuestionId ? questions.find(q => q.id === selectedQuestionId) : null;
   const selectedSubmissionAnswers = submissionAnswers[selectedSubmission.id] || [];
@@ -115,12 +117,13 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
       {/* Right Panel - Grading Form (now wider) */}
       <div className="lg:col-span-1">
         {selectedQuestion && (
-          <QuizGradingForm
+          <QuizGradingFormWithLocalState
             submission={selectedSubmission}
             question={selectedQuestion}
             submissionAnswer={selectedAnswer}
             gradeQuestion={gradeQuestion}
             onGradeUpdate={onGradeUpdate}
+            locallyGraded={localGradingState[selectedSubmission.id]?.[selectedQuestion.id] || false}
           />
         )}
       </div>

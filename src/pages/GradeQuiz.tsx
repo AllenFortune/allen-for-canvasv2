@@ -27,7 +27,9 @@ const GradeQuiz = () => {
     retryFetch,
     retryAnswersFetch,
     refreshSubmissions,
-    setSubmissions
+    setSubmissions,
+    markQuestionAsGraded,
+    localGradingState
   } = useGradeQuiz(courseId, quizId);
 
   if (!session) {
@@ -43,14 +45,31 @@ const GradeQuiz = () => {
     setSubmissions(newSubmissions);
   };
 
-  // Handle grade updates to update submission state and counts
-  const handleGradeUpdate = (submissionId: number, score: string) => {
+  // Enhanced grade update handler with local state tracking
+  const handleGradeUpdate = (submissionId: number, score: string, questionId?: number) => {
+    // Mark question as graded in local state
+    if (questionId) {
+      markQuestionAsGraded(submissionId, questionId);
+    }
+
+    // Check if all manual grading questions are now graded for this submission
+    const manualQuestions = questions.filter(q => 
+      q.question_type === 'essay_question' || 
+      q.question_type === 'fill_in_multiple_blanks_question' ||
+      q.question_type === 'file_upload_question'
+    );
+
+    const currentLocalState = localGradingState[submissionId] || {};
+    const allManualQuestionsGraded = manualQuestions.every(q => 
+      currentLocalState[q.id] || (questionId === q.id)
+    );
+
     const updatedSubmissions = submissions.map(submission => {
       if (submission.id === submissionId) {
         return {
           ...submission,
-          workflow_state: 'graded',
-          score: parseFloat(score) || null
+          workflow_state: allManualQuestionsGraded ? 'graded' : submission.workflow_state,
+          score: parseFloat(score) || submission.score
         };
       }
       return submission;
@@ -89,6 +108,7 @@ const GradeQuiz = () => {
             answersErrors={answersErrors}
             fetchSubmissionAnswers={fetchSubmissionAnswers}
             retryAnswersFetch={retryAnswersFetch}
+            localGradingState={localGradingState}
           />
         </div>
       </div>

@@ -47,12 +47,8 @@ export const useQuizGrading = (
 
       console.log('Question graded successfully:', data);
       
-      // Refresh submissions from Canvas after successful grading
-      if (refreshSubmissions) {
-        setTimeout(() => {
-          refreshSubmissions();
-        }, 1000); // Small delay to allow Canvas to process the grade
-      }
+      // Note: Removed automatic refresh to prevent overwriting local state
+      // Manual refresh is available via the refresh button in the UI
       
       return true;
     } catch (error) {
