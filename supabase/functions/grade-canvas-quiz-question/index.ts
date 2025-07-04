@@ -100,7 +100,6 @@ serve(async (req) => {
     }
 
     let gradeResponse;
-    let commentResponse;
 
     if (isNewQuizzes) {
       // For New Quizzes, grade the entire assignment submission
@@ -133,7 +132,7 @@ serve(async (req) => {
         body: JSON.stringify(gradeData),
       });
     } else {
-      // For Classic Quizzes, grade individual questions
+      // For Classic Quizzes, use the correct Canvas API endpoint
       if (!questionId) {
         return new Response(
           JSON.stringify({ error: 'Question ID is required for Classic Quiz grading' }),
@@ -141,61 +140,51 @@ serve(async (req) => {
         );
       }
 
-      const classicQuizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}`;
-      console.log(`Grading Classic Quiz question: ${classicQuizUrl}`);
+      // Use the correct Canvas quiz submissions API endpoint
+      const quizSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
+      console.log(`Grading Classic Quiz submission: ${quizSubmissionUrl}`);
+      console.log(`Question ID: ${questionId}, Submission ID: ${submissionId}`);
 
-      // Only send score for the question - comments handled separately
-      const gradeData: any = {};
+      // Build the correct payload according to Canvas API documentation
+      const quizSubmissionData: any = {
+        quiz_submissions: [{
+          attempt: 1, // Default to attempt 1, should be fetched from actual submission data
+          questions: {}
+        }]
+      };
+
+      // Add question scoring and/or comment
+      const questionData: any = {};
       if (score !== undefined && score !== null && score !== '') {
         const parsedScore = parseFloat(score);
         if (!isNaN(parsedScore)) {
-          gradeData.question_score = parsedScore;
+          questionData.score = parsedScore;
         }
       }
+      if (comment && comment.trim() !== '') {
+        questionData.comment = comment;
+      }
 
-      console.log(`Classic Quiz question payload:`, JSON.stringify(gradeData));
-      gradeResponse = await fetch(classicQuizUrl, {
+      // Only proceed if we have either score or comment to update
+      if (Object.keys(questionData).length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Either score or comment is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      quizSubmissionData.quiz_submissions[0].questions[questionId.toString()] = questionData;
+
+      console.log(`Classic Quiz submission payload:`, JSON.stringify(quizSubmissionData, null, 2));
+      gradeResponse = await fetch(quizSubmissionUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${canvas_access_token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(gradeData),
+        body: JSON.stringify(quizSubmissionData),
       });
-
-      // Handle comment as a separate API call for Classic Quizzes
-      if (comment && comment.trim() !== '') {
-        const commentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/comments`;
-        console.log(`Posting comment for Classic Quiz submission: ${commentUrl}`);
-        
-        const commentData = {
-          quiz_submission: {
-            submission_data: {
-              comment: comment
-            }
-          }
-        };
-        
-        console.log(`Classic Quiz comment payload:`, JSON.stringify(commentData));
-        commentResponse = await fetch(commentUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(commentData),
-        });
-
-        if (!commentResponse.ok) {
-          const commentErrorText = await commentResponse.text();
-          console.error(`Failed to post Classic Quiz comment: ${commentResponse.status} - ${commentErrorText}`);
-          // Don't fail the whole grading operation for comment failure
-        } else {
-          console.log('Successfully posted Classic Quiz comment');
-        }
-      }
     }
 
     if (!gradeResponse.ok) {
