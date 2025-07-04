@@ -44,14 +44,24 @@ serve(async (req) => {
     const body = await req.json();
     const { courseId, quizId, submissionId, questionId, score, comment } = body;
     
+    console.log(`=== CANVAS GRADING DEBUG ===`);
+    console.log(`Received parameters:`, {
+      courseId,
+      quizId, 
+      submissionId,
+      questionId,
+      score,
+      comment: comment ? `"${comment.substring(0, 50)}..."` : 'null',
+      user: user.email
+    });
+    
     if (!courseId || !quizId || !submissionId) {
+      console.error(`Missing required parameters:`, { courseId, quizId, submissionId });
       return new Response(
         JSON.stringify({ error: 'Course ID, Quiz ID, and Submission ID are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log(`Grading quiz for course ${courseId}, quiz ${quizId}, submission ${submissionId}, user: ${user.email}`);
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -132,7 +142,7 @@ serve(async (req) => {
         body: JSON.stringify(gradeData),
       });
     } else {
-      // For Classic Quizzes, use the correct Canvas API endpoint
+      // For Classic Quizzes, we need to handle this more carefully
       if (!questionId) {
         return new Response(
           JSON.stringify({ error: 'Question ID is required for Classic Quiz grading' }),
@@ -140,54 +150,157 @@ serve(async (req) => {
         );
       }
 
-      // Use the correct Canvas quiz submissions API endpoint
-      const quizSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
-      console.log(`Grading Classic Quiz submission: ${quizSubmissionUrl}`);
-      console.log(`Question ID: ${questionId}, Submission ID: ${submissionId}`);
-
-      // Build the correct payload according to Canvas API documentation
-      const quizSubmissionData: any = {
-        quiz_submissions: [{
-          attempt: 1, // Default to attempt 1, should be fetched from actual submission data
-          questions: {}
-        }]
-      };
-
-      // Add question scoring and/or comment
-      const questionData: any = {};
-      if (score !== undefined && score !== null && score !== '') {
-        const parsedScore = parseFloat(score);
-        if (!isNaN(parsedScore)) {
-          questionData.score = parsedScore;
-        }
-      }
-      if (comment && comment.trim() !== '') {
-        questionData.comment = comment;
-      }
-
-      // Only proceed if we have either score or comment to update
-      if (Object.keys(questionData).length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'Either score or comment is required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      quizSubmissionData.quiz_submissions[0].questions[questionId.toString()] = questionData;
-
-      console.log(`Classic Quiz submission payload:`, JSON.stringify(quizSubmissionData, null, 2));
-      gradeResponse = await fetch(quizSubmissionUrl, {
-        method: 'PUT',
+      // First, fetch the quiz submission to get the correct attempt number and verify it exists
+      const getSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
+      console.log(`Fetching Classic Quiz submission details: ${getSubmissionUrl}`);
+      
+      const submissionResponse = await fetch(getSubmissionUrl, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${canvas_access_token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(quizSubmissionData),
       });
+
+      if (!submissionResponse.ok) {
+        const submissionError = await submissionResponse.text();
+        console.error(`Failed to fetch submission: ${submissionResponse.status} - ${submissionError}`);
+        return new Response(
+          JSON.stringify({ 
+            error: `Quiz submission not found: ${submissionResponse.status}`,
+            debug: { courseId, quizId, submissionId, url: getSubmissionUrl }
+          }),
+          { status: submissionResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const submissionData = await submissionResponse.json();
+      console.log(`Found submission with attempt: ${submissionData.quiz_submissions?.[0]?.attempt || 'unknown'}`);
+      
+      const actualAttempt = submissionData.quiz_submissions?.[0]?.attempt || 1;
+
+      // Now try multiple approaches for Classic Quiz grading
+      let gradeSuccess = false;
+      let lastError = '';
+
+      // Approach 1: Try the individual question scoring endpoint
+      if (score !== undefined && score !== null && score !== '') {
+        const questionGradeUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}/score_and_comment`;
+        console.log(`Attempting individual question grading: ${questionGradeUrl}`);
+        
+        const questionGradeData = {
+          quiz_submissions: [{
+            attempt: actualAttempt,
+            questions: {
+              [questionId.toString()]: {
+                score: parseFloat(score),
+                comment: comment || ''
+              }
+            }
+          }]
+        };
+
+        console.log(`Question grading payload:`, JSON.stringify(questionGradeData, null, 2));
+        
+        const questionGradeResponse = await fetch(questionGradeUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(questionGradeData),
+        });
+
+        if (questionGradeResponse.ok) {
+          gradeResponse = questionGradeResponse;
+          gradeSuccess = true;
+          console.log('Successfully used individual question grading endpoint');
+        } else {
+          const errorText = await questionGradeResponse.text();
+          lastError = `Question endpoint failed: ${questionGradeResponse.status} - ${errorText}`;
+          console.log(lastError);
+        }
+      }
+
+      // Approach 2: Try the submission update endpoint if approach 1 failed
+      if (!gradeSuccess) {
+        const quizSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
+        console.log(`Attempting submission update: ${quizSubmissionUrl}`);
+
+        const quizSubmissionData: any = {
+          quiz_submissions: [{
+            attempt: actualAttempt,
+            questions: {}
+          }]
+        };
+
+        // Add question scoring and/or comment
+        const questionData: any = {};
+        if (score !== undefined && score !== null && score !== '') {
+          const parsedScore = parseFloat(score);
+          if (!isNaN(parsedScore)) {
+            questionData.score = parsedScore;
+          }
+        }
+        if (comment && comment.trim() !== '') {
+          questionData.comment = comment;
+        }
+
+        // Only proceed if we have either score or comment to update
+        if (Object.keys(questionData).length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Either score or comment is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        quizSubmissionData.quiz_submissions[0].questions[questionId.toString()] = questionData;
+
+        console.log(`Classic Quiz submission payload:`, JSON.stringify(quizSubmissionData, null, 2));
+        gradeResponse = await fetch(quizSubmissionUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(quizSubmissionData),
+        });
+
+        if (gradeResponse.ok) {
+          gradeSuccess = true;
+          console.log('Successfully used submission update endpoint');
+        } else {
+          const errorText = await gradeResponse.text();
+          lastError += ` | Submission endpoint failed: ${gradeResponse.status} - ${errorText}`;
+          console.log(`Submission update failed: ${gradeResponse.status} - ${errorText}`);
+        }
+      }
+
+      // If both approaches failed, return the combined error
+      if (!gradeSuccess) {
+        console.error(`All Classic Quiz grading approaches failed: ${lastError}`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'All grading approaches failed for Classic Quiz',
+            debug: { 
+              courseId, 
+              quizId, 
+              submissionId, 
+              questionId, 
+              attempt: actualAttempt,
+              errors: lastError 
+            }
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    if (!gradeResponse.ok) {
+    // Only check gradeResponse if we have one and it's from New Quizzes or if Classic Quiz failed
+    if (gradeResponse && !gradeResponse.ok) {
       const errorText = await gradeResponse.text();
       console.error(`Canvas API error: ${gradeResponse.status} - ${errorText}`);
       
