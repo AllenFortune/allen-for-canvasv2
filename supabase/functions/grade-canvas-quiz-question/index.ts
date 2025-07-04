@@ -1,5 +1,4 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -180,127 +179,52 @@ serve(async (req) => {
       
       const actualAttempt = submissionData.quiz_submissions?.[0]?.attempt || 1;
 
-      // Now try multiple approaches for Classic Quiz grading
-      let gradeSuccess = false;
-      let lastError = '';
+      // Grade Classic Quiz submission
+      const quizSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
+      console.log(`Updating Classic Quiz submission: ${quizSubmissionUrl}`);
 
-      // Approach 1: Try the individual question scoring endpoint
+      const questionData: any = {};
       if (score !== undefined && score !== null && score !== '') {
-        const questionGradeUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}/score_and_comment`;
-        console.log(`Attempting individual question grading: ${questionGradeUrl}`);
-        
-        const questionGradeData = {
-          quiz_submissions: [{
-            attempt: actualAttempt,
-            questions: {
-              [questionId.toString()]: {
-                score: parseFloat(score),
-                comment: comment || ''
-              }
-            }
-          }]
-        };
-
-        console.log(`Question grading payload:`, JSON.stringify(questionGradeData, null, 2));
-        
-        const questionGradeResponse = await fetch(questionGradeUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(questionGradeData),
-        });
-
-        if (questionGradeResponse.ok) {
-          gradeResponse = questionGradeResponse;
-          gradeSuccess = true;
-          console.log('Successfully used individual question grading endpoint');
-        } else {
-          const errorText = await questionGradeResponse.text();
-          lastError = `Question endpoint failed: ${questionGradeResponse.status} - ${errorText}`;
-          console.log(lastError);
+        const parsedScore = parseFloat(score);
+        if (!isNaN(parsedScore)) {
+          questionData.score = parsedScore;
         }
       }
-
-      // Approach 2: Try the submission update endpoint if approach 1 failed
-      if (!gradeSuccess) {
-        const quizSubmissionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}`;
-        console.log(`Attempting submission update: ${quizSubmissionUrl}`);
-
-        const quizSubmissionData: any = {
-          quiz_submissions: [{
-            attempt: actualAttempt,
-            questions: {}
-          }]
-        };
-
-        // Add question scoring and/or comment
-        const questionData: any = {};
-        if (score !== undefined && score !== null && score !== '') {
-          const parsedScore = parseFloat(score);
-          if (!isNaN(parsedScore)) {
-            questionData.score = parsedScore;
-          }
-        }
-        if (comment && comment.trim() !== '') {
-          questionData.comment = comment;
-        }
-
-        // Only proceed if we have either score or comment to update
-        if (Object.keys(questionData).length === 0) {
-          return new Response(
-            JSON.stringify({ error: 'Either score or comment is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        quizSubmissionData.quiz_submissions[0].questions[questionId.toString()] = questionData;
-
-        console.log(`Classic Quiz submission payload:`, JSON.stringify(quizSubmissionData, null, 2));
-        gradeResponse = await fetch(quizSubmissionUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${canvas_access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(quizSubmissionData),
-        });
-
-        if (gradeResponse.ok) {
-          gradeSuccess = true;
-          console.log('Successfully used submission update endpoint');
-        } else {
-          const errorText = await gradeResponse.text();
-          lastError += ` | Submission endpoint failed: ${gradeResponse.status} - ${errorText}`;
-          console.log(`Submission update failed: ${gradeResponse.status} - ${errorText}`);
-        }
+      if (comment && comment.trim() !== '') {
+        questionData.comment = comment;
       }
 
-      // If both approaches failed, return the combined error
-      if (!gradeSuccess) {
-        console.error(`All Classic Quiz grading approaches failed: ${lastError}`);
+      // Only proceed if we have either score or comment to update
+      if (Object.keys(questionData).length === 0) {
         return new Response(
-          JSON.stringify({ 
-            error: 'All grading approaches failed for Classic Quiz',
-            debug: { 
-              courseId, 
-              quizId, 
-              submissionId, 
-              questionId, 
-              attempt: actualAttempt,
-              errors: lastError 
-            }
-          }),
+          JSON.stringify({ error: 'Either score or comment is required' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      const quizSubmissionData = {
+        quiz_submissions: [{
+          attempt: actualAttempt,
+          questions: {
+            [questionId.toString()]: questionData
+          }
+        }]
+      };
+
+      console.log(`Classic Quiz submission payload:`, JSON.stringify(quizSubmissionData, null, 2));
+      gradeResponse = await fetch(quizSubmissionUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${canvas_access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(quizSubmissionData),
+      });
     }
 
-    // Only check gradeResponse if we have one and it's from New Quizzes or if Classic Quiz failed
-    if (gradeResponse && !gradeResponse.ok) {
+    // Check if grading was successful
+    if (!gradeResponse.ok) {
       const errorText = await gradeResponse.text();
       console.error(`Canvas API error: ${gradeResponse.status} - ${errorText}`);
       
@@ -323,7 +247,15 @@ serve(async (req) => {
       );
     }
 
-    const result = await gradeResponse.json();
+    // Handle response parsing safely, accounting for 204 No Content
+    let result = null;
+    if (gradeResponse.status !== 204) {
+      try {
+        result = await gradeResponse.json();
+      } catch (e) {
+        console.warn("Could not parse JSON from Canvas response, but request was successful. Continuing.");
+      }
+    }
     
     console.log(`Successfully graded ${isNewQuizzes ? 'New Quizzes assignment' : 'Classic Quiz question'}`);
 
