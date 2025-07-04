@@ -146,22 +146,63 @@ serve(async (req) => {
       const assignmentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`;
       console.log(`Grading New Quizzes assignment: ${assignmentUrl} (using userId: ${userId})`);
 
+      let finalPostedGrade = 0; // Initialize final grade
+
+      // 1. Fetch the current submission to get the existing grade
+      try {
+        console.log(`Fetching current submission grade from: ${assignmentUrl}`);
+        const currentSubmissionResponse = await fetch(assignmentUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (currentSubmissionResponse.ok) {
+          const currentSubmissionData = await currentSubmissionResponse.json();
+          const existingScore = parseFloat(currentSubmissionData.score || '0');
+          if (!isNaN(existingScore)) {
+            finalPostedGrade = existingScore;
+            console.log(`Existing score for submission: ${existingScore}`);
+          } else {
+            console.log(`No existing score found, starting from 0`);
+          }
+        } else {
+          const errorText = await currentSubmissionResponse.text();
+          console.warn(`Failed to fetch current submission grade (status: ${currentSubmissionResponse.status}): ${errorText}`);
+          // If fetching current grade fails, proceed with only the manual score
+        }
+      } catch (e) {
+        console.error("Error fetching current submission grade:", e);
+        // If an error occurs, proceed with only the manual score
+      }
+
       const gradeData: any = {};
+      // 2. Add the new manually graded score to the existing score
       if (score !== undefined && score !== null && score !== '') {
-        const parsedScore = parseFloat(score);
-        if (!isNaN(parsedScore)) {
-          gradeData.submission = {
-            posted_grade: parsedScore
-          };
+        const parsedManualScore = parseFloat(score);
+        if (!isNaN(parsedManualScore)) {
+          finalPostedGrade += parsedManualScore;
+          console.log(`Adding manual score: ${parsedManualScore}, new total: ${finalPostedGrade}`);
         }
       }
+      
+      // Send the calculated total grade
+      if (finalPostedGrade > 0) {
+        gradeData.submission = {
+          posted_grade: finalPostedGrade
+        };
+      }
+      
       if (comment && comment.trim() !== '') {
         gradeData.comment = {
           text_comment: comment
         };
       }
 
-      console.log(`New Quizzes payload:`, JSON.stringify(gradeData));
+      console.log(`New Quizzes payload with aggregated grade:`, JSON.stringify(gradeData));
       gradeResponse = await fetch(assignmentUrl, {
         method: 'PUT',
         headers: {
