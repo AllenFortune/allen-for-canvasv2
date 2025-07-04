@@ -42,6 +42,21 @@ const GradeQuiz = () => {
     setSubmissions(newSubmissions);
   };
 
+  // Handle grade updates to update submission state and counts
+  const handleGradeUpdate = (submissionId: number, score: string) => {
+    const updatedSubmissions = submissions.map(submission => {
+      if (submission.id === submissionId) {
+        return {
+          ...submission,
+          workflow_state: 'graded',
+          score: parseFloat(score) || null
+        };
+      }
+      return submission;
+    });
+    setSubmissions(updatedSubmissions);
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -65,6 +80,7 @@ const GradeQuiz = () => {
             questions={questions}
             submissions={submissions}
             gradeQuestion={gradeQuestion}
+            onGradeUpdate={handleGradeUpdate}
             setSubmissions={handleSetSubmissions}
             submissionAnswers={submissionAnswers}
             loadingAnswers={loadingAnswers}

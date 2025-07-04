@@ -55,6 +55,7 @@ interface QuizGradingLayoutProps {
   selectedSubmission: QuizSubmission;
   onQuestionSelect: (questionId: number) => void;
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  onGradeUpdate?: (submissionId: number, score: string) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};
   answersErrors: {[submissionId: number]: string};
@@ -70,6 +71,7 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
   selectedSubmission,
   onQuestionSelect,
   gradeQuestion,
+  onGradeUpdate,
   submissionAnswers,
   loadingAnswers,
   answersErrors,
@@ -118,6 +120,7 @@ const QuizGradingLayout: React.FC<QuizGradingLayoutProps> = ({
             question={selectedQuestion}
             submissionAnswer={selectedAnswer}
             gradeQuestion={gradeQuestion}
+            onGradeUpdate={onGradeUpdate}
           />
         )}
       </div>

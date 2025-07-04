@@ -55,6 +55,7 @@ interface GradeQuizContentProps {
   questions: QuizQuestion[];
   submissions: QuizSubmission[];
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  onGradeUpdate?: (submissionId: number, score: string) => void;
   setSubmissions: (submissions: QuizSubmission[]) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};
@@ -68,6 +69,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   questions,
   submissions,
   gradeQuestion,
+  onGradeUpdate,
   submissionAnswers,
   loadingAnswers,
   answersErrors,
@@ -149,6 +151,7 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
         selectedSubmission={selectedSubmission}
         onQuestionSelect={setSelectedQuestionId}
         gradeQuestion={gradeQuestion}
+        onGradeUpdate={onGradeUpdate}
         submissionAnswers={submissionAnswers}
         loadingAnswers={loadingAnswers}
         answersErrors={answersErrors}
