@@ -41,7 +41,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { courseId, quizId, submissionId, questionId, score, comment } = body;
+    const { courseId, quizId, submissionId, questionId, score, comment, userId } = body;
     
     console.log(`=== CANVAS GRADING DEBUG ===`);
     console.log(`Received parameters:`, {
@@ -49,6 +49,7 @@ serve(async (req) => {
       quizId, 
       submissionId,
       questionId,
+      userId,
       score,
       comment: comment ? `"${comment.substring(0, 50)}..."` : 'null',
       user: user.email
@@ -128,9 +129,22 @@ serve(async (req) => {
     let gradeResponse;
 
     if (isNewQuizzes) {
-      // For New Quizzes, grade the entire assignment submission
-      const assignmentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`;
-      console.log(`Grading New Quizzes assignment: ${assignmentUrl}`);
+      // For New Quizzes, we need the userId, not submissionId
+      if (!userId) {
+        console.error(`Missing userId for New Quiz grading`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'User ID is required for New Quiz grading',
+            quizType: 'new_quizzes',
+            submissionId: submissionId 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // For New Quizzes, grade the entire assignment submission using userId
+      const assignmentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${userId}`;
+      console.log(`Grading New Quizzes assignment: ${assignmentUrl} (using userId: ${userId})`);
 
       const gradeData: any = {};
       if (score !== undefined && score !== null && score !== '') {

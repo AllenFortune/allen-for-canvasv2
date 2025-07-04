@@ -16,6 +16,7 @@ interface QuizQuestion {
 
 interface QuizSubmission {
   id: number;
+  user_id: number;
   user: {
     name: string;
     sortable_name: string;
@@ -34,7 +35,7 @@ interface QuizGradingFormProps {
   submission: QuizSubmission;
   question: QuizQuestion;
   submissionAnswer?: SubmissionAnswer;
-  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string, userId?: number) => Promise<boolean>;
 }
 
 const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
@@ -150,7 +151,7 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const success = await gradeQuestion(submission.id, question.id, score, comment);
+      const success = await gradeQuestion(submission.id, question.id, score, comment, submission.user_id);
       
       if (success) {
         toast({

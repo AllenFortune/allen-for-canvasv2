@@ -9,7 +9,8 @@ export const useQuizGrading = (courseId: string | undefined, quizId: string | un
     submissionId: number,
     questionId: number,
     score: string,
-    comment: string
+    comment: string,
+    userId?: number
   ): Promise<boolean> => {
     if (!courseId || !quizId || !session?.access_token) {
       console.error('Missing required data for grading');
@@ -27,6 +28,7 @@ export const useQuizGrading = (courseId: string | undefined, quizId: string | un
             questionId,
             score: parseFloat(score) || 0,
             comment,
+            userId,
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
