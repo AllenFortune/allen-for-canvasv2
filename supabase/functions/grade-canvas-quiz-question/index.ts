@@ -100,12 +100,29 @@ serve(async (req) => {
     }
 
     const quizData = await quizResponse.json();
-    const isNewQuizzes = !!quizData.assignment_id;
+    
+    // Enhanced logging for quiz data analysis
+    console.log(`Full Quiz Data:`, JSON.stringify(quizData, null, 2));
+    console.log(`Assignment ID type: ${typeof quizData.assignment_id}, value: ${quizData.assignment_id}`);
+    
+    // Robust quiz type detection - New Quizzes have a valid numeric assignment_id
+    const isNewQuizzes = typeof quizData.assignment_id === 'number' && quizData.assignment_id > 0;
     const assignmentId = quizData.assignment_id;
 
     console.log(`Quiz type: ${isNewQuizzes ? 'New Quizzes' : 'Classic Quiz'}`);
-    if (isNewQuizzes) {
-      console.log(`Assignment ID: ${assignmentId}`);
+    console.log(`Assignment ID: ${assignmentId} (valid: ${isNewQuizzes})`);
+    
+    // Validation for New Quizzes
+    if (isNewQuizzes && (!assignmentId || assignmentId <= 0)) {
+      console.error(`Invalid assignment ID for New Quiz: ${assignmentId}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid New Quiz configuration - assignment ID is missing or invalid',
+          quizType: 'new_quizzes_invalid',
+          assignmentId: assignmentId 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let gradeResponse;
