@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -30,6 +30,9 @@ const GradeQuiz = () => {
     setSubmissions
   } = useGradeQuiz(courseId, quizId);
 
+  // Track graded questions per submission to show partial grading progress
+  const [gradedQuestions, setGradedQuestions] = useState<{[submissionId: number]: Set<number>}>({});
+
   if (!session) {
     return <LoadingDisplay />;
   }
@@ -43,19 +46,21 @@ const GradeQuiz = () => {
     setSubmissions(newSubmissions);
   };
 
-  // Handle grade updates to update submission state and counts
-  const handleGradeUpdate = (submissionId: number, score: string) => {
-    const updatedSubmissions = submissions.map(submission => {
-      if (submission.id === submissionId) {
-        return {
-          ...submission,
-          workflow_state: 'graded',
-          score: parseFloat(score) || null
-        };
-      }
-      return submission;
-    });
-    setSubmissions(updatedSubmissions);
+  // Get manual grading questions (essay questions)
+  const manualGradingQuestions = useMemo(() => {
+    return questions.filter(q => q.question_type === 'essay_question');
+  }, [questions]);
+
+  // Handle grade updates - track individual question completion instead of marking entire submission as graded
+  const handleGradeUpdate = (submissionId: number, score: string, questionId: number) => {
+    // Update the graded questions tracking
+    setGradedQuestions(prev => ({
+      ...prev,
+      [submissionId]: new Set([...(prev[submissionId] || []), questionId])
+    }));
+    
+    // Don't optimistically mark the entire submission as graded
+    // Let Canvas determine the final status when all questions are complete
   };
 
   return (
@@ -89,6 +94,8 @@ const GradeQuiz = () => {
             answersErrors={answersErrors}
             fetchSubmissionAnswers={fetchSubmissionAnswers}
             retryAnswersFetch={retryAnswersFetch}
+            gradedQuestions={gradedQuestions}
+            manualGradingQuestions={manualGradingQuestions}
           />
         </div>
       </div>

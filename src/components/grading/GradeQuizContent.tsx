@@ -55,13 +55,15 @@ interface GradeQuizContentProps {
   questions: QuizQuestion[];
   submissions: QuizSubmission[];
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
-  onGradeUpdate?: (submissionId: number, score: string) => void;
+  onGradeUpdate?: (submissionId: number, score: string, questionId: number) => void;
   setSubmissions: (submissions: QuizSubmission[]) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};
   answersErrors: {[submissionId: number]: string};
   fetchSubmissionAnswers: (submissionId: number, userId?: number) => Promise<SubmissionAnswer[] | null>;
   retryAnswersFetch: (submissionId: number, userId?: number) => void;
+  gradedQuestions: {[submissionId: number]: Set<number>};
+  manualGradingQuestions: QuizQuestion[];
 }
 
 const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
@@ -74,7 +76,9 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
   loadingAnswers,
   answersErrors,
   fetchSubmissionAnswers,
-  retryAnswersFetch
+  retryAnswersFetch,
+  gradedQuestions,
+  manualGradingQuestions
 }) => {
   const [selectedSubmissionIndex, setSelectedSubmissionIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
@@ -141,6 +145,8 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
         selectedSubmissionIndex={selectedSubmissionIndex}
         onSubmissionSelect={setSelectedSubmissionIndex}
         onNavigate={navigateSubmission}
+        gradedQuestions={gradedQuestions}
+        manualGradingQuestions={manualGradingQuestions}
       />
 
       {/* Main Grading Layout */}
