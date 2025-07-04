@@ -2,7 +2,11 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useQuizGrading = (courseId: string | undefined, quizId: string | undefined) => {
+export const useQuizGrading = (
+  courseId: string | undefined, 
+  quizId: string | undefined,
+  refreshSubmissions?: () => Promise<boolean>
+) => {
   const { session } = useAuth();
 
   const gradeQuestion = async (
@@ -42,6 +46,14 @@ export const useQuizGrading = (courseId: string | undefined, quizId: string | un
       }
 
       console.log('Question graded successfully:', data);
+      
+      // Refresh submissions from Canvas after successful grading
+      if (refreshSubmissions) {
+        setTimeout(() => {
+          refreshSubmissions();
+        }, 1000); // Small delay to allow Canvas to process the grade
+      }
+      
       return true;
     } catch (error) {
       console.error('Error grading question:', error);

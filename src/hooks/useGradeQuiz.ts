@@ -11,6 +11,7 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     loading,
     error,
     retryFetch,
+    refreshSubmissions,
     setSubmissions
   } = useQuizData(courseId, quizId);
 
@@ -23,7 +24,7 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     retryAnswersFetch
   } = useSubmissionAnswers(courseId, quizId);
 
-  const { gradeQuestion } = useQuizGrading(courseId, quizId);
+  const { gradeQuestion } = useQuizGrading(courseId, quizId, refreshSubmissions);
 
   return {
     quiz,
@@ -39,6 +40,7 @@ export const useGradeQuiz = (courseId: string | undefined, quizId: string | unde
     fetchSubmissionAnswers,
     retryFetch,
     retryAnswersFetch,
+    refreshSubmissions,
     setSubmissions
   };
 };

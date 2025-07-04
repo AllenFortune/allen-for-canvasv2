@@ -26,6 +26,7 @@ const GradeQuiz = () => {
     fetchSubmissionAnswers,
     retryFetch,
     retryAnswersFetch,
+    refreshSubmissions,
     setSubmissions
   } = useGradeQuiz(courseId, quizId);
 
@@ -67,6 +68,7 @@ const GradeQuiz = () => {
             quiz={quiz}
             submissions={submissions}
             questions={questions}
+            onRefreshSubmissions={refreshSubmissions}
           />
 
           {error && (

@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronLeft, ChevronRight, User, CheckCircle2, Clock } from 'lucide-react';
 
 interface QuizSubmission {
   id: number;
@@ -54,10 +55,38 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
   const getStatusBadge = (submission: QuizSubmission) => {
     switch (submission.workflow_state) {
       case 'graded':
-        return <Badge variant="default" className="bg-green-100 text-green-800 text-xs">Graded</Badge>;
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="default" className="bg-green-100 text-green-800 text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Graded
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Status verified with Canvas</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
       case 'complete':
       case 'pending_review':
-        return <Badge variant="destructive" className="text-xs">Needs Grading</Badge>;
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Needs Grading
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Requires manual grading</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
       case 'untaken':
         return <Badge variant="secondary" className="text-xs">Not Taken</Badge>;
       default:
@@ -111,8 +140,17 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
                       <span className="flex-1 text-left">{submission.user.sortable_name}</span>
                     </div>
                     <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                      {submission.workflow_state === 'complete' && (
-                        <Badge variant="destructive" className="text-xs">Needs Grading</Badge>
+                      {(submission.workflow_state === 'complete' || submission.workflow_state === 'pending_review') && (
+                        <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Needs Grading
+                        </Badge>
+                      )}
+                      {submission.workflow_state === 'graded' && (
+                        <Badge variant="default" className="bg-green-100 text-green-800 text-xs flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Graded
+                        </Badge>
                       )}
                       {submission.score !== null && (
                         <span className="text-xs text-gray-500">{submission.score} pts</span>

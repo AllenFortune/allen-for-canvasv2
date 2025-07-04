@@ -65,6 +65,38 @@ export const useQuizData = (courseId: string | undefined, quizId: string | undef
     }
   };
 
+  const refreshSubmissions = async () => {
+    if (!courseId || !quizId || !session?.access_token) {
+      return;
+    }
+
+    try {
+      console.log('Refreshing quiz submissions from Canvas...');
+      
+      const { data: submissionsData, error: submissionsError } = await supabase.functions.invoke(
+        'get-canvas-quiz-submissions',
+        {
+          body: { courseId, quizId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (submissionsError) {
+        throw new Error(`Failed to refresh submissions: ${submissionsError.message}`);
+      }
+
+      console.log('Quiz submissions refreshed from Canvas');
+      setSubmissions(submissionsData.submissions || []);
+      setQuiz(submissionsData.quiz || null);
+      return true;
+    } catch (err) {
+      console.error('Error refreshing submissions:', err);
+      return false;
+    }
+  };
+
   const retryFetch = () => {
     console.log('Retrying quiz data fetch...');
     setError(null);
@@ -83,6 +115,7 @@ export const useQuizData = (courseId: string | undefined, quizId: string | undef
     loading,
     error,
     retryFetch,
+    refreshSubmissions,
     setSubmissions
   };
 };
