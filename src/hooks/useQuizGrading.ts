@@ -47,8 +47,12 @@ export const useQuizGrading = (
 
       console.log('Question graded successfully:', data);
       
-      // Don't auto-refresh after individual question grading
-      // Canvas will only mark as 'graded' when ALL manual questions are complete
+      // Refresh submissions from Canvas after successful grading
+      if (refreshSubmissions) {
+        setTimeout(() => {
+          refreshSubmissions();
+        }, 1000); // Small delay to allow Canvas to process the grade
+      }
       
       return true;
     } catch (error) {

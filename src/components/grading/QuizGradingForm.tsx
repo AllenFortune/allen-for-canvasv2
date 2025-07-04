@@ -36,7 +36,7 @@ interface QuizGradingFormProps {
   question: QuizQuestion;
   submissionAnswer?: SubmissionAnswer;
   gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string, userId?: number) => Promise<boolean>;
-  onGradeUpdate?: (submissionId: number, score: string, questionId: number) => void;
+  onGradeUpdate?: (submissionId: number, score: string) => void;
 }
 
 const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
@@ -156,8 +156,8 @@ const QuizGradingForm: React.FC<QuizGradingFormProps> = ({
       const success = await gradeQuestion(submission.id, question.id, score, comment, submission.user_id);
       
       if (success) {
-        // Update the grading tracking with question ID
-        onGradeUpdate?.(submission.id, score, question.id);
+        // Update the submission state optimistically
+        onGradeUpdate?.(submission.id, score);
         
         toast({
           title: "Question Graded",
