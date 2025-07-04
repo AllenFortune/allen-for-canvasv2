@@ -100,6 +100,7 @@ serve(async (req) => {
     }
 
     let gradeResponse;
+    let commentResponse;
 
     if (isNewQuizzes) {
       // For New Quizzes, grade the entire assignment submission
@@ -107,17 +108,21 @@ serve(async (req) => {
       console.log(`Grading New Quizzes assignment: ${assignmentUrl}`);
 
       const gradeData: any = {};
-      if (score !== undefined && score !== null) {
-        gradeData.submission = {
-          posted_grade: parseFloat(score)
-        };
+      if (score !== undefined && score !== null && score !== '') {
+        const parsedScore = parseFloat(score);
+        if (!isNaN(parsedScore)) {
+          gradeData.submission = {
+            posted_grade: parsedScore
+          };
+        }
       }
-      if (comment) {
+      if (comment && comment.trim() !== '') {
         gradeData.comment = {
           text_comment: comment
         };
       }
 
+      console.log(`New Quizzes payload:`, JSON.stringify(gradeData));
       gradeResponse = await fetch(assignmentUrl, {
         method: 'PUT',
         headers: {
@@ -128,7 +133,7 @@ serve(async (req) => {
         body: JSON.stringify(gradeData),
       });
     } else {
-      // For Classic Quizzes, grade individual questions (existing logic)
+      // For Classic Quizzes, grade individual questions
       if (!questionId) {
         return new Response(
           JSON.stringify({ error: 'Question ID is required for Classic Quiz grading' }),
@@ -139,14 +144,16 @@ serve(async (req) => {
       const classicQuizUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/questions/${questionId}`;
       console.log(`Grading Classic Quiz question: ${classicQuizUrl}`);
 
+      // Only send score for the question - comments handled separately
       const gradeData: any = {};
-      if (score !== undefined && score !== null) {
-        gradeData.question_score = parseFloat(score);
-      }
-      if (comment) {
-        gradeData.comment = comment;
+      if (score !== undefined && score !== null && score !== '') {
+        const parsedScore = parseFloat(score);
+        if (!isNaN(parsedScore)) {
+          gradeData.question_score = parsedScore;
+        }
       }
 
+      console.log(`Classic Quiz question payload:`, JSON.stringify(gradeData));
       gradeResponse = await fetch(classicQuizUrl, {
         method: 'PUT',
         headers: {
@@ -156,6 +163,39 @@ serve(async (req) => {
         },
         body: JSON.stringify(gradeData),
       });
+
+      // Handle comment as a separate API call for Classic Quizzes
+      if (comment && comment.trim() !== '') {
+        const commentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/quizzes/${quizId}/submissions/${submissionId}/comments`;
+        console.log(`Posting comment for Classic Quiz submission: ${commentUrl}`);
+        
+        const commentData = {
+          quiz_submission: {
+            submission_data: {
+              comment: comment
+            }
+          }
+        };
+        
+        console.log(`Classic Quiz comment payload:`, JSON.stringify(commentData));
+        commentResponse = await fetch(commentUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${canvas_access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(commentData),
+        });
+
+        if (!commentResponse.ok) {
+          const commentErrorText = await commentResponse.text();
+          console.error(`Failed to post Classic Quiz comment: ${commentResponse.status} - ${commentErrorText}`);
+          // Don't fail the whole grading operation for comment failure
+        } else {
+          console.log('Successfully posted Classic Quiz comment');
+        }
+      }
     }
 
     if (!gradeResponse.ok) {
