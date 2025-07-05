@@ -14,7 +14,7 @@ const CanvasIntegrationBenefits = () => {
       description: "ALLEN grade assist provides comprehensive, consistent feedback while you focus on guiding student analysis, fostering discussion, and modeling how to think critically about ALLEN grade assist-generated content."
     },
     {
-      icon: Shield,
+      icon: "/lovable-uploads/3d7e2873-9f44-4096-809f-a9eb33f740a6.png",
       title: "Seamless Canvas Integration",
       description: "Works within your existing Canvas workflow. No learning curve, no data migration—just enhanced capability to focus on what teachers do best."
     },
@@ -43,7 +43,11 @@ const CanvasIntegrationBenefits = () => {
             <div key={index} className="bg-white rounded-lg shadow-sm border p-8 hover:shadow-md transition-shadow">
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <benefit.icon className="w-6 h-6 text-indigo-600" />
+                  {typeof benefit.icon === 'string' ? (
+                    <img src={benefit.icon} alt="Canvas Logo" className="w-6 h-6" />
+                  ) : (
+                    <benefit.icon className="w-6 h-6 text-indigo-600" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">
