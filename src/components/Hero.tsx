@@ -1,13 +1,37 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import heroBackground from "@/assets/hero-background.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="bg-gradient-to-br from-indigo-50 to-white py-20">
-      <div className="max-w-7xl mx-auto px-6 text-center">
+    <section className="relative py-20 overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 hero-gradient-bg opacity-10"></div>
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url(${heroBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      ></div>
+      
+      {/* Floating Elements */}
+      <div className="absolute top-20 left-10 w-16 h-16 bg-primary/20 rounded-full hero-float hero-pulse"></div>
+      <div className="absolute top-32 right-20 w-12 h-12 bg-blue-500/20 rounded-lg hero-float-delayed"></div>
+      <div className="absolute bottom-32 left-20 w-8 h-8 bg-purple-500/30 rounded-full hero-float"></div>
+      <div className="absolute bottom-20 right-10 w-6 h-6 bg-indigo-400/25 rounded-lg hero-float-delayed hero-pulse"></div>
+      
+      {/* Data Flow Lines */}
+      <div className="absolute top-1/4 left-1/4 w-px h-20 bg-gradient-to-b from-primary/30 to-transparent hero-data-flow"></div>
+      <div className="absolute top-1/3 right-1/3 w-px h-16 bg-gradient-to-b from-blue-500/30 to-transparent hero-data-flow" style={{animationDelay: '1s'}}></div>
+      
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
           Stop Being the AI Police.<br />
           <span className="text-indigo-600">Be the AI Leader.</span>
