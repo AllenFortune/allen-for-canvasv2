@@ -171,6 +171,8 @@ const GradeQuizContent: React.FC<GradeQuizContentProps> = ({
         selectedSubmissionIndex={selectedSubmissionIndex}
         onSubmissionSelect={setSelectedSubmissionIndex}
         onNavigate={navigateSubmission}
+        localGradingState={localGradingState}
+        questions={questions}
       />
 
       {/* Main Grading Layout */}

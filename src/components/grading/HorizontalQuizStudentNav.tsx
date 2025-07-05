@@ -23,27 +23,72 @@ interface QuizSubmission {
   };
 }
 
+interface QuizQuestion {
+  id: number;
+  question_type: string;
+  question_text: string;
+  points_possible: number;
+  question_name: string;
+}
+
 interface HorizontalQuizStudentNavProps {
   sortedSubmissions: QuizSubmission[];
   selectedSubmissionIndex: number;
   onSubmissionSelect: (index: number) => void;
   onNavigate: (direction: 'prev' | 'next') => void;
+  localGradingState?: {[submissionId: number]: {[questionId: number]: boolean}};
+  questions: QuizQuestion[];
 }
 
 const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
   sortedSubmissions,
   selectedSubmissionIndex,
   onSubmissionSelect,
-  onNavigate
+  onNavigate,
+  localGradingState = {},
+  questions
 }) => {
   const selectedSubmission = sortedSubmissions[selectedSubmissionIndex];
 
+  // Get manual grading questions that require human review
+  const manualGradingQuestions = questions.filter(q => 
+    q.question_type === 'essay_question' || 
+    q.question_type === 'fill_in_multiple_blanks_question' ||
+    q.question_type === 'file_upload_question'
+  );
+
+  // Smart status logic that considers both Canvas state and local grading state
+  const getSmartSubmissionStatus = (submission: QuizSubmission) => {
+    // If Canvas shows graded, use that
+    if (submission.workflow_state === 'graded') {
+      return 'graded';
+    }
+
+    // If there are no manual questions, no grading needed
+    if (manualGradingQuestions.length === 0) {
+      return submission.workflow_state;
+    }
+
+    // Check if all manual questions are graded locally
+    const localState = localGradingState[submission.id] || {};
+    const allManualQuestionsGraded = manualGradingQuestions.every(q => localState[q.id]);
+    
+    if (allManualQuestionsGraded) {
+      return 'graded_local';
+    }
+
+    return submission.workflow_state;
+  };
+
   const getSubmissionStatusColor = (submission: QuizSubmission) => {
-    switch (submission.workflow_state) {
+    const smartStatus = getSmartSubmissionStatus(submission);
+    
+    switch (smartStatus) {
       case 'complete':
       case 'pending_review':
         return 'bg-blue-500'; // Needs grading
       case 'graded':
+      case 'graded_local':
         return 'bg-green-500'; // Graded
       case 'untaken':
         return 'bg-gray-400'; // Not taken
@@ -53,7 +98,9 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
   };
 
   const getStatusBadge = (submission: QuizSubmission) => {
-    switch (submission.workflow_state) {
+    const smartStatus = getSmartSubmissionStatus(submission);
+    
+    switch (smartStatus) {
       case 'graded':
         return (
           <TooltipProvider>
@@ -66,6 +113,22 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Status verified with Canvas</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case 'graded_local':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="default" className="bg-green-100 text-green-800 text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Graded (Local)
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>All questions graded locally, syncing with Canvas</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -86,6 +149,33 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        );
+      case 'untaken':
+        return <Badge variant="secondary" className="text-xs">Not Taken</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs">{submission.workflow_state}</Badge>;
+    }
+  };
+
+  const getSelectItemStatusBadge = (submission: QuizSubmission) => {
+    const smartStatus = getSmartSubmissionStatus(submission);
+    
+    switch (smartStatus) {
+      case 'graded':
+      case 'graded_local':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 text-xs flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            {smartStatus === 'graded_local' ? 'Graded (Local)' : 'Graded'}
+          </Badge>
+        );
+      case 'complete':
+      case 'pending_review':
+        return (
+          <Badge variant="destructive" className="text-xs flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Needs Grading
+          </Badge>
         );
       case 'untaken':
         return <Badge variant="secondary" className="text-xs">Not Taken</Badge>;
@@ -140,18 +230,7 @@ const HorizontalQuizStudentNav: React.FC<HorizontalQuizStudentNavProps> = ({
                       <span className="flex-1 text-left">{submission.user.sortable_name}</span>
                     </div>
                     <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                      {(submission.workflow_state === 'complete' || submission.workflow_state === 'pending_review') && (
-                        <Badge variant="destructive" className="text-xs flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Needs Grading
-                        </Badge>
-                      )}
-                      {submission.workflow_state === 'graded' && (
-                        <Badge variant="default" className="bg-green-100 text-green-800 text-xs flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Graded
-                        </Badge>
-                      )}
+                      {getSelectItemStatusBadge(submission)}
                       {submission.score !== null && (
                         <span className="text-xs text-gray-500">{submission.score} pts</span>
                       )}
