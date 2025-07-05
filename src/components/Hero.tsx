@@ -4,14 +4,26 @@ import heroBackground from "@/assets/hero-background.jpg";
 const Hero = () => {
   const navigate = useNavigate();
   return <section className="relative py-20 overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 hero-gradient-bg opacity-10"></div>
-      <div className="absolute inset-0 opacity-20" style={{
-      backgroundImage: `url(${heroBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
-    }}></div>
+      {/* YouTube Video Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <iframe
+          src="https://www.youtube.com/embed/02PnCIOtmFI?autoplay=1&mute=1&loop=1&playlist=02PnCIOtmFI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
+          className="absolute inset-0 w-full h-full object-cover opacity-20"
+          style={{
+            width: '100vw',
+            height: '100vh',
+            transform: 'scale(1.2)',
+            pointerEvents: 'none'
+          }}
+          allow="autoplay; encrypted-media"
+          title="Background Video"
+        />
+        {/* Video Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-indigo-600/20"></div>
+      </div>
+      
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 hero-gradient-bg opacity-5"></div>
       
       {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-16 h-16 bg-primary/20 rounded-full hero-float hero-pulse"></div>
@@ -28,8 +40,8 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-          Stop Being the AI Police.<br />
-          <span className="text-indigo-600">Transformative Teaching.</span>
+          Less time Grading.<br />
+          <span className="text-indigo-600">More time Guiding.</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">In the age of AI and internet, students need teachers less as information providers—and more to guide them in discovering information. Meet ALLEN to handle grading and feedback tasks so you can focus on what only teachers can do: nurture critical thinking, scaffold understanding, and model AI collaboration.</p>
         
