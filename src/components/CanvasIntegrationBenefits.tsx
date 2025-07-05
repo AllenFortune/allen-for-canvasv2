@@ -14,7 +14,7 @@ const CanvasIntegrationBenefits = () => {
       description: "ALLEN grade assist provides comprehensive, consistent feedback while you focus on guiding student analysis, fostering discussion, and modeling how to think critically about ALLEN grade assist-generated content."
     },
     {
-      icon: "/lovable-uploads/3d7e2873-9f44-4096-809f-a9eb33f740a6.png",
+      icon: "/lovable-uploads/52cb36cc-3c15-405e-867f-c7ad2c694e82.png",
       title: "Seamless Canvas Integration",
       description: "Works within your existing Canvas workflow. No learning curve, no data migration—just enhanced capability to focus on what teachers do best."
     },
