@@ -1,37 +1,37 @@
 
-import { CheckCircle, Clock, BookOpen, MessageSquare, BarChart3, Shield } from "lucide-react";
+import { CheckCircle, Clock, BookOpen, MessageSquare, BarChart3, Shield, Users, Target, TrendingUp } from "lucide-react";
 
 const WhyUseAllen = () => {
   const benefits = [
     {
-      icon: <Clock className="w-8 h-8 text-indigo-600" />,
-      title: "Save 60% of Grading Time",
-      description: "Reduce hours spent on repetitive grading tasks while maintaining quality feedback for your students."
+      icon: <Users className="w-8 h-8 text-indigo-600" />,
+      title: "Lead AI Innovation on Campus",
+      description: "Stop being the faculty member who bans AI. Become the educator who shows colleagues how to integrate it responsibly and effectively."
     },
     {
-      icon: <MessageSquare className="w-8 h-8 text-indigo-600" />,
-      title: "Consistent, Quality Feedback",
-      description: "Ensure every student receives detailed, constructive feedback that helps them improve their work."
+      icon: <TrendingUp className="w-8 h-8 text-green-600" />,
+      title: "Transform Student Engagement",
+      description: "Students are more motivated when they learn to collaborate with AI rather than hide their usage. Create transparent, educational AI experiences."
     },
     {
-      icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
-      title: "Rubric-Based Grading",
-      description: "AI follows your existing rubrics to provide accurate, standardized grading across all submissions."
+      icon: <Target className="w-8 h-8 text-blue-600" />,
+      title: "Model AI Best Practices",
+      description: "Demonstrate responsible AI use in your classroom. Students learn ethical AI collaboration by watching your teaching workflow."
     },
     {
-      icon: <BookOpen className="w-8 h-8 text-indigo-600" />,
-      title: "Focus on Teaching",
-      description: "Spend less time on administrative tasks and more time on what you love - educating students."
+      icon: <Clock className="w-8 h-8 text-purple-600" />,
+      title: "Save Time, Improve Feedback",
+      description: "Focus on high-level pedagogical decisions while AI handles routine tasks. Spend more time on what matters: student learning."
     },
     {
-      icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
-      title: "Advanced Analytics",
-      description: "Get insights into class performance and identify areas where students need additional support."
+      icon: <BookOpen className="w-8 h-8 text-orange-600" />,
+      title: "Prepare Students for AI Careers",
+      description: "Every industry will use AI. Give your students hands-on experience with AI collaboration in an academic context."
     },
     {
-      icon: <Shield className="w-8 h-8 text-indigo-600" />,
-      title: "Secure & Private",
-      description: "Your data is encrypted and secure. We never store student submissions permanently."
+      icon: <Shield className="w-8 h-8 text-red-600" />,
+      title: "Canvas-Native Security",
+      description: "Built with Canvas API compliance and institutional security standards. Your data stays within approved systems."
     }
   ];
 
@@ -40,10 +40,11 @@ const WhyUseAllen = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Why Teachers Choose A.L.L.E.N.
+            Why Educators Choose A.L.L.E.N.
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Save time, improve consistency, and enhance your teaching experience
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Transform from AI skeptic to AI leader. Model responsible AI use while improving 
+            student engagement and saving valuable time.
           </p>
         </div>
 

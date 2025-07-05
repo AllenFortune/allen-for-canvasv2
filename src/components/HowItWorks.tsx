@@ -3,20 +3,20 @@ const HowItWorks = () => {
   const steps = [
     {
       number: "1",
-      title: "Connect Canvas Account",
-      description: "Securely link your Canvas LMS using your institution's API token. We'll guide you through the simple setup process.",
+      title: "Connect Canvas Seamlessly",
+      description: "Securely link your Canvas LMS with one-time setup. A.L.L.E.N. automatically syncs with your courses, assignments, and student submissions—no copy-paste required.",
       icon: "🔗"
     },
     {
       number: "2", 
-      title: "Select Assignments",
-      description: "Choose which assignments you want AI assistance with. A.L.L.E.N. works with essays, projects, and any text-based submissions.",
+      title: "AI Reviews & Suggests",
+      description: "Our AI analyzes student work against your rubrics and course context, providing intelligent feedback suggestions alongside each submission in your familiar Canvas workflow.",
       icon: "📝"
     },
     {
       number: "3",
-      title: "Get AI Grading Assistance",
-      description: "Our AI analyzes submissions against your rubrics and provides suggested grades and detailed feedback to enhance your evaluation process.",
+      title: "One-Click Grade Delivery",
+      description: "Review AI suggestions, make adjustments, and deliver grades plus feedback directly to Canvas with a single click. Transform students into AI-literate learners while you lead.",
       icon: "/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png"
     }
   ];
@@ -26,10 +26,10 @@ const HowItWorks = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            How A.L.L.E.N. Works
+            Canvas-Native AI Integration
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Get started with AI-powered grading in three simple steps
+            Experience seamless AI-powered grading without leaving your Canvas workflow
           </p>
         </div>
 

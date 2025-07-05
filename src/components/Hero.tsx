@@ -9,11 +9,12 @@ const Hero = () => {
     <section className="bg-gradient-to-br from-indigo-50 to-white py-20">
       <div className="max-w-7xl mx-auto px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-          AI Learning Led Evaluation & Navigation
+          Stop Being the AI Police.<br />
+          <span className="text-indigo-600">Be the AI Leader.</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-          Transform your Canvas classroom with AI literacy integration. Grade smarter, teach students 
-          to collaborate with AI effectively, and prepare them for an AI-enhanced future.
+          Transform your Canvas classroom with seamless AI integration. No more copy-paste workflows—
+          review AI-suggested feedback alongside student submissions and deliver grades with one click.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -22,7 +23,7 @@ const Hero = () => {
             className="bg-indigo-600 hover:bg-indigo-700 px-8 py-3"
             onClick={() => navigate("/canvas-setup")}
           >
-            Start Free Trial
+            Become an AI Leader
           </Button>
           <Button 
             variant="outline" 
@@ -30,26 +31,26 @@ const Hero = () => {
             className="px-8 py-3"
             onClick={() => navigate("/ai-literacy")}
           >
-            Explore AI Literacy
+            Explore AI Literacy Tools
           </Button>
         </div>
         
         <p className="text-gray-500 text-sm mb-4">
-          No credit card required • 10 free submissions
+          No credit card required • Canvas integration in minutes
         </p>
         
         <div className="flex justify-center items-center space-x-8 text-sm text-gray-600 mb-12">
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            AI-Enhanced Grading
+            Canvas-Native Integration
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-            Student AI Literacy
+            AI Leadership Tools
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-            Teacher Resources
+            Student Engagement
           </div>
         </div>
 
