@@ -3,20 +3,20 @@ const HowItWorks = () => {
   const steps = [
     {
       number: "1",
-      title: "Connect Canvas Seamlessly",
-      description: "Securely link your Canvas LMS with one-time setup. A.L.L.E.N. automatically syncs with your courses, assignments, and student submissions—no copy-paste required.",
+      title: "Connect Canvas, Reclaim Time",
+      description: "Securely link your Canvas LMS with one-time setup. ALLEN automatically handles the grading workflow, liberating hours of your time for what matters most—guiding student thinking and fostering deeper learning.",
       icon: "🔗"
     },
     {
       number: "2", 
-      title: "AI Reviews & Suggests",
-      description: "Our AI analyzes student work against your rubrics and course context, providing intelligent feedback suggestions alongside each submission in your familiar Canvas workflow.",
+      title: "AI Provides Feedback, You Provide Wisdom",
+      description: "While AI analyzes student work and generates consistent feedback against your rubrics, you focus on facilitating critical thinking, leading discussions, and modeling how to collaborate with AI as a thinking partner.",
       icon: "📝"
     },
     {
       number: "3",
-      title: "One-Click Grade Delivery",
-      description: "Review AI suggestions, make adjustments, and deliver grades plus feedback directly to Canvas with a single click. Transform students into AI-literate learners while you lead.",
+      title: "Students Learn WITH AI, Not FROM AI",
+      description: "Deliver comprehensive feedback instantly while demonstrating responsible AI use. Your students see you as their guide in learning to think alongside AI, not just consume AI-generated content.",
       icon: "/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png"
     }
   ];
@@ -26,10 +26,10 @@ const HowItWorks = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Canvas-Native AI Integration
+            How Teaching Evolves with ALLEN
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Experience seamless AI-powered grading without leaving your Canvas workflow
+            Transform from grading burden to guiding brilliance—seamlessly integrated with your Canvas workflow
           </p>
         </div>
 

@@ -33,12 +33,12 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-          Stop Being the AI Police.<br />
-          <span className="text-indigo-600">Be the AI Leader.</span>
+          Stop Grading. Start Guiding.<br />
+          <span className="text-indigo-600">Transform How Students Think.</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-          Transform your Canvas classroom with seamless AI integration. No more copy-paste workflows—
-          review AI-suggested feedback alongside student submissions and deliver grades with one click.
+          In the age of AI and internet, students don't need you to provide information—they need you to guide their thinking. 
+          ALLEN handles the grading so you can focus on what only teachers can do: nurture critical thinking, scaffold understanding, and model AI collaboration.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -47,7 +47,7 @@ const Hero = () => {
             className="bg-indigo-600 hover:bg-indigo-700 px-8 py-3"
             onClick={() => navigate("/canvas-setup")}
           >
-            Become an AI Leader
+            Reclaim Your Teaching Role
           </Button>
           <Button 
             variant="outline" 
@@ -66,15 +66,15 @@ const Hero = () => {
         <div className="flex justify-center items-center space-x-8 text-sm text-gray-600 mb-12">
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            Canvas-Native Integration
+            More Thinking Time
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-            AI Leadership Tools
+            Deeper Student Connections
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-            Student Engagement
+            AI Partnership Modeling
           </div>
         </div>
 

@@ -5,33 +5,33 @@ const WhyUseAllen = () => {
   const benefits = [
     {
       icon: <Users className="w-8 h-8 text-indigo-600" />,
-      title: "Lead AI Innovation on Campus",
-      description: "Stop being the faculty member who bans AI. Become the educator who shows colleagues how to integrate it responsibly and effectively."
+      title: "Focus on What Only Teachers Can Do",
+      description: "Stop grading. Start facilitating critical thinking, leading meaningful discussions, guiding creative problem-solving, and nurturing the analytical skills only humans can develop."
     },
     {
       icon: <TrendingUp className="w-8 h-8 text-green-600" />,
-      title: "Transform Student Engagement",
-      description: "Students are more motivated when they learn to collaborate with AI rather than hide their usage. Create transparent, educational AI experiences."
+      title: "Model AI as Thinking Partner",
+      description: "Show students how to use AI to scaffold their understanding, not replace their thinking. Demonstrate collaboration where AI amplifies human insight rather than substituting for it."
     },
     {
       icon: <Target className="w-8 h-8 text-blue-600" />,
-      title: "Model AI Best Practices",
-      description: "Demonstrate responsible AI use in your classroom. Students learn ethical AI collaboration by watching your teaching workflow."
+      title: "Create Engaged AI Learners",
+      description: "Transform students from passive AI consumers to active AI collaborators. Guide them to analyze, question, and build upon AI-generated content rather than accepting it uncritically."
     },
     {
       icon: <Clock className="w-8 h-8 text-purple-600" />,
-      title: "Save Time, Improve Feedback",
-      description: "Focus on high-level pedagogical decisions while AI handles routine tasks. Spend more time on what matters: student learning."
+      title: "Transform Assignments into AI Literacy Labs",
+      description: "Every assignment becomes an opportunity to teach responsible AI use. Guide students to discover information, analyze sources, and apply knowledge with AI as their thinking partner."
     },
     {
       icon: <BookOpen className="w-8 h-8 text-orange-600" />,
-      title: "Prepare Students for AI Careers",
-      description: "Every industry will use AI. Give your students hands-on experience with AI collaboration in an academic context."
+      title: "Guide Discovery, Don't Deliver Information",
+      description: "Your role has evolved from information provider to learning facilitator. Help students navigate, understand, and critically evaluate the vast information landscape of the internet age."
     },
     {
       icon: <Shield className="w-8 h-8 text-red-600" />,
-      title: "Canvas-Native Security",
-      description: "Built with Canvas API compliance and institutional security standards. Your data stays within approved systems."
+      title: "Canvas-Native Integration",
+      description: "Seamlessly integrated with your existing Canvas workflow. Secure, compliant, and designed to enhance rather than replace your teaching practices."
     }
   ];
 
@@ -40,11 +40,11 @@ const WhyUseAllen = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Why Educators Choose A.L.L.E.N.
+            Reclaim Your Role as a Learning Guide
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Transform from AI skeptic to AI leader. Model responsible AI use while improving 
-            student engagement and saving valuable time.
+            In the age of AI and internet, your role isn't to provide information—it's to guide thinking. 
+            ALLEN frees you to focus on what only teachers can do.
           </p>
         </div>
 
