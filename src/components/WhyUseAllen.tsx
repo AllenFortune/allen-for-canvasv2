@@ -29,7 +29,7 @@ const WhyUseAllen = () => {
       description: "Your role has evolved from information provider to learning facilitator. Help students navigate, understand, and critically evaluate the vast information landscape of the internet age."
     },
     {
-      icon: <Shield className="w-8 h-8 text-red-600" />,
+      icon: "/lovable-uploads/52cb36cc-3c15-405e-867f-c7ad2c694e82.png",
       title: "Canvas-Native Integration",
       description: "Seamlessly integrated with your existing Canvas workflow. Secure, compliant, and designed to enhance rather than replace your teaching practices."
     }
@@ -52,7 +52,11 @@ const WhyUseAllen = () => {
           {benefits.map((benefit, index) => (
             <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-4">
-                {benefit.icon}
+                {typeof benefit.icon === 'string' ? (
+                  <img src={benefit.icon} alt="Canvas Logo" className="w-8 h-8" />
+                ) : (
+                  benefit.icon
+                )}
                 <h3 className="text-lg font-semibold text-gray-900 ml-3">
                   {benefit.title}
                 </h3>
