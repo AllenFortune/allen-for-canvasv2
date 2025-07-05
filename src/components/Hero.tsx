@@ -33,7 +33,7 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-          Stop Grading. Start Guiding.<br />
+          Less time Grading. More time Guiding.<br />
           <span className="text-indigo-600">Transform How Students Think.</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
