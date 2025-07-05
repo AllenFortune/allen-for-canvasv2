@@ -11,7 +11,7 @@ const CanvasIntegrationBenefits = () => {
     {
       icon: Zap,
       title: "Consistent Feedback, Human Wisdom",
-      description: "AI provides comprehensive, consistent feedback while you focus on guiding student analysis, fostering discussion, and modeling how to think critically about AI-generated content."
+      description: "ALLEN grade assist provides comprehensive, consistent feedback while you focus on guiding student analysis, fostering discussion, and modeling how to think critically about ALLEN grade assist-generated content."
     },
     {
       icon: Shield,
@@ -20,8 +20,8 @@ const CanvasIntegrationBenefits = () => {
     },
     {
       icon: Users,
-      title: "Every Assignment as AI Literacy Lab",
-      description: "Transform routine assignments into opportunities to teach responsible AI collaboration. Guide students to use AI as a thinking partner, not a replacement for thought."
+      title: "Every Assignment as ALLEN grade assist Literacy Lab",
+      description: "Transform routine assignments into opportunities to teach responsible ALLEN grade assist collaboration. Guide students to use ALLEN grade assist as a thinking partner, not a replacement for thought."
     }
   ];
 
@@ -33,7 +33,7 @@ const CanvasIntegrationBenefits = () => {
             The Teacher's Role is Evolving
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            In the age of AI and internet, students don't need you to provide information—they need you to guide their thinking. 
+            In the age of ALLEN grade assist and internet, students don't need you to provide information—they need you to guide their thinking. 
             ALLEN's Canvas integration frees you to focus on analysis, discussion, application, and critical thinking.
           </p>
         </div>
@@ -64,7 +64,7 @@ const CanvasIntegrationBenefits = () => {
               From Information Provider to Learning Guide
             </h3>
             <p className="text-lg text-gray-600 mb-6">
-              Your students have access to all the world's information and powerful AI tools. What they need from you is guidance 
+              Your students have access to all the world's information and powerful ALLEN grade assist tools. What they need from you is guidance 
               in understanding, analyzing, discussing, and applying that information. ALLEN handles the grading so you can focus on developing minds.
             </p>
             <div className="grid md:grid-cols-3 gap-6 text-sm">
@@ -78,7 +78,7 @@ const CanvasIntegrationBenefits = () => {
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <CheckCircle className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-gray-700 font-medium">Guide AI Collaboration</span>
+                <span className="text-gray-700 font-medium">Guide ALLEN grade assist Collaboration</span>
               </div>
               <div className="text-center">
                 <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
