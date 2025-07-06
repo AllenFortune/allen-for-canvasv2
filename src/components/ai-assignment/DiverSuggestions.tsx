@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import AssignmentEditor from './AssignmentEditor';
+import AssignmentComparison from './AssignmentComparison';
 
 interface DiverSuggestion {
   phase: string;
@@ -374,10 +374,15 @@ ${integration.implementation_guide}
         </Card>
       )}
 
-      {revisedAssignment && (
+      {revisedAssignment && originalAssignment && (
         <>
-          <AssignmentEditor
+          <AssignmentComparison
+            originalAssignment={{
+              title: originalAssignment.title,
+              content: originalAssignment.content
+            }}
             revisedAssignment={revisedAssignment}
+            onRevisedAssignmentChange={setRevisedAssignment}
             onRegenerate={generateRevisedAssignment}
             loading={loading}
           />
