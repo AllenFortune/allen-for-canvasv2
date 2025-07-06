@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, BookOpen, ExternalLink } from 'lucide-react';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, BookOpen, ExternalLink, Search, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,6 +46,8 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [importingAssignment, setImportingAssignment] = useState(false);
+  const [courseSearchOpen, setCourseSearchOpen] = useState(false);
+  const [assignmentSearchOpen, setAssignmentSearchOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchCourses = async () => {
@@ -178,18 +181,51 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
           <>
             <div>
               <label className="text-sm font-medium mb-2 block">Select Course</label>
-              <Select value={selectedCourse} onValueChange={handleCourseChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a Canvas course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
-                      {course.course_code} - {course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={courseSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedCourse
+                      ? courses.find((course) => course.id.toString() === selectedCourse)?.course_code + ' - ' + courses.find((course) => course.id.toString() === selectedCourse)?.name
+                      : "Choose a Canvas course"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover border">
+                  <Command>
+                    <CommandInput placeholder="Search courses..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No courses found.</CommandEmpty>
+                      <CommandGroup>
+                        {courses.map((course) => (
+                          <CommandItem
+                            key={course.id}
+                            value={`${course.course_code} ${course.name}`}
+                            onSelect={() => {
+                              handleCourseChange(course.id.toString());
+                              setCourseSearchOpen(false);
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{course.course_code}</span>
+                              <span className="text-sm text-muted-foreground">{course.name}</span>
+                            </div>
+                            <Check
+                              className={`ml-auto h-4 w-4 ${
+                                selectedCourse === course.id.toString() ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {loadingAssignments && (
@@ -202,24 +238,54 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
             {assignments.length > 0 && (
               <div>
                 <label className="text-sm font-medium mb-2 block">Select Assignment</label>
-                <Select value={selectedAssignment} onValueChange={setSelectedAssignment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an assignment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assignments.map((assignment) => (
-                      <SelectItem key={assignment.id} value={assignment.id.toString()}>
-                        <div className="flex flex-col">
-                          <span>{assignment.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {assignment.points_possible ? `${assignment.points_possible} points` : 'No points'} 
-                            {assignment.due_at && ` • Due: ${new Date(assignment.due_at).toLocaleDateString()}`}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={assignmentSearchOpen} onOpenChange={setAssignmentSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={assignmentSearchOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedAssignment
+                        ? assignments.find((assignment) => assignment.id.toString() === selectedAssignment)?.name
+                        : "Choose an assignment"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover border">
+                    <Command>
+                      <CommandInput placeholder="Search assignments..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No assignments found.</CommandEmpty>
+                        <CommandGroup>
+                          {assignments.map((assignment) => (
+                            <CommandItem
+                              key={assignment.id}
+                              value={assignment.name}
+                              onSelect={() => {
+                                setSelectedAssignment(assignment.id.toString());
+                                setAssignmentSearchOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium">{assignment.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {assignment.points_possible ? `${assignment.points_possible} points` : 'No points'} 
+                                  {assignment.due_at && ` • Due: ${new Date(assignment.due_at).toLocaleDateString()}`}
+                                </span>
+                              </div>
+                              <Check
+                                className={`ml-auto h-4 w-4 ${
+                                  selectedAssignment === assignment.id.toString() ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
