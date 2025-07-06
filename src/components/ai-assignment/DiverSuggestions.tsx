@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AssignmentComparison from './AssignmentComparison';
+import IntegrationOverview from './suggestions/IntegrationOverview';
+import SuggestionsSelection from './suggestions/SuggestionsSelection';
+import DiverSuggestionCard from './suggestions/DiverSuggestionCard';
+import RevisionActions from './suggestions/RevisionActions';
+import ImplementationGuide from './suggestions/ImplementationGuide';
 
 interface DiverSuggestion {
   phase: string;
@@ -40,22 +39,6 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
   const [revisedAssignment, setRevisedAssignment] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [canvasUpdateLoading, setCanvasUpdateLoading] = useState(false);
-
-  const phaseIcons = {
-    'Discovery': Eye,
-    'Interaction & Collaboration': Users,
-    'Verification': CheckCircle,
-    'Editing & Iteration': Edit,
-    'Reflection': Brain
-  };
-
-  const phaseColors = {
-    'Discovery': 'bg-blue-100 text-blue-800 border-blue-200',
-    'Interaction & Collaboration': 'bg-green-100 text-green-800 border-green-200',
-    'Verification': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'Editing & Iteration': 'bg-purple-100 text-purple-800 border-purple-200',
-    'Reflection': 'bg-red-100 text-red-800 border-red-200'
-  };
 
   const handleSuggestionToggle = (suggestion: DiverSuggestion, checked: boolean) => {
     if (checked) {
@@ -235,244 +218,79 @@ ${integration.implementation_guide}
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-foreground">AI Integration Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground leading-relaxed mb-4">{integration.overview}</p>
-          <div className="flex gap-2">
-            <Button onClick={handleCopy} variant="outline" size="sm">
-              <Copy className="w-4 h-4 mr-2" />
-              Copy All
-            </Button>
-            <Button onClick={handleDownload} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <IntegrationOverview
+        overview={integration.overview}
+        onCopy={handleCopy}
+        onDownload={handleDownload}
+      />
 
       {originalAssignment && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-green-900">
-              Select Suggestions to Integrate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-green-800 text-sm mb-4">
-              Choose which DIVER suggestions you'd like to integrate into your assignment. 
-              Selected suggestions will be used to create a revised assignment description.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-green-700">
-              <span className="font-medium">Selected:</span>
-              <Badge variant="outline" className="bg-green-100 text-green-800">
-                {selectedSuggestions.length} of {integration.suggestions.length}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        <SuggestionsSelection
+          selectedCount={selectedSuggestions.length}
+          totalCount={integration.suggestions.length}
+        >
+          {integration.suggestions.map((suggestion, index) => {
+            const isSelected = selectedSuggestions.some(s => s.phase === suggestion.phase);
+            
+            return (
+              <DiverSuggestionCard
+                key={index}
+                suggestion={suggestion}
+                isSelected={isSelected}
+                onToggle={(checked) => handleSuggestionToggle(suggestion, checked)}
+                onCopy={() => handleCopySuggestion(suggestion)}
+                showSelection={true}
+              />
+            );
+          })}
+        </SuggestionsSelection>
       )}
 
-      {integration.suggestions.map((suggestion, index) => {
-        const IconComponent = phaseIcons[suggestion.phase as keyof typeof phaseIcons] || Eye;
-        const colorClass = phaseColors[suggestion.phase as keyof typeof phaseColors] || phaseColors['Discovery'];
-        const isSelected = selectedSuggestions.some(s => s.phase === suggestion.phase);
-        
-        return (
-          <Card 
-            key={index} 
-            className={`border-l-4 border-l-indigo-500 transition-all duration-200 ${
-              isSelected ? 'ring-2 ring-indigo-200 bg-indigo-50' : ''
-            }`}
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {originalAssignment && (
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={(checked) => handleSuggestionToggle(suggestion, checked as boolean)}
-                      className="mr-3"
-                    />
-                  )}
-                  <IconComponent className="w-6 h-6 text-indigo-600 mr-3" />
-                  <div>
-                    <Badge className={`mb-2 ${colorClass}`}>
-                      {suggestion.phase}
-                    </Badge>
-                    <CardTitle className="text-lg">{suggestion.title}</CardTitle>
-                  </div>
-                </div>
-                <Button 
-                  onClick={() => handleCopySuggestion(suggestion)} 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 mb-4">{suggestion.description}</p>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Activities</h4>
-                  <ul className="space-y-1">
-                    {suggestion.activities.map((activity, idx) => (
-                      <li key={idx} className="text-sm text-gray-700 flex items-start">
-                        <span className="w-2 h-2 bg-indigo-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {activity}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Examples</h4>
-                  <ul className="space-y-1">
-                    {suggestion.examples.map((example, idx) => (
-                      <li key={idx} className="text-sm text-gray-600 italic flex items-start">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {example}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {!originalAssignment && (
+        <div className="space-y-4">
+          {integration.suggestions.map((suggestion, index) => (
+            <DiverSuggestionCard
+              key={index}
+              suggestion={suggestion}
+              isSelected={false}
+              onToggle={() => {}}
+              onCopy={() => handleCopySuggestion(suggestion)}
+              showSelection={false}
+            />
+          ))}
+        </div>
+      )}
 
       {originalAssignment && (
-        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-purple-900 mb-2">
-                  Ready to Create Your Revised Assignment?
-                </h3>
-                <p className="text-purple-800 text-sm">
-                  Generate a new assignment description that integrates your selected AI literacy suggestions.
-                </p>
-              </div>
-              <Button 
-                onClick={generateRevisedAssignment}
-                disabled={selectedSuggestions.length === 0 || loading}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                <Sparkles className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Generating...' : 'Create Revised Assignment'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <RevisionActions
+          selectedCount={selectedSuggestions.length}
+          onGenerateRevision={generateRevisedAssignment}
+          revisionLoading={loading}
+          showCanvasUpdate={!!revisedAssignment && !!originalAssignment?.courseId && !!originalAssignment?.assignmentId}
+          onCanvasUpdate={updateCanvasAssignment}
+          canvasUpdateLoading={canvasUpdateLoading}
+          assignmentTitle={originalAssignment.title}
+          assignmentSubject={originalAssignment.subject}
+        />
       )}
 
       {revisedAssignment && originalAssignment && (
-        <>
-          <AssignmentComparison
-            originalAssignment={{
-              title: originalAssignment.title,
-              content: originalAssignment.content
-            }}
-            revisedAssignment={revisedAssignment}
-            onRevisedAssignmentChange={setRevisedAssignment}
-            onRegenerate={generateRevisedAssignment}
-            loading={loading}
-          />
-          
-          {originalAssignment?.courseId && originalAssignment?.assignmentId && (
-            <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                      Update Assignment in Canvas
-                    </h3>
-                    <p className="text-blue-800 text-sm">
-                      Push your revised assignment with AI literacy integration back to Canvas.
-                    </p>
-                  </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Update in Canvas
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Update Canvas Assignment</DialogTitle>
-                        <DialogDescription>
-                          This will update your Canvas assignment "{originalAssignment.title}" with the revised content that includes AI literacy integration. 
-                          The original assignment description will be replaced.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-600 mb-2">
-                            <strong>Course:</strong> {originalAssignment.subject || 'N/A'}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-2">
-                            <strong>Assignment:</strong> {originalAssignment.title}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Action:</strong> Replace assignment description with AI-enhanced version
-                          </p>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button 
-                          onClick={updateCanvasAssignment}
-                          disabled={canvasUpdateLoading}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          {canvasUpdateLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              Confirm Update
-                            </>
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
+        <AssignmentComparison
+          originalAssignment={{
+            title: originalAssignment.title,
+            content: originalAssignment.content
+          }}
+          revisedAssignment={revisedAssignment}
+          onRevisedAssignmentChange={setRevisedAssignment}
+          onRegenerate={generateRevisedAssignment}
+          loading={loading}
+        />
       )}
 
-      <Card className="bg-gray-50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Implementation Guide</CardTitle>
-            <Button 
-              onClick={handleCopyImplementationGuide} 
-              variant="ghost" 
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="whitespace-pre-line text-gray-700">{integration.implementation_guide}</div>
-        </CardContent>
-      </Card>
+      <ImplementationGuide
+        implementationGuide={integration.implementation_guide}
+        onCopy={handleCopyImplementationGuide}
+      />
     </div>
   );
 };
