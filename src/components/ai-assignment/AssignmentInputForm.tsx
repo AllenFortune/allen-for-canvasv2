@@ -24,6 +24,8 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const [assignmentText, setAssignmentText] = useState('');
   const [assignmentTitle, setAssignmentTitle] = useState('');
   const [subject, setSubject] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
+  const [isCustomSubject, setIsCustomSubject] = useState(false);
   const [gradeLevel, setGradeLevel] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -51,12 +53,37 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   }) => {
     setAssignmentTitle(importedAssignment.title);
     setAssignmentText(importedAssignment.content);
-    setSubject(importedAssignment.subject || '');
+    if (importedAssignment.subject) {
+      const predefinedSubjects = ['english', 'math', 'science', 'social-studies', 'history', 'art'];
+      if (predefinedSubjects.includes(importedAssignment.subject.toLowerCase())) {
+        setSubject(importedAssignment.subject.toLowerCase());
+        setIsCustomSubject(false);
+        setCustomSubject('');
+      } else {
+        setSubject('custom');
+        setIsCustomSubject(true);
+        setCustomSubject(importedAssignment.subject);
+      }
+    }
     setEstimatedTime(importedAssignment.estimatedTime || '');
     setCanvasIds({
       courseId: importedAssignment.courseId,
       assignmentId: importedAssignment.assignmentId
     });
+  };
+
+  const handleSubjectChange = (value: string) => {
+    setSubject(value);
+    if (value === 'custom') {
+      setIsCustomSubject(true);
+    } else {
+      setIsCustomSubject(false);
+      setCustomSubject('');
+    }
+  };
+
+  const getSubjectValue = () => {
+    return isCustomSubject ? customSubject : subject;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +98,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         body: {
           assignmentTitle,
           assignmentText,
-          subject,
+          subject: getSubjectValue(),
           gradeLevel,
           estimatedTime
         }
@@ -80,7 +107,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
       const assignmentData = {
         title: assignmentTitle,
         content: assignmentText,
-        subject,
+        subject: getSubjectValue(),
         gradeLevel,
         estimatedTime,
         courseId: canvasIds.courseId,
@@ -174,23 +201,33 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
 
               {/* Metadata */}
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="subject">Subject</Label>
-                  <Select value={subject} onValueChange={setSubject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="english">English/Language Arts</SelectItem>
-                      <SelectItem value="math">Mathematics</SelectItem>
-                      <SelectItem value="science">Science</SelectItem>
-                      <SelectItem value="social-studies">Social Studies</SelectItem>
-                      <SelectItem value="history">History</SelectItem>
-                      <SelectItem value="art">Art</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                 <div>
+                   <Label htmlFor="subject">Subject</Label>
+                   <Select value={subject} onValueChange={handleSubjectChange}>
+                     <SelectTrigger>
+                       <SelectValue placeholder="Select subject" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="english">English/Language Arts</SelectItem>
+                       <SelectItem value="math">Mathematics</SelectItem>
+                       <SelectItem value="science">Science</SelectItem>
+                       <SelectItem value="social-studies">Social Studies</SelectItem>
+                       <SelectItem value="history">History</SelectItem>
+                       <SelectItem value="art">Art</SelectItem>
+                       <SelectItem value="custom">Custom Subject</SelectItem>
+                     </SelectContent>
+                   </Select>
+                   {isCustomSubject && (
+                     <div className="mt-2">
+                       <Input 
+                         value={customSubject}
+                         onChange={e => setCustomSubject(e.target.value)}
+                         placeholder="Enter your specific subject (e.g., AP Biology, World Literature)"
+                         className="text-sm"
+                       />
+                     </div>
+                   )}
+                 </div>
 
                 <div>
                   <Label htmlFor="grade">Grade Level</Label>
@@ -266,23 +303,33 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
 
             {/* Metadata */}
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="canvas-subject">Subject</Label>
-                <Select value={subject} onValueChange={setSubject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="english">English/Language Arts</SelectItem>
-                    <SelectItem value="math">Mathematics</SelectItem>
-                    <SelectItem value="science">Science</SelectItem>
-                    <SelectItem value="social-studies">Social Studies</SelectItem>
-                    <SelectItem value="history">History</SelectItem>
-                    <SelectItem value="art">Art</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+               <div>
+                 <Label htmlFor="canvas-subject">Subject</Label>
+                 <Select value={subject} onValueChange={handleSubjectChange}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Select subject" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="english">English/Language Arts</SelectItem>
+                     <SelectItem value="math">Mathematics</SelectItem>
+                     <SelectItem value="science">Science</SelectItem>
+                     <SelectItem value="social-studies">Social Studies</SelectItem>
+                     <SelectItem value="history">History</SelectItem>
+                     <SelectItem value="art">Art</SelectItem>
+                     <SelectItem value="custom">Custom Subject</SelectItem>
+                   </SelectContent>
+                 </Select>
+                 {isCustomSubject && (
+                   <div className="mt-2">
+                     <Input 
+                       value={customSubject}
+                       onChange={e => setCustomSubject(e.target.value)}
+                       placeholder="Enter your specific subject (e.g., AP Biology, World Literature)"
+                       className="text-sm"
+                     />
+                   </div>
+                 )}
+               </div>
 
               <div>
                 <Label htmlFor="canvas-grade">Grade Level</Label>
