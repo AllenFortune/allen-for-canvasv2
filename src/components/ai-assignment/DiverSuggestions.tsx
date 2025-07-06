@@ -237,10 +237,10 @@ ${integration.implementation_guide}
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl text-gray-900">AI Integration Overview</CardTitle>
+          <CardTitle className="text-xl text-foreground">AI Integration Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-700 leading-relaxed mb-4">{integration.overview}</p>
+          <p className="text-muted-foreground leading-relaxed mb-4">{integration.overview}</p>
           <div className="flex gap-2">
             <Button onClick={handleCopy} variant="outline" size="sm">
               <Copy className="w-4 h-4 mr-2" />
