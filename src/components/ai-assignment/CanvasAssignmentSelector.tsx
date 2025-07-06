@@ -28,6 +28,8 @@ interface CanvasAssignmentSelectorProps {
     subject?: string;
     gradeLevel?: string;
     estimatedTime?: string;
+    courseId?: string;
+    assignmentId?: string;
   }) => void;
   loading: boolean;
 }

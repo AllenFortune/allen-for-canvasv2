@@ -28,6 +28,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const [estimatedTime, setEstimatedTime] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [inputMode, setInputMode] = useState<'manual' | 'canvas'>('manual');
+  const [canvasIds, setCanvasIds] = useState<{courseId?: string; assignmentId?: string}>({});
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
@@ -52,6 +53,10 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
     setAssignmentText(importedAssignment.content);
     setSubject(importedAssignment.subject || '');
     setEstimatedTime(importedAssignment.estimatedTime || '');
+    setCanvasIds({
+      courseId: importedAssignment.courseId,
+      assignmentId: importedAssignment.assignmentId
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,8 +83,8 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         subject,
         gradeLevel,
         estimatedTime,
-        courseId: importedAssignment?.courseId,
-        assignmentId: importedAssignment?.assignmentId
+        courseId: canvasIds.courseId,
+        assignmentId: canvasIds.assignmentId
       };
       onIntegrationGenerated(data, assignmentData);
     } catch (error) {
