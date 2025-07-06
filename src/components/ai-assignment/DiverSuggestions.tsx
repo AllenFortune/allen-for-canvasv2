@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download, Copy, Eye, Users, CheckCircle, Edit, Brain, Sparkles, Upload, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AssignmentEditor from './AssignmentEditor';
@@ -28,6 +29,8 @@ interface DiverSuggestionsProps {
     subject?: string;
     gradeLevel?: string;
     estimatedTime?: string;
+    courseId?: string;
+    assignmentId?: string;
   };
 }
 
@@ -36,6 +39,7 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
   const [selectedSuggestions, setSelectedSuggestions] = useState<DiverSuggestion[]>([]);
   const [revisedAssignment, setRevisedAssignment] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [canvasUpdateLoading, setCanvasUpdateLoading] = useState(false);
 
   const phaseIcons = {
     'Discovery': Eye,
@@ -190,6 +194,45 @@ ${integration.implementation_guide}
     URL.revokeObjectURL(url);
   };
 
+  const updateCanvasAssignment = async () => {
+    if (!originalAssignment?.courseId || !originalAssignment?.assignmentId || !revisedAssignment) {
+      toast({
+        title: "Missing Information",
+        description: "Cannot update Canvas assignment. Missing course ID, assignment ID, or revised assignment content.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCanvasUpdateLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-canvas-assignment', {
+        body: {
+          courseId: originalAssignment.courseId,
+          assignmentId: originalAssignment.assignmentId,
+          updatedContent: revisedAssignment,
+          preserveFormatting: false
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Canvas Assignment Updated",
+        description: "Your assignment has been successfully updated in Canvas with the AI literacy integration.",
+      });
+    } catch (error) {
+      console.error('Error updating Canvas assignment:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update assignment in Canvas. Please try again or copy the content manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setCanvasUpdateLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -332,11 +375,79 @@ ${integration.implementation_guide}
       )}
 
       {revisedAssignment && (
-        <AssignmentEditor
-          revisedAssignment={revisedAssignment}
-          onRegenerate={generateRevisedAssignment}
-          loading={loading}
-        />
+        <>
+          <AssignmentEditor
+            revisedAssignment={revisedAssignment}
+            onRegenerate={generateRevisedAssignment}
+            loading={loading}
+          />
+          
+          {originalAssignment?.courseId && originalAssignment?.assignmentId && (
+            <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                      Update Assignment in Canvas
+                    </h3>
+                    <p className="text-blue-800 text-sm">
+                      Push your revised assignment with AI literacy integration back to Canvas.
+                    </p>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-blue-600 hover:bg-blue-700">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Update in Canvas
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Update Canvas Assignment</DialogTitle>
+                        <DialogDescription>
+                          This will update your Canvas assignment "{originalAssignment.title}" with the revised content that includes AI literacy integration. 
+                          The original assignment description will be replaced.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 mb-2">
+                            <strong>Course:</strong> {originalAssignment.subject || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-2">
+                            <strong>Assignment:</strong> {originalAssignment.title}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <strong>Action:</strong> Replace assignment description with AI-enhanced version
+                          </p>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          onClick={updateCanvasAssignment}
+                          disabled={canvasUpdateLoading}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {canvasUpdateLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Confirm Update
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <Card className="bg-gray-50">

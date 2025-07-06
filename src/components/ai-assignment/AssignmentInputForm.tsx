@@ -5,13 +5,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import CanvasAssignmentSelector from './CanvasAssignmentSelector';
+
 interface AssignmentInputFormProps {
   onIntegrationGenerated: (integration: any, assignmentData: any) => void;
   loading: boolean;
   setLoading: (loading: boolean) => void;
 }
+
 const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   onIntegrationGenerated,
   loading,
@@ -23,6 +27,8 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const [gradeLevel, setGradeLevel] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<'manual' | 'canvas'>('manual');
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0];
     if (uploadedFile) {
@@ -32,6 +38,22 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
       setAssignmentText(`[File uploaded: ${uploadedFile.name}]`);
     }
   };
+
+  const handleCanvasAssignmentImported = (importedAssignment: {
+    title: string;
+    content: string;
+    subject?: string;
+    gradeLevel?: string;
+    estimatedTime?: string;
+    courseId?: string;
+    assignmentId?: string;
+  }) => {
+    setAssignmentTitle(importedAssignment.title);
+    setAssignmentText(importedAssignment.content);
+    setSubject(importedAssignment.subject || '');
+    setEstimatedTime(importedAssignment.estimatedTime || '');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignmentText.trim() || !assignmentTitle.trim()) {
@@ -40,10 +62,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
     }
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('generate-ai-assignment-integration', {
+      const { data, error } = await supabase.functions.invoke('generate-ai-assignment-integration', {
         body: {
           assignmentTitle,
           assignmentText,
@@ -58,7 +77,9 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         content: assignmentText,
         subject,
         gradeLevel,
-        estimatedTime
+        estimatedTime,
+        courseId: importedAssignment?.courseId,
+        assignmentId: importedAssignment?.assignmentId
       };
       onIntegrationGenerated(data, assignmentData);
     } catch (error) {
@@ -68,7 +89,9 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
       setLoading(false);
     }
   };
-  return <Card>
+
+  return (
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
           <FileText className="w-6 h-6 mr-2" />
@@ -76,83 +99,227 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Assignment Title */}
-          <div>
-            <Label htmlFor="title">Assignment Title *</Label>
-            <Input id="title" value={assignmentTitle} onChange={e => setAssignmentTitle(e.target.value)} placeholder="Enter assignment title" required />
-          </div>
+        <Tabs value={inputMode} onValueChange={(value: string) => setInputMode(value as 'manual' | 'canvas')} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">Manual Input</TabsTrigger>
+            <TabsTrigger value="canvas">Import from Canvas</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="canvas" className="space-y-4">
+            <CanvasAssignmentSelector 
+              onAssignmentImported={handleCanvasAssignmentImported}
+              loading={loading}
+            />
+          </TabsContent>
+          
+          <TabsContent value="manual">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Assignment Title */}
+              <div>
+                <Label htmlFor="title">Assignment Title *</Label>
+                <Input 
+                  id="title" 
+                  value={assignmentTitle} 
+                  onChange={e => setAssignmentTitle(e.target.value)} 
+                  placeholder="Enter assignment title" 
+                  required 
+                />
+              </div>
 
-          {/* Assignment Content */}
-          <div>
-            <Label htmlFor="content">Assignment Content *</Label>
-            <Textarea id="content" value={assignmentText} onChange={e => setAssignmentText(e.target.value)} placeholder="Paste your assignment instructions, description, and requirements here..." rows={8} required />
-          </div>
+              {/* Assignment Content */}
+              <div>
+                <Label htmlFor="content">Assignment Content *</Label>
+                <Textarea 
+                  id="content" 
+                  value={assignmentText} 
+                  onChange={e => setAssignmentText(e.target.value)} 
+                  placeholder="Paste your assignment instructions, description, and requirements here..." 
+                  rows={8} 
+                  required 
+                />
+              </div>
 
-          {/* File Upload */}
-          <div>
-            <Label htmlFor="file">Or Upload Assignment File</Label>
-            <div className="mt-2">
-              <input id="file" type="file" onChange={handleFileUpload} accept=".txt,.doc,.docx,.pdf" className="hidden" />
-              <Button type="button" variant="outline" onClick={() => document.getElementById('file')?.click()} className="w-full">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload File (TXT, DOC, PDF)
+              {/* File Upload */}
+              <div>
+                <Label htmlFor="file">Or Upload Assignment File</Label>
+                <div className="mt-2">
+                  <input 
+                    id="file" 
+                    type="file" 
+                    onChange={handleFileUpload} 
+                    accept=".txt,.doc,.docx,.pdf" 
+                    className="hidden" 
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => document.getElementById('file')?.click()} 
+                    className="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload File (TXT, DOC, PDF)
+                  </Button>
+                  {file && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      Selected: {file.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="subject">Subject</Label>
+                  <Select value={subject} onValueChange={setSubject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="english">English/Language Arts</SelectItem>
+                      <SelectItem value="math">Mathematics</SelectItem>
+                      <SelectItem value="science">Science</SelectItem>
+                      <SelectItem value="social-studies">Social Studies</SelectItem>
+                      <SelectItem value="history">History</SelectItem>
+                      <SelectItem value="art">Art</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="grade">Grade Level</Label>
+                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="elementary">Elementary (K-5)</SelectItem>
+                      <SelectItem value="middle">Middle School (6-8)</SelectItem>
+                      <SelectItem value="high">High School (9-12)</SelectItem>
+                      <SelectItem value="college">College/University</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="time">Estimated Time to Complete</Label>
+                <Input 
+                  id="time" 
+                  value={estimatedTime} 
+                  onChange={e => setEstimatedTime(e.target.value)} 
+                  placeholder="e.g., 2 weeks, 3 class periods" 
+                />
+              </div>
+
+              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating AI Integration...
+                  </>
+                ) : (
+                  'Generate AI Literacy Integration'
+                )}
               </Button>
-              {file && <p className="text-sm text-gray-600 mt-2">
-                  Selected: {file.name}
-                </p>}
+            </form>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Show form for both modes when Canvas assignment is imported */}
+        {inputMode === 'canvas' && assignmentTitle && (
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6 pt-6 border-t">
+            <div className="text-sm text-gray-600 mb-4">
+              Review and modify the imported assignment details below, then generate AI integration:
             </div>
-          </div>
-
-          {/* Metadata */}
-          <div className="grid md:grid-cols-2 gap-4">
+            
+            {/* Assignment Title */}
             <div>
-              <Label htmlFor="subject">Subject</Label>
-              <Select value={subject} onValueChange={setSubject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="english">English/Language Arts</SelectItem>
-                  <SelectItem value="math">Mathematics</SelectItem>
-                  <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="social-studies">Social Studies</SelectItem>
-                  <SelectItem value="history">History</SelectItem>
-                  <SelectItem value="art">Art</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="canvas-title">Assignment Title *</Label>
+              <Input 
+                id="canvas-title" 
+                value={assignmentTitle} 
+                onChange={e => setAssignmentTitle(e.target.value)} 
+                placeholder="Enter assignment title" 
+                required 
+              />
+            </div>
+
+            {/* Assignment Content */}
+            <div>
+              <Label htmlFor="canvas-content">Assignment Content *</Label>
+              <Textarea 
+                id="canvas-content" 
+                value={assignmentText} 
+                onChange={e => setAssignmentText(e.target.value)} 
+                placeholder="Assignment content imported from Canvas..." 
+                rows={8} 
+                required 
+              />
+            </div>
+
+            {/* Metadata */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="canvas-subject">Subject</Label>
+                <Select value={subject} onValueChange={setSubject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="english">English/Language Arts</SelectItem>
+                    <SelectItem value="math">Mathematics</SelectItem>
+                    <SelectItem value="science">Science</SelectItem>
+                    <SelectItem value="social-studies">Social Studies</SelectItem>
+                    <SelectItem value="history">History</SelectItem>
+                    <SelectItem value="art">Art</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="canvas-grade">Grade Level</Label>
+                <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grade level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="elementary">Elementary (K-5)</SelectItem>
+                    <SelectItem value="middle">Middle School (6-8)</SelectItem>
+                    <SelectItem value="high">High School (9-12)</SelectItem>
+                    <SelectItem value="college">College/University</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="grade">Grade Level</Label>
-              <Select value={gradeLevel} onValueChange={setGradeLevel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select grade level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="elementary">Elementary (K-5)</SelectItem>
-                  <SelectItem value="middle">Middle School (6-8)</SelectItem>
-                  <SelectItem value="high">High School (9-12)</SelectItem>
-                  <SelectItem value="college">College/University</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="canvas-time">Estimated Time to Complete</Label>
+              <Input 
+                id="canvas-time" 
+                value={estimatedTime} 
+                onChange={e => setEstimatedTime(e.target.value)} 
+                placeholder="e.g., 2 weeks, 3 class periods" 
+              />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="time">Estimated Time to Complete</Label>
-            <Input id="time" value={estimatedTime} onChange={e => setEstimatedTime(e.target.value)} placeholder="e.g., 2 weeks, 3 class periods" />
-          </div>
-
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
-            {loading ? <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating AI Integration...
-              </> : 'Generate AI Literacy Integration'}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating AI Integration...
+                </>
+              ) : (
+                'Generate AI Literacy Integration'
+              )}
+            </Button>
+          </form>
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default AssignmentInputForm;
