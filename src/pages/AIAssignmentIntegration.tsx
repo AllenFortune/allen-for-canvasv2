@@ -15,6 +15,10 @@ interface DiverSuggestion {
   description: string;
   activities: string[];
   examples: string[];
+  studentAIPrompts: string[];
+  teachingTips: string[];
+  criticalThinkingQuestions: string[];
+  responsibleUseGuideline: string;
 }
 
 interface AssignmentIntegration {
@@ -55,7 +59,7 @@ const AIAssignmentIntegration = () => {
                 <h1 className="text-3xl font-bold text-foreground">AI Assignment Integration</h1>
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Transform your assignments with AI literacy integration using the DIVER framework.
+                Transform your assignments with AI literacy integration using the DIVER framework. Get student-focused AI prompts that encourage critical thinking and responsible AI use.
               </p>
             </div>
 

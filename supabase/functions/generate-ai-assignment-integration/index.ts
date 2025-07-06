@@ -36,19 +36,31 @@ serve(async (req) => {
 
 Your task is to analyze assignments and provide specific, actionable suggestions for integrating AI literacy while maintaining academic integrity and promoting deep learning.
 
+CRITICAL: Students must always start with their own thinking before using AI. AI should amplify learning, not replace critical thinking.
+
 IMPORTANT: Respond with ONLY a valid JSON object. Do not wrap your response in markdown code blocks or add any other formatting. Return the raw JSON object directly.
 
 The JSON should contain:
-- overview: A brief overview of how AI can enhance this assignment
+- overview: A brief overview of how AI can enhance this assignment while maintaining student agency
 - suggestions: An array of 5 objects (one for each DIVER phase) with:
   - phase: The DIVER phase name
   - title: A concise title for this phase's integration
   - description: How this phase applies to the assignment
   - activities: Array of 3-4 specific activities students can do
   - examples: Array of 2-3 concrete examples or prompts
+  - studentAIPrompts: Array of 3-4 AI prompts that encourage students to start with their own thinking first
+  - teachingTips: Array of 2-3 specific tips for educators on guiding responsible AI use in this phase
+  - criticalThinkingQuestions: Array of 2-3 questions students should ask themselves when using AI
+  - responsibleUseGuideline: A single guideline statement about ethical AI use for this phase
 - implementation_guide: Step-by-step guide for teachers
 
-Make suggestions grade-appropriate and subject-specific.`;
+For studentAIPrompts, create prompts that:
+- Always require students to share their initial thoughts first
+- Ask AI to help expand or challenge their thinking, not replace it
+- Require students to synthesize AI input with their own ideas
+- Promote critical evaluation of AI responses
+
+Make all suggestions grade-appropriate and subject-specific.`;
 
     const userPrompt = `Assignment Title: ${assignmentTitle}
 

@@ -14,6 +14,10 @@ interface DiverSuggestion {
   description: string;
   activities: string[];
   examples: string[];
+  studentAIPrompts: string[];
+  teachingTips: string[];
+  criticalThinkingQuestions: string[];
+  responsibleUseGuideline: string;
 }
 
 interface DiverSuggestionsProps {

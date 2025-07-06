@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Copy, Eye, Users, CheckCircle, Edit, Brain } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Copy, Eye, Users, CheckCircle, Edit, Brain, ChevronDown, ChevronRight, Lightbulb, MessageSquare, HelpCircle, Shield } from 'lucide-react';
 
 interface DiverSuggestion {
   phase: string;
@@ -11,6 +12,10 @@ interface DiverSuggestion {
   description: string;
   activities: string[];
   examples: string[];
+  studentAIPrompts: string[];
+  teachingTips: string[];
+  criticalThinkingQuestions: string[];
+  responsibleUseGuideline: string;
 }
 
 interface DiverSuggestionCardProps {
@@ -28,6 +33,8 @@ const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
   onCopy,
   showSelection = false
 }) => {
+  const [showStudentPrompts, setShowStudentPrompts] = React.useState(false);
+  const [showTeachingTips, setShowTeachingTips] = React.useState(false);
   const phaseIcons = {
     'Discovery': Eye,
     'Interaction & Collaboration': Users,
@@ -84,7 +91,7 @@ const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
       <CardContent>
         <p className="text-gray-700 mb-4">{suggestion.description}</p>
         
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Activities</h4>
             <ul className="space-y-1">
@@ -109,6 +116,87 @@ const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
             </ul>
           </div>
         </div>
+
+        {/* Responsible Use Guideline */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+          <div className="flex items-start">
+            <Shield className="w-4 h-4 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+            <p className="text-sm text-amber-800 font-medium">{suggestion.responsibleUseGuideline}</p>
+          </div>
+        </div>
+
+        {/* Student AI Prompts */}
+        <Collapsible open={showStudentPrompts} onOpenChange={setShowStudentPrompts}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full mb-3">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Student AI Prompt Examples
+              {showStudentPrompts ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mb-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="space-y-3">
+                {suggestion.studentAIPrompts.map((prompt, idx) => (
+                  <div key={idx} className="bg-white rounded p-3 border border-blue-100">
+                    <p className="text-sm text-gray-700 mb-2">"{prompt}"</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(prompt);
+                        // You could add a toast here if needed
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Prompt
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Critical Thinking Questions */}
+              <div className="mt-4 pt-4 border-t border-blue-200">
+                <h5 className="font-semibold text-blue-900 mb-2 flex items-center">
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  Ask Yourself:
+                </h5>
+                <ul className="space-y-1">
+                  {suggestion.criticalThinkingQuestions.map((question, idx) => (
+                    <li key={idx} className="text-sm text-blue-800 flex items-start">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                      {question}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Teaching Tips */}
+        <Collapsible open={showTeachingTips} onOpenChange={setShowTeachingTips}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full">
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Teaching Tips
+              {showTeachingTips ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <ul className="space-y-2">
+                {suggestion.teachingTips.map((tip, idx) => (
+                  <li key={idx} className="text-sm text-green-800 flex items-start">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
