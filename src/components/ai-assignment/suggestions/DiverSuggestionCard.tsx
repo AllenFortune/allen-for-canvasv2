@@ -24,6 +24,8 @@ interface DiverSuggestionCardProps {
   onToggle: (checked: boolean) => void;
   onCopy: () => void;
   showSelection?: boolean;
+  selectedPromptIds?: number[];
+  onPromptToggle?: (promptIndex: number, checked: boolean) => void;
 }
 
 const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
@@ -31,7 +33,9 @@ const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
   isSelected,
   onToggle,
   onCopy,
-  showSelection = false
+  showSelection = false,
+  selectedPromptIds = [],
+  onPromptToggle
 }) => {
   const [showStudentPrompts, setShowStudentPrompts] = React.useState(false);
   const [showTeachingTips, setShowTeachingTips] = React.useState(false);
@@ -136,22 +140,70 @@ const DiverSuggestionCard: React.FC<DiverSuggestionCardProps> = ({
           </CollapsibleTrigger>
           <CollapsibleContent className="mb-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              {showSelection && onPromptToggle && (
+                <div className="mb-4 p-3 bg-white rounded border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-blue-900">
+                      Select prompts to include ({selectedPromptIds.length} of {suggestion.studentAIPrompts.length})
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          suggestion.studentAIPrompts.forEach((_, idx) => {
+                            if (!selectedPromptIds.includes(idx)) {
+                              onPromptToggle(idx, true);
+                            }
+                          });
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          selectedPromptIds.forEach(idx => {
+                            onPromptToggle(idx, false);
+                          });
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3">
                 {suggestion.studentAIPrompts.map((prompt, idx) => (
                   <div key={idx} className="bg-white rounded p-3 border border-blue-100">
-                    <p className="text-sm text-gray-700 mb-2">"{prompt}"</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        navigator.clipboard.writeText(prompt);
-                        // You could add a toast here if needed
-                      }}
-                      className="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      <Copy className="w-3 h-3 mr-1" />
-                      Copy Prompt
-                    </Button>
+                    <div className="flex items-start gap-3">
+                      {showSelection && onPromptToggle && (
+                        <Checkbox
+                          checked={selectedPromptIds.includes(idx)}
+                          onCheckedChange={(checked) => onPromptToggle(idx, checked as boolean)}
+                          className="mt-1"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-700 mb-2">"{prompt}"</p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(prompt);
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          <Copy className="w-3 h-3 mr-1" />
+                          Copy Prompt
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -40,6 +40,7 @@ interface DiverSuggestionsProps {
 const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, originalAssignment }) => {
   const { toast } = useToast();
   const [selectedSuggestions, setSelectedSuggestions] = useState<DiverSuggestion[]>([]);
+  const [selectedPromptIds, setSelectedPromptIds] = useState<Record<string, number[]>>({});
   const [revisedAssignment, setRevisedAssignment] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [canvasUpdateLoading, setCanvasUpdateLoading] = useState(false);
@@ -47,9 +48,37 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
   const handleSuggestionToggle = (suggestion: DiverSuggestion, checked: boolean) => {
     if (checked) {
       setSelectedSuggestions(prev => [...prev, suggestion]);
+      // Auto-select first 2 prompts when phase is selected
+      setSelectedPromptIds(prev => ({
+        ...prev,
+        [suggestion.phase]: [0, 1].filter(i => i < suggestion.studentAIPrompts.length)
+      }));
     } else {
       setSelectedSuggestions(prev => prev.filter(s => s.phase !== suggestion.phase));
+      // Clear prompt selections when phase is deselected
+      setSelectedPromptIds(prev => {
+        const updated = { ...prev };
+        delete updated[suggestion.phase];
+        return updated;
+      });
     }
+  };
+
+  const handlePromptToggle = (phase: string, promptIndex: number, checked: boolean) => {
+    setSelectedPromptIds(prev => {
+      const currentPrompts = prev[phase] || [];
+      if (checked) {
+        return {
+          ...prev,
+          [phase]: [...currentPrompts, promptIndex].sort()
+        };
+      } else {
+        return {
+          ...prev,
+          [phase]: currentPrompts.filter(i => i !== promptIndex)
+        };
+      }
+    });
   };
 
   const generateRevisedAssignment = async () => {
@@ -62,12 +91,20 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
       return;
     }
 
+    // Filter selected suggestions to include only selected prompts
+    const selectedSuggestionsWithPrompts = selectedSuggestions.map(suggestion => ({
+      ...suggestion,
+      studentAIPrompts: suggestion.studentAIPrompts.filter(
+        (_, index) => selectedPromptIds[suggestion.phase]?.includes(index)
+      )
+    }));
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-revised-assignment', {
         body: {
           originalAssignment: originalAssignment.content,
-          selectedSuggestions,
+          selectedSuggestions: selectedSuggestionsWithPrompts,
           assignmentTitle: originalAssignment.title,
           subject: originalAssignment.subject,
           gradeLevel: originalAssignment.gradeLevel,
@@ -232,6 +269,7 @@ ${integration.implementation_guide}
         <SuggestionsSelection
           selectedCount={selectedSuggestions.length}
           totalCount={integration.suggestions.length}
+          selectedPromptIds={selectedPromptIds}
         >
           {integration.suggestions.map((suggestion, index) => {
             const isSelected = selectedSuggestions.some(s => s.phase === suggestion.phase);
@@ -244,6 +282,8 @@ ${integration.implementation_guide}
                 onToggle={(checked) => handleSuggestionToggle(suggestion, checked)}
                 onCopy={() => handleCopySuggestion(suggestion)}
                 showSelection={true}
+                selectedPromptIds={selectedPromptIds[suggestion.phase] || []}
+                onPromptToggle={(promptIndex, checked) => handlePromptToggle(suggestion.phase, promptIndex, checked)}
               />
             );
           })}

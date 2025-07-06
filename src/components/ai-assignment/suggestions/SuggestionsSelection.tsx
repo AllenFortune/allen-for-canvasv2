@@ -6,12 +6,14 @@ interface SuggestionsSelectionProps {
   selectedCount: number;
   totalCount: number;
   children: React.ReactNode;
+  selectedPromptIds?: Record<string, number[]>;
 }
 
 const SuggestionsSelection: React.FC<SuggestionsSelectionProps> = ({
   selectedCount,
   totalCount,
-  children
+  children,
+  selectedPromptIds = {}
 }) => {
   return (
     <>
@@ -29,7 +31,10 @@ const SuggestionsSelection: React.FC<SuggestionsSelectionProps> = ({
           <div className="flex items-center gap-2 text-sm text-green-700">
             <span className="font-medium">Selected:</span>
             <Badge variant="outline" className="bg-green-100 text-green-800">
-              {selectedCount} of {totalCount}
+              {selectedCount} phases
+            </Badge>
+            <Badge variant="outline" className="bg-blue-100 text-blue-800">
+              {Object.values(selectedPromptIds || {}).reduce((total, prompts) => total + prompts.length, 0)} prompts
             </Badge>
           </div>
         </CardContent>
