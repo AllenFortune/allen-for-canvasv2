@@ -91,12 +91,13 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
       return;
     }
 
-    // Filter selected suggestions to include only selected prompts
-    const selectedSuggestionsWithPrompts = selectedSuggestions.map(suggestion => ({
+    // Prepare complete DIVER framework data with selected prompts
+    const selectedSuggestionsWithCompleteData = selectedSuggestions.map(suggestion => ({
       ...suggestion,
-      studentAIPrompts: suggestion.studentAIPrompts.filter(
+      selectedStudentAIPrompts: suggestion.studentAIPrompts.filter(
         (_, index) => selectedPromptIds[suggestion.phase]?.includes(index)
-      )
+      ),
+      allStudentAIPrompts: suggestion.studentAIPrompts // Keep all for context
     }));
 
     setLoading(true);
@@ -104,7 +105,7 @@ const DiverSuggestions: React.FC<DiverSuggestionsProps> = ({ integration, origin
       const { data, error } = await supabase.functions.invoke('generate-revised-assignment', {
         body: {
           originalAssignment: originalAssignment.content,
-          selectedSuggestions: selectedSuggestionsWithPrompts,
+          selectedSuggestions: selectedSuggestionsWithCompleteData,
           assignmentTitle: originalAssignment.title,
           subject: originalAssignment.subject,
           gradeLevel: originalAssignment.gradeLevel,
