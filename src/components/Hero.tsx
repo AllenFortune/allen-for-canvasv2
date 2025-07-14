@@ -47,7 +47,7 @@ const Hero = () => {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
           <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 px-8 py-3" onClick={() => navigate("/canvas-setup")}>Try Grading With Allen</Button>
-          <Button variant="outline" size="lg" className="px-8 py-3" onClick={() => navigate("/ai-literacy")}>
+          <Button variant="outline" size="lg" className="px-8 py-3" onClick={() => navigate("/ai-pedagogy")}>
             Explore AI Literacy Tools
           </Button>
         </div>
