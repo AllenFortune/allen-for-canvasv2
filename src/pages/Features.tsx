@@ -67,7 +67,7 @@ const Features = () => {
             <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate("/canvas-setup")}>
               Start Free Trial
             </Button>
-            <Button variant="outline" size="lg" onClick={() => navigate("/ai-literacy")}>
+            <Button variant="outline" size="lg" onClick={() => navigate("/ai-pedagogy")}>
               Explore AI Literacy
             </Button>
           </div>
