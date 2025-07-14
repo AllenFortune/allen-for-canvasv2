@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotifyMeModalProps {
   open: boolean;
@@ -32,18 +33,41 @@ export const NotifyMeModal = ({ open, onOpenChange, featureName, featureDescript
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement Supabase edge function to store notification requests
-      // For now, we'll just show a success message
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      toast({
-        title: "Thank you!",
-        description: `We'll notify you at ${email} when ${featureName} launches.`,
+      const { data, error } = await supabase.functions.invoke('feature-notification-signup', {
+        body: {
+          email,
+          featureName,
+          featureDescription
+        }
       });
-      
-      setEmail("");
-      onOpenChange(false);
+
+      if (error) {
+        console.error('Function invocation error:', error);
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.success) {
+        toast({
+          title: "Thank you!",
+          description: data.message || `We'll notify you at ${email} when ${featureName} launches.`,
+        });
+        
+        setEmail("");
+        onOpenChange(false);
+      } else {
+        toast({
+          title: "Error",
+          description: data?.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('Submission error:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

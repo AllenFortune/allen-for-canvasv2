@@ -86,6 +86,41 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_notifications: {
+        Row: {
+          created_at: string | null
+          email: string
+          feature_name: string
+          id: string
+          notified_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          feature_name: string
+          id?: string
+          notified_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          feature_name?: string
+          id?: string
+          notified_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           canvas_access_token: string | null
