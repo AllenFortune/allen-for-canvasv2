@@ -9,7 +9,7 @@ import PedagogyNavigation from "@/components/pedagogy/PedagogyNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, ArrowRight, ClipboardCheck } from "lucide-react";
+import { BookOpen, ArrowRight, ClipboardCheck, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AIPedagogyHub = () => {
@@ -139,6 +139,59 @@ const AIPedagogyHub = () => {
               </div>
             </div>
             <Button variant="outline" disabled className="border-violet-200 text-violet-600 hover:bg-violet-50">
+              Coming Soon - Notify Me
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* CustomGPT Teaching Assistant Builder Card - Coming Soon */}
+        <Card className="mb-12 border-l-4 border-l-orange-600 bg-gradient-to-r from-orange-50 to-white relative">
+          <div className="absolute top-4 right-4">
+            <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
+              Coming Soon
+            </Badge>
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <MessageCircle className="w-6 h-6 text-orange-600" />
+              CustomGPT Teaching Assistant Builder
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Create personalized AI teaching assistants for your students with step-by-step guidance. Build GPTs that guide learning through Socratic questioning rather than providing direct answers, extending your office hours and supporting student understanding 24/7.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-orange-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Step-by-Step Setup</h4>
+                  <p className="text-sm text-gray-600">Guided process to create your custom teaching assistant GPT</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-orange-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Knowledge Base Integration</h4>
+                  <p className="text-sm text-gray-600">Upload course materials and resources for contextual responses</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-orange-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Socratic Learning Approach</h4>
+                  <p className="text-sm text-gray-600">Guide students to answers through questions, not direct solutions</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-orange-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Canvas Integration</h4>
+                  <p className="text-sm text-gray-600">Add as external tool for seamless student access</p>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" disabled className="border-orange-200 text-orange-600 hover:bg-orange-50">
               Coming Soon - Notify Me
             </Button>
           </CardContent>
