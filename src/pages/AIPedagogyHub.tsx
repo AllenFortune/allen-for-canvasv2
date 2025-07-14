@@ -8,7 +8,8 @@ import ArticlesList from "@/components/pedagogy/ArticlesList";
 import PedagogyNavigation from "@/components/pedagogy/PedagogyNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, ArrowRight, ClipboardCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AIPedagogyHub = () => {
@@ -87,6 +88,59 @@ const AIPedagogyHub = () => {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        {/* AI Rubric Builder Card - Coming Soon */}
+        <Card className="mb-12 border-l-4 border-l-violet-600 bg-gradient-to-r from-violet-50 to-white relative">
+          <div className="absolute top-4 right-4">
+            <Badge variant="secondary" className="bg-violet-100 text-violet-700 border-violet-200">
+              Coming Soon
+            </Badge>
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <ClipboardCheck className="w-6 h-6 text-violet-600" />
+              AI Rubric Builder
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Automatically generate comprehensive assessment rubrics from your Canvas assignments or pasted content. Seamlessly integrates with the AI Literacy Builder to create aligned assessment criteria that evaluate both content mastery and responsible AI use.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-violet-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Automatic Generation</h4>
+                  <p className="text-sm text-gray-600">Create rubrics from Canvas assignments or pasted descriptions</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-violet-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">DIVER Framework Aligned</h4>
+                  <p className="text-sm text-gray-600">Assessment criteria that match AI literacy components</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-violet-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Multiple Formats</h4>
+                  <p className="text-sm text-gray-600">Analytic, holistic, and single-point rubric options</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-violet-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Canvas Integration</h4>
+                  <p className="text-sm text-gray-600">Direct export to Canvas gradebook and SpeedGrader</p>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" disabled className="border-violet-200 text-violet-600 hover:bg-violet-50">
+              Coming Soon - Notify Me
+            </Button>
           </CardContent>
         </Card>
         
