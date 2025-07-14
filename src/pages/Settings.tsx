@@ -89,7 +89,12 @@ const Settings = () => {
               </TabsList>
               
               <TabsContent value="account" className="space-y-6">
-                <ProfileCard loading={loading} profile={profile} user={user} />
+                <ProfileCard 
+                  loading={loading} 
+                  profile={profile} 
+                  user={user} 
+                  onProfileUpdate={setProfile}
+                />
                 <CanvasIntegrationCard profile={profile} />
                 <AccountActionsCard onSignOut={handleSignOut} />
               </TabsContent>
