@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PedagogyHero from "@/components/pedagogy/PedagogyHero";
 import FeaturedArticle from "@/components/pedagogy/FeaturedArticle";
 import ArticlesList from "@/components/pedagogy/ArticlesList";
 import PedagogyNavigation from "@/components/pedagogy/PedagogyNavigation";
+import { NotifyMeModal } from "@/components/pedagogy/NotifyMeModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,8 @@ import { BookOpen, ArrowRight, ClipboardCheck, MessageCircle } from "lucide-reac
 import { Link } from "react-router-dom";
 
 const AIPedagogyHub = () => {
+  const [rubricModalOpen, setRubricModalOpen] = useState(false);
+  const [gptModalOpen, setGptModalOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -138,7 +141,11 @@ const AIPedagogyHub = () => {
                 </div>
               </div>
             </div>
-            <Button variant="outline" disabled className="border-violet-200 text-violet-600 hover:bg-violet-50">
+            <Button 
+              variant="outline" 
+              onClick={() => setRubricModalOpen(true)}
+              className="border-violet-200 text-violet-600 hover:bg-violet-50"
+            >
               Coming Soon - Notify Me
             </Button>
           </CardContent>
@@ -191,7 +198,11 @@ const AIPedagogyHub = () => {
                 </div>
               </div>
             </div>
-            <Button variant="outline" disabled className="border-orange-200 text-orange-600 hover:bg-orange-50">
+            <Button 
+              variant="outline" 
+              onClick={() => setGptModalOpen(true)}
+              className="border-orange-200 text-orange-600 hover:bg-orange-50"
+            >
               Coming Soon - Notify Me
             </Button>
           </CardContent>
@@ -208,6 +219,21 @@ const AIPedagogyHub = () => {
         </div>
       </div>
       <Footer />
+      
+      {/* Notification Modals */}
+      <NotifyMeModal
+        open={rubricModalOpen}
+        onOpenChange={setRubricModalOpen}
+        featureName="AI Rubric Builder"
+        featureDescription="Be the first to know when our AI-powered rubric generation tool launches. Automatically create comprehensive assessment rubrics from your assignments."
+      />
+      
+      <NotifyMeModal
+        open={gptModalOpen}
+        onOpenChange={setGptModalOpen}
+        featureName="CustomGPT Teaching Assistant Builder"
+        featureDescription="Get notified when our step-by-step CustomGPT builder launches. Create personalized AI teaching assistants for your students."
+      />
     </div>
   );
 };
