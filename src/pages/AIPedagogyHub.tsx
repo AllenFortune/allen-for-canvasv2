@@ -19,7 +19,7 @@ const AIPedagogyHub = () => {
         <PedagogyHero />
         
         {/* AI Literacy Tools Card */}
-        <Card className="mb-12 border-l-4 border-l-indigo-600 bg-gradient-to-r from-indigo-50 to-white">
+        <Card className="mb-8 border-l-4 border-l-indigo-600 bg-gradient-to-r from-indigo-50 to-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <BookOpen className="w-6 h-6 text-indigo-600" />
@@ -33,6 +33,57 @@ const AIPedagogyHub = () => {
             <Link to="/ai-literacy">
               <Button className="bg-indigo-600 hover:bg-indigo-700">
                 Access AI Literacy Tools
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* AI Literacy Builder Card */}
+        <Card className="mb-12 border-l-4 border-l-emerald-600 bg-gradient-to-r from-emerald-50 to-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="w-6 h-6 text-emerald-600" />
+              AI Literacy Builder for Assignments & Discussions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Transform your existing assignments and discussions using our DIVER framework (Discovery, Interaction, Verification, Editing, Reflection). Create student-focused AI prompts that encourage critical thinking, responsible AI use, and seamless Canvas integration.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">DIVER Framework Integration</h4>
+                  <p className="text-sm text-gray-600">Structured approach to AI literacy in coursework</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Student-Focused Prompts</h4>
+                  <p className="text-sm text-gray-600">Encourage critical thinking and responsible AI use</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Canvas Integration</h4>
+                  <p className="text-sm text-gray-600">Seamlessly integrate with your existing LMS</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Assignment Transformation</h4>
+                  <p className="text-sm text-gray-600">Modernize assignments and discussions effectively</p>
+                </div>
+              </div>
+            </div>
+            <Link to="/ai-assignment-integration">
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                Explore AI Literacy Builder
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
