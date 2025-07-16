@@ -29,34 +29,60 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const resolveSubjectArea = () => {
+    if (state.isCustomSubject && state.customSubject) {
+      return state.customSubject;
+    }
+    return state.subjectArea || 'General';
+  };
+
   const generateRubric = async () => {
     setGenerating(true);
     try {
+      const resolvedSubjectArea = resolveSubjectArea();
+      
+      console.log('Generating rubric with params:', {
+        assignmentContent: state.assignmentContent,
+        rubricType: state.rubricType,
+        pointsPossible: state.pointsPossible,
+        subjectArea: resolvedSubjectArea,
+        gradeLevel: state.gradeLevel,
+        includeDiverAlignment: state.includeDiverAlignment
+      });
+
       const { data, error } = await supabase.functions.invoke('generate-ai-rubric', {
         body: {
           assignmentContent: state.assignmentContent,
           rubricType: state.rubricType,
           pointsPossible: state.pointsPossible,
-          subjectArea: state.subjectArea,
+          subjectArea: resolvedSubjectArea,
           gradeLevel: state.gradeLevel,
           includeDiverAlignment: state.includeDiverAlignment
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
-      if (data?.rubric) {
-        updateState({ generatedRubric: data.rubric });
+      console.log('Received data from edge function:', data);
+
+      // The edge function returns the rubric data directly, not nested in a 'rubric' property
+      if (data?.criteria) {
+        updateState({ generatedRubric: data });
         toast({
           title: "Success",
           description: "AI rubric generated successfully!"
         });
+      } else {
+        throw new Error('Invalid rubric data received');
       }
     } catch (error) {
       console.error('Error generating rubric:', error);
       toast({
         title: "Error",
-        description: "Failed to generate rubric. Please try again.",
+        description: `Failed to generate rubric: ${error.message || 'Please try again.'}`,
         variant: "destructive"
       });
     } finally {
