@@ -51,6 +51,7 @@ export interface RubricBuilderState {
   generatedRubric: RubricData | null;
   isGenerating: boolean;
   error: string | null;
+  rubricTitle: string;
   // Alternative property names for compatibility
   sourceContent?: string;
   sourceTitle?: string;

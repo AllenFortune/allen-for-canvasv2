@@ -31,11 +31,25 @@ const RubricBuilderWizard = () => {
     isCustomSubject: false,
     generatedRubric: null,
     isGenerating: false,
-    error: null
+    error: null,
+    rubricTitle: 'Assignment Rubric'
   });
 
   const updateState = (updates: Partial<RubricBuilderState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState(prev => {
+      const newState = { ...prev, ...updates };
+      
+      // Auto-generate rubric title when assignment changes
+      if (updates.selectedAssignment || updates.inputMethod) {
+        if (newState.selectedAssignment?.title) {
+          newState.rubricTitle = `${newState.selectedAssignment.title} Rubric`;
+        } else {
+          newState.rubricTitle = 'Assignment Rubric';
+        }
+      }
+      
+      return newState;
+    });
   };
 
   const nextStep = () => {

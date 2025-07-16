@@ -99,7 +99,7 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
         .from('rubrics')
         .insert({
           user_id: user.id,
-          title: 'Generated Rubric',
+          title: state.rubricTitle,
           description: state.subjectArea,
           rubric_type: state.rubricType,
           points_possible: state.pointsPossible,
@@ -187,7 +187,8 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
               <div>
                 <label className="text-sm font-medium">Title</label>
                 <Input 
-                  value="Generated Rubric" 
+                  value={state.rubricTitle} 
+                  onChange={(e) => updateState({ rubricTitle: e.target.value })}
                   placeholder="Rubric title"
                 />
               </div>
