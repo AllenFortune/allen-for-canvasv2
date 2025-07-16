@@ -8,6 +8,7 @@ import { RubricBuilderState } from '@/types/rubric';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import RubricViewModal from '../RubricViewModal';
 
 interface RubricLibraryStepProps {
   state: RubricBuilderState;
@@ -36,6 +37,8 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
   const [rubrics, setRubrics] = useState<SavedRubric[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [viewingRubric, setViewingRubric] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -91,6 +94,16 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
     } finally {
       setDeleting(null);
     }
+  };
+
+  const handleViewRubric = (rubricId: string) => {
+    setViewingRubric(rubricId);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setViewingRubric(null);
   };
 
   useEffect(() => {
@@ -157,7 +170,11 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewRubric(rubric.id)}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="sm">
@@ -192,6 +209,12 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
           Create Another Rubric
         </Button>
       </div>
+
+      <RubricViewModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        rubricId={viewingRubric}
+      />
     </div>
   );
 };
