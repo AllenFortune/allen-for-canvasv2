@@ -107,7 +107,8 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
           criteria: state.generatedRubric.criteria as any,
           performance_levels: state.generatedRubric.performanceLevels as any,
           source_content: state.assignmentContent,
-          source_type: 'manual',
+          source_type: state.selectedAssignment ? 'canvas_assignment' : 'manual',
+          source_assignment_id: state.selectedAssignment?.id || null,
           diver_alignment: state.includeDiverAlignment ? state.generatedRubric.diverAlignment as any : null,
           ai_literacy_components: state.generatedRubric.aiLiteracyComponents as any,
           status: 'published'
