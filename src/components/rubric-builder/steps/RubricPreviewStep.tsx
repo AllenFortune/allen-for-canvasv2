@@ -26,6 +26,7 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
 }) => {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -132,6 +133,47 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
     }
   };
 
+  const exportToCanvas = async () => {
+    if (!state.generatedRubric || !user) return;
+
+    setIsExporting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('export-rubric-to-canvas', {
+        body: { rubricId: state.generatedRubric.id }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Export Successful",
+          description: "Rubric has been exported to Canvas successfully!"
+        });
+        
+        // Update the local state to reflect the export
+        updateState({
+          generatedRubric: {
+            ...state.generatedRubric,
+            canvasRubricId: data.canvasRubricId,
+            exportedToCanvas: true
+          }
+        });
+      } else {
+        throw new Error(data.error || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Error exporting rubric:', error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export rubric to Canvas. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -231,6 +273,26 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
                 </>
               )}
             </Button>
+            
+            {state.selectedAssignment && (
+              <Button
+                onClick={exportToCanvas}
+                disabled={isExporting || !state.generatedRubric}
+                variant="outline"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export to Canvas
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}

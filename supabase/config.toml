@@ -198,3 +198,7 @@ verify_jwt = true
 [[edge-runtime.functions]]
 name = "verify-submission-purchase"
 verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "export-rubric-to-canvas"
+verify_jwt = true

@@ -1,0 +1,206 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface RubricCriterion {
+  name: string;
+  description: string;
+  points: number;
+  levels: RubricLevel[];
+}
+
+interface RubricLevel {
+  name: string;
+  description: string;
+  points: number;
+}
+
+interface RubricData {
+  id: string;
+  title: string;
+  description: string;
+  rubric_type: string;
+  points_possible: number;
+  criteria: RubricCriterion[];
+  performance_levels: string[];
+  source_assignment_id?: number;
+  user_id: string;
+}
+
+function convertToCanvasFormat(rubric: RubricData) {
+  const canvasRubric = {
+    title: rubric.title,
+    points_possible: rubric.points_possible,
+    criteria: {} as Record<string, any>
+  };
+
+  // Convert criteria to Canvas format
+  rubric.criteria.forEach((criterion, index) => {
+    const criterionId = `criterion_${index}`;
+    canvasRubric.criteria[criterionId] = {
+      description: criterion.name,
+      long_description: criterion.description,
+      points: criterion.points,
+      ratings: {} as Record<string, any>
+    };
+
+    // Convert levels to Canvas ratings
+    criterion.levels.forEach((level, levelIndex) => {
+      const ratingId = `rating_${levelIndex}`;
+      canvasRubric.criteria[criterionId].ratings[ratingId] = {
+        description: level.name,
+        long_description: level.description,
+        points: level.points
+      };
+    });
+  });
+
+  return canvasRubric;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    // Verify the user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Invalid token');
+    }
+
+    const { rubricId } = await req.json();
+
+    // Get the rubric from database
+    const { data: rubric, error: rubricError } = await supabase
+      .from('rubrics')
+      .select('*')
+      .eq('id', rubricId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (rubricError || !rubric) {
+      throw new Error('Rubric not found');
+    }
+
+    // Get user's Canvas credentials
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('canvas_instance_url, canvas_access_token')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      throw new Error('Canvas credentials not configured');
+    }
+
+    // Convert rubric to Canvas format
+    const canvasRubric = convertToCanvasFormat(rubric);
+
+    // Create rubric in Canvas
+    const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${rubric.source_assignment_id ? 'assignments/' + rubric.source_assignment_id + '/' : ''}rubrics`;
+    
+    const canvasResponse = await fetch(canvasUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ rubric: canvasRubric }),
+    });
+
+    if (!canvasResponse.ok) {
+      const errorText = await canvasResponse.text();
+      throw new Error(`Canvas API error: ${canvasResponse.status} - ${errorText}`);
+    }
+
+    const canvasRubricData = await canvasResponse.json();
+
+    // Associate rubric with assignment if source_assignment_id exists
+    if (rubric.source_assignment_id && canvasRubricData.id) {
+      const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${rubric.source_assignment_id}/assignments/${rubric.source_assignment_id}/rubrics/${canvasRubricData.id}`;
+      
+      const associateResponse = await fetch(associateUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${profile.canvas_access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rubric_association: {
+            association_type: 'Assignment',
+            association_id: rubric.source_assignment_id,
+            use_for_grading: true,
+            purpose: 'grading'
+          }
+        }),
+      });
+
+      if (!associateResponse.ok) {
+        console.warn('Failed to associate rubric with assignment:', await associateResponse.text());
+      }
+    }
+
+    // Update the rubric in our database
+    const { error: updateError } = await supabase
+      .from('rubrics')
+      .update({
+        canvas_rubric_id: canvasRubricData.id,
+        exported_to_canvas: true,
+        export_log: {
+          exported_at: new Date().toISOString(),
+          canvas_response: canvasRubricData,
+          success: true
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', rubricId);
+
+    if (updateError) {
+      console.error('Failed to update rubric export status:', updateError);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        canvasRubricId: canvasRubricData.id,
+        message: 'Rubric successfully exported to Canvas'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in export-rubric-to-canvas function:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});
