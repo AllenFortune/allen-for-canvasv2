@@ -4,6 +4,7 @@ import CourseCard from './CourseCard';
 import { useAuth } from "@/contexts/AuthContext";
 import { Course, isPastCourse, getCachedSession, withRetry } from '@/utils/courseUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { groupCoursesByTerm, getTermDisplayName } from '@/utils/termUtils';
 
 interface CoursesGridProps {
   courses: Course[];
@@ -21,12 +22,22 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
   const { user } = useAuth();
   const [gradingCounts, setGradingCounts] = useState<Record<number, number>>({});
   const [gradingCountsLoading, setGradingCountsLoading] = useState(false);
+  const [groupedCourses, setGroupedCourses] = useState<{ term: any; courses: any[] }[]>([]);
 
   useEffect(() => {
     if (filteredCourses.length > 0 && user && !loading) {
       fetchGradingCounts();
     }
   }, [filteredCourses, user, loading]);
+
+  useEffect(() => {
+    if (filteredCourses.length > 0) {
+      const grouped = groupCoursesByTerm(filteredCourses);
+      setGroupedCourses(grouped);
+    } else {
+      setGroupedCourses([]);
+    }
+  }, [filteredCourses]);
 
   const fetchGradingCounts = async () => {
     if (!user) return;
@@ -136,13 +147,27 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
           <span className="text-sm text-gray-500">Loading grading info...</span>
         )}
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map((course) => (
-          <CourseCard 
-            key={course.id} 
-            course={course} 
-            needsGradingCount={gradingCounts[course.id] || 0}
-          />
+      <div className="space-y-8">
+        {groupedCourses.map(({ term, courses: termCourses }) => (
+          <div key={term.termCode} className="space-y-4">
+            <div className="border-b pb-2">
+              <h2 className="text-xl font-semibold text-foreground">
+                {getTermDisplayName(term)}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {termCourses.length} course{termCourses.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {termCourses.map((course) => (
+                <CourseCard 
+                  key={course.id} 
+                  course={course} 
+                  needsGradingCount={gradingCounts[course.id] || 0}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     </>

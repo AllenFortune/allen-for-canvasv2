@@ -6,11 +6,21 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Loader2, BookOpen, ExternalLink, Search, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { groupCoursesByTerm, getTermDisplayName, type CourseWithTerm } from '@/utils/termUtils';
 
 interface Course {
   id: number;
   name: string;
   course_code: string;
+  term?: {
+    id: number;
+    name: string;
+    start_at?: string | null;
+    end_at?: string | null;
+  };
+  workflow_state?: string;
+  start_at?: string | null;
+  end_at?: string | null;
 }
 
 interface Assignment {
@@ -40,6 +50,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
   loading
 }) => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [groupedCourses, setGroupedCourses] = useState<{ term: any; courses: CourseWithTerm[] }[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedAssignment, setSelectedAssignment] = useState<string>('');
@@ -59,6 +70,8 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
       
       if (data?.courses) {
         setCourses(data.courses);
+        const grouped = groupCoursesByTerm(data.courses);
+        setGroupedCourses(grouped);
       } else {
         throw new Error('No courses data received');
       }
@@ -200,28 +213,30 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
                     <CommandInput placeholder="Search courses..." className="h-9" />
                     <CommandList>
                       <CommandEmpty>No courses found.</CommandEmpty>
-                      <CommandGroup>
-                        {courses.map((course) => (
-                          <CommandItem
-                            key={course.id}
-                            value={`${course.course_code} ${course.name}`}
-                            onSelect={() => {
-                              handleCourseChange(course.id.toString());
-                              setCourseSearchOpen(false);
-                            }}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{course.course_code}</span>
-                              <span className="text-sm text-muted-foreground">{course.name}</span>
-                            </div>
-                            <Check
-                              className={`ml-auto h-4 w-4 ${
-                                selectedCourse === course.id.toString() ? "opacity-100" : "opacity-0"
-                              }`}
-                            />
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
+                      {groupedCourses.map(({ term, courses: termCourses }) => (
+                        <CommandGroup key={term.termCode} heading={getTermDisplayName(term)}>
+                          {termCourses.map((course) => (
+                            <CommandItem
+                              key={course.id}
+                              value={`${course.course_code} ${course.name}`}
+                              onSelect={() => {
+                                handleCourseChange(course.id.toString());
+                                setCourseSearchOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{course.course_code}</span>
+                                <span className="text-sm text-muted-foreground">{course.name}</span>
+                              </div>
+                              <Check
+                                className={`ml-auto h-4 w-4 ${
+                                  selectedCourse === course.id.toString() ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ))}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -313,6 +328,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
               variant="outline" 
               onClick={() => {
                 setCourses([]);
+                setGroupedCourses([]);
                 setAssignments([]);
                 setSelectedCourse('');
                 setSelectedAssignment('');
