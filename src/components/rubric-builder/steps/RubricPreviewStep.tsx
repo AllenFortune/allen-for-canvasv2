@@ -139,8 +139,45 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
     setIsExporting(true);
 
     try {
+      let rubricId = state.generatedRubric.id;
+
+      // If the rubric hasn't been saved to the database yet, save it first
+      if (!rubricId) {
+        const { data: savedRubric, error: saveError } = await supabase
+          .from('rubrics')
+          .insert({
+            user_id: user.id,
+            title: state.rubricTitle,
+            description: state.subjectArea,
+            rubric_type: state.rubricType,
+            points_possible: state.pointsPossible,
+            criteria: state.generatedRubric.criteria as any,
+            performance_levels: state.generatedRubric.performanceLevels as any,
+            source_content: state.assignmentContent,
+            source_type: state.selectedAssignment ? 'canvas_assignment' : 'manual',
+            source_assignment_id: state.selectedAssignment?.id || null,
+            diver_alignment: state.includeDiverAlignment ? state.generatedRubric.diverAlignment as any : null,
+            ai_literacy_components: state.generatedRubric.aiLiteracyComponents as any,
+            status: 'published'
+          })
+          .select()
+          .single();
+
+        if (saveError) throw saveError;
+        
+        rubricId = savedRubric.id;
+        
+        // Update the local state with the saved rubric ID
+        updateState({
+          generatedRubric: {
+            ...state.generatedRubric,
+            id: rubricId
+          }
+        });
+      }
+
       const { data, error } = await supabase.functions.invoke('export-rubric-to-canvas', {
-        body: { rubricId: state.generatedRubric.id }
+        body: { rubricId }
       });
 
       if (error) throw error;
