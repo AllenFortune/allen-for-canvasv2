@@ -103,52 +103,13 @@ const RubricOptionsStep: React.FC<RubricOptionsStepProps> = ({
             <div className="space-y-4">
               <div>
                 <Label htmlFor="subject">Subject Area (Optional)</Label>
-                <Select
-                  value={state.isCustomSubject ? "custom" : state.subjectArea}
-                  onValueChange={(value) => {
-                    if (value === "custom") {
-                      updateState({ 
-                        isCustomSubject: true, 
-                        subjectArea: state.customSubject || '' 
-                      });
-                    } else {
-                      updateState({ 
-                        isCustomSubject: false, 
-                        subjectArea: value,
-                        customSubject: ''
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select subject area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mathematics">Mathematics</SelectItem>
-                    <SelectItem value="english">English Language Arts</SelectItem>
-                    <SelectItem value="science">Science</SelectItem>
-                    <SelectItem value="social-studies">Social Studies</SelectItem>
-                    <SelectItem value="arts">Arts</SelectItem>
-                    <SelectItem value="pe">Physical Education</SelectItem>
-                    <SelectItem value="world-languages">World Languages</SelectItem>
-                    <SelectItem value="cte">Career & Technical Education</SelectItem>
-                    <SelectItem value="custom">Custom Subject</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {state.isCustomSubject && (
-                  <div className="mt-3">
-                    <Input
-                      placeholder="Enter your specific subject (e.g., AP Biology, Calculus II, Creative Writing)"
-                      value={state.customSubject}
-                      onChange={(e) => updateState({ 
-                        customSubject: e.target.value,
-                        subjectArea: e.target.value
-                      })}
-                      className="w-full"
-                    />
-                  </div>
-                )}
+                <Input
+                  id="subject"
+                  placeholder="Enter subject area (e.g., Mathematics, AP Biology, Creative Writing)"
+                  value={state.subjectArea}
+                  onChange={(e) => updateState({ subjectArea: e.target.value })}
+                  className="mt-1"
+                />
               </div>
               
               <div>
