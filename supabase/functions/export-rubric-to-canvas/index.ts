@@ -116,8 +116,36 @@ serve(async (req) => {
     // Convert rubric to Canvas format
     const canvasRubric = convertToCanvasFormat(rubric);
 
-    // Create rubric in Canvas
-    const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${rubric.source_assignment_id ? 'assignments/' + rubric.source_assignment_id + '/' : ''}rubrics`;
+    let courseId = null;
+    
+    // Get course ID if we have a source assignment
+    if (rubric.source_assignment_id) {
+      const assignmentUrl = `${profile.canvas_instance_url}/api/v1/assignments/${rubric.source_assignment_id}`;
+      
+      const assignmentResponse = await fetch(assignmentUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${profile.canvas_access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (assignmentResponse.ok) {
+        const assignmentData = await assignmentResponse.json();
+        courseId = assignmentData.course_id;
+        console.log('Found course ID:', courseId, 'for assignment:', rubric.source_assignment_id);
+      } else {
+        console.warn('Failed to fetch assignment details:', await assignmentResponse.text());
+        throw new Error('Could not retrieve course information for the assignment');
+      }
+    } else {
+      throw new Error('No assignment ID found. Canvas rubrics require a course context.');
+    }
+
+    // Create rubric in Canvas using the correct course-based endpoint
+    const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
+    
+    console.log('Creating rubric at URL:', canvasUrl);
     
     const canvasResponse = await fetch(canvasUrl, {
       method: 'POST',
@@ -130,23 +158,26 @@ serve(async (req) => {
 
     if (!canvasResponse.ok) {
       const errorText = await canvasResponse.text();
+      console.error('Canvas API error response:', errorText);
       throw new Error(`Canvas API error: ${canvasResponse.status} - ${errorText}`);
     }
 
     const canvasRubricData = await canvasResponse.json();
+    console.log('Successfully created Canvas rubric:', canvasRubricData.id);
 
-    // Associate rubric with assignment if source_assignment_id exists
-    if (rubric.source_assignment_id && canvasRubricData.id) {
-      const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${rubric.source_assignment_id}/assignments/${rubric.source_assignment_id}/rubrics/${canvasRubricData.id}`;
+    // Associate rubric with assignment
+    if (rubric.source_assignment_id && canvasRubricData.id && courseId) {
+      const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
       
       const associateResponse = await fetch(associateUrl, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${profile.canvas_access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           rubric_association: {
+            rubric_id: canvasRubricData.id,
             association_type: 'Assignment',
             association_id: rubric.source_assignment_id,
             use_for_grading: true,
@@ -156,7 +187,11 @@ serve(async (req) => {
       });
 
       if (!associateResponse.ok) {
-        console.warn('Failed to associate rubric with assignment:', await associateResponse.text());
+        const associateError = await associateResponse.text();
+        console.warn('Failed to associate rubric with assignment:', associateError);
+        // Don't throw here since the rubric was created successfully
+      } else {
+        console.log('Successfully associated rubric with assignment');
       }
     }
 
