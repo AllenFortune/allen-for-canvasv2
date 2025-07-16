@@ -46,6 +46,8 @@ export interface RubricBuilderState {
   includeDiverAlignment: boolean;
   subjectArea: string;
   gradeLevel: string;
+  customSubject: string;
+  isCustomSubject: boolean;
   generatedRubric: RubricData | null;
   isGenerating: boolean;
   error: string | null;

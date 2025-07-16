@@ -104,8 +104,21 @@ const RubricOptionsStep: React.FC<RubricOptionsStepProps> = ({
               <div>
                 <Label htmlFor="subject">Subject Area (Optional)</Label>
                 <Select
-                  value={state.subjectArea}
-                  onValueChange={(value) => updateState({ subjectArea: value })}
+                  value={state.isCustomSubject ? "custom" : state.subjectArea}
+                  onValueChange={(value) => {
+                    if (value === "custom") {
+                      updateState({ 
+                        isCustomSubject: true, 
+                        subjectArea: state.customSubject || '' 
+                      });
+                    } else {
+                      updateState({ 
+                        isCustomSubject: false, 
+                        subjectArea: value,
+                        customSubject: ''
+                      });
+                    }
+                  }}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select subject area" />
@@ -119,9 +132,23 @@ const RubricOptionsStep: React.FC<RubricOptionsStepProps> = ({
                     <SelectItem value="pe">Physical Education</SelectItem>
                     <SelectItem value="world-languages">World Languages</SelectItem>
                     <SelectItem value="cte">Career & Technical Education</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="custom">Custom Subject</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                {state.isCustomSubject && (
+                  <div className="mt-3">
+                    <Input
+                      placeholder="Enter your specific subject (e.g., AP Biology, Calculus II, Creative Writing)"
+                      value={state.customSubject}
+                      onChange={(e) => updateState({ 
+                        customSubject: e.target.value,
+                        subjectArea: e.target.value
+                      })}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
               
               <div>

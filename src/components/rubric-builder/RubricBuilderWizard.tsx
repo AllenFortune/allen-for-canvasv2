@@ -27,6 +27,8 @@ const RubricBuilderWizard = () => {
     includeDiverAlignment: false,
     subjectArea: '',
     gradeLevel: '',
+    customSubject: '',
+    isCustomSubject: false,
     generatedRubric: null,
     isGenerating: false,
     error: null
