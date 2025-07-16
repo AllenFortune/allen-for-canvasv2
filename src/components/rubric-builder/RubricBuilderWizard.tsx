@@ -48,6 +48,17 @@ const RubricBuilderWizard = () => {
         }
       }
       
+      // Auto-populate points from Canvas assignment
+      if (updates.selectedAssignment) {
+        const pointsPossible = newState.selectedAssignment?.points_possible;
+        if (pointsPossible && pointsPossible > 0) {
+          newState.pointsPossible = pointsPossible;
+        } else if (!newState.selectedAssignment) {
+          // Reset to default when no assignment is selected
+          newState.pointsPossible = 100;
+        }
+      }
+      
       return newState;
     });
   };
