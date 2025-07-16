@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,47 +29,50 @@ import AIAssignmentIntegration from "./pages/AIAssignmentIntegration";
 import InstitutionalInquiry from "./pages/InstitutionalInquiry";
 import AdminPortal from "./pages/AdminPortal";
 import AdminSetup from "./pages/AdminSetup";
+import AIRubricBuilder from "@/pages/AIRubricBuilder";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/canvas-setup" element={<CanvasSetup />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/courses/:courseId" element={<CourseDetail />} />
-            <Route path="/courses/:courseId/assignments/:assignmentId/grade" element={<GradeAssignment />} />
-            <Route path="/courses/:courseId/discussions/:discussionId/grade" element={<GradeDiscussion />} />
-            <Route path="/courses/:courseId/quizzes/:quizId/grade" element={<GradeQuiz />} />
-            <Route path="/assignments" element={<Assignments />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/ai-literacy" element={<AILiteracy />} />
-            <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
-            <Route path="/ai-assignment-integration" element={<AIAssignmentIntegration />} />
-            <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
-            <Route path="/admin-portal" element={<AdminPortal />} />
-            <Route path="/admin-setup" element={<AdminSetup />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClient client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/canvas-setup" element={<CanvasSetup />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:courseId" element={<CourseDetail />} />
+              <Route path="/courses/:courseId/assignments/:assignmentId/grade" element={<GradeAssignment />} />
+              <Route path="/courses/:courseId/discussions/:discussionId/grade" element={<GradeDiscussion />} />
+              <Route path="/courses/:courseId/quizzes/:quizId/grade" element={<GradeQuiz />} />
+              <Route path="/assignments" element={<Assignments />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/ai-literacy" element={<AILiteracy />} />
+              <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
+              <Route path="/ai-assignment-integration" element={<AIAssignmentIntegration />} />
+              <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
+              <Route path="/admin-portal" element={<AdminPortal />} />
+              <Route path="/admin-setup" element={<AdminSetup />} />
+              <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </div>
+        </AuthProvider>
+      </Router>
+    </QueryClient>
+  );
+}
 
 export default App;

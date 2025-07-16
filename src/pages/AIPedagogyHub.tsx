@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,7 +9,7 @@ import { NotifyMeModal } from "@/components/pedagogy/NotifyMeModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, ArrowRight, ClipboardCheck, MessageCircle } from "lucide-react";
+import { BookOpen, ArrowRight, ClipboardCheck, MessageCircle, FileText, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AIPedagogyHub = () => {

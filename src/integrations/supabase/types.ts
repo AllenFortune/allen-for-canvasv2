@@ -256,6 +256,126 @@ export type Database = {
           },
         ]
       }
+      rubric_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          criteria: Json
+          description: string | null
+          diver_alignment: Json | null
+          grade_level: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          performance_levels: Json
+          rubric_type: Database["public"]["Enums"]["rubric_type"]
+          subject_area: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json
+          description?: string | null
+          diver_alignment?: Json | null
+          grade_level?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          performance_levels?: Json
+          rubric_type: Database["public"]["Enums"]["rubric_type"]
+          subject_area?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json
+          description?: string | null
+          diver_alignment?: Json | null
+          grade_level?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          performance_levels?: Json
+          rubric_type?: Database["public"]["Enums"]["rubric_type"]
+          subject_area?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rubrics: {
+        Row: {
+          ai_literacy_components: Json | null
+          canvas_rubric_id: number | null
+          created_at: string
+          criteria: Json
+          description: string | null
+          diver_alignment: Json | null
+          export_log: Json | null
+          exported_to_canvas: boolean | null
+          id: string
+          last_used_at: string | null
+          performance_levels: Json
+          points_possible: number
+          rubric_type: Database["public"]["Enums"]["rubric_type"]
+          source_assignment_id: number | null
+          source_content: string | null
+          source_type: string | null
+          status: Database["public"]["Enums"]["rubric_status"]
+          title: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_literacy_components?: Json | null
+          canvas_rubric_id?: number | null
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          diver_alignment?: Json | null
+          export_log?: Json | null
+          exported_to_canvas?: boolean | null
+          id?: string
+          last_used_at?: string | null
+          performance_levels?: Json
+          points_possible?: number
+          rubric_type?: Database["public"]["Enums"]["rubric_type"]
+          source_assignment_id?: number | null
+          source_content?: string | null
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["rubric_status"]
+          title: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_literacy_components?: Json | null
+          canvas_rubric_id?: number | null
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          diver_alignment?: Json | null
+          export_log?: Json | null
+          exported_to_canvas?: boolean | null
+          id?: string
+          last_used_at?: string | null
+          performance_levels?: Json
+          points_possible?: number
+          rubric_type?: Database["public"]["Enums"]["rubric_type"]
+          source_assignment_id?: number | null
+          source_content?: string | null
+          source_type?: string | null
+          status?: Database["public"]["Enums"]["rubric_status"]
+          title?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       submission_purchases: {
         Row: {
           amount: number
@@ -511,6 +631,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_rubric_usage: {
+        Args: { rubric_id: string }
+        Returns: undefined
+      }
       increment_usage: {
         Args: { user_email: string; user_uuid: string }
         Returns: number
@@ -536,6 +660,8 @@ export type Database = {
       app_role: "admin" | "user"
       referral_status: "pending" | "completed" | "rewarded"
       reward_type: "referrer_bonus" | "referee_bonus"
+      rubric_status: "draft" | "published" | "archived"
+      rubric_type: "analytic" | "holistic" | "single_point"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -666,6 +792,8 @@ export const Constants = {
       app_role: ["admin", "user"],
       referral_status: ["pending", "completed", "rewarded"],
       reward_type: ["referrer_bonus", "referee_bonus"],
+      rubric_status: ["draft", "published", "archived"],
+      rubric_type: ["analytic", "holistic", "single_point"],
     },
   },
 } as const
