@@ -49,6 +49,14 @@ export interface RubricBuilderState {
   generatedRubric: RubricData | null;
   isGenerating: boolean;
   error: string | null;
+  // Alternative property names for compatibility
+  sourceContent?: string;
+  sourceTitle?: string;
+  sourceType?: string;
+  pointsScale?: number;
+  context?: string;
+  includeAILiteracy?: boolean;
+  assignmentId?: string;
 }
 
 export interface RubricTemplate {

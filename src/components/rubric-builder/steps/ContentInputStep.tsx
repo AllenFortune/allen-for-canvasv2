@@ -99,13 +99,13 @@ const ContentInputStep: React.FC<ContentInputStepProps> = ({ state, updateState,
           </CardHeader>
           <CardContent>
             <CanvasAssignmentSelector
-              onAssignmentSelect={(assignment) => {
+              onAssignmentImported={(assignment) => {
                 updateState({ 
                   selectedAssignment: assignment,
-                  assignmentContent: assignment.description || assignment.name 
+                  assignmentContent: assignment.content || assignment.title 
                 });
               }}
-              selectedAssignment={state.selectedAssignment}
+              loading={false}
             />
           </CardContent>
         </Card>

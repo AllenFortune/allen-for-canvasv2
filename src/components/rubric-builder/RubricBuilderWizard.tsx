@@ -75,7 +75,7 @@ const RubricBuilderWizard = () => {
             state={state} 
             updateState={updateState} 
             onNext={nextStep}
-            onPrev={prevStep}
+            onPrevious={prevStep}
           />
         );
       case 3:
@@ -83,7 +83,8 @@ const RubricBuilderWizard = () => {
           <RubricLibraryStep 
             state={state} 
             updateState={updateState} 
-            onPrev={prevStep}
+            onPrevious={prevStep}
+            onRestart={() => setCurrentStep(0)}
           />
         );
       default:

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import RubricBuilderWizard from '@/components/rubric-builder/RubricBuilderWizard';
 
 const AIRubricBuilder = () => {
