@@ -34,12 +34,11 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
     try {
       const { data, error } = await supabase.functions.invoke('generate-ai-rubric', {
         body: {
-          content: state.assignmentContent,
-          title: 'Generated Rubric',
+          assignmentContent: state.assignmentContent,
           rubricType: state.rubricType,
-          pointsScale: state.pointsPossible,
-          context: state.subjectArea,
-          includeAILiteracy: false,
+          pointsPossible: state.pointsPossible,
+          subjectArea: state.subjectArea,
+          gradeLevel: state.gradeLevel,
           includeDiverAlignment: state.includeDiverAlignment
         }
       });
