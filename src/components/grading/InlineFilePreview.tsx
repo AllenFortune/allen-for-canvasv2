@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InlineFilePreviewProps {
   attachment: {
@@ -38,6 +39,37 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
     setError(true);
   };
 
+  // Helper function to detect Canvas file URLs
+  const isCanvasFile = (url: string): boolean => {
+    return url.includes('/files/') && (url.includes('/courses/') || url.includes('canvas'));
+  };
+
+  // Helper function to generate Canvas proxy URL for PDFs
+  const getCanvasProxyUrl = async (fileUrl: string): Promise<string | null> => {
+    try {
+      const response = await supabase.functions.invoke('canvas-file-proxy', {
+        body: { fileUrl }
+      });
+      
+      if (response.error) {
+        console.error('Canvas file proxy error:', response.error);
+        return null;
+      }
+      
+      // The response.data should be the file blob directly
+      if (response.data) {
+        // Create a blob URL from the response data for iframe display
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        return URL.createObjectURL(blob);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error calling Canvas file proxy:', error);
+      return null;
+    }
+  };
+
   const getPreviewContent = () => {
     if (error) {
       return (
@@ -59,41 +91,88 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
 
     // PDF files
     if (contentType.includes('pdf') || fileExtension === 'pdf') {
-      // For Canvas URLs, try multiple preview parameters to force inline display
-      let pdfUrl = attachment.url;
-      if (attachment.url.includes('/files/') && (attachment.url.includes('/courses/') || attachment.url.includes('canvas'))) {
-        // Try multiple Canvas parameters in order of likelihood to work
-        const separator = attachment.url.includes('?') ? '&' : '?';
-        const canvasParams = [
-          'inline=1',
-          'disposition=inline', 
-          'download=0',
-          'wrap=1',
-          'preview=1&inline=1',
-          'verifier='
-        ];
-        
-        // Try the first parameter combination (most likely to work)
-        pdfUrl = `${attachment.url}${separator}${canvasParams[0]}`;
-        console.log('Trying Canvas PDF preview with parameters:', pdfUrl);
-      }
-      
-      return (
-        <div className="relative h-96 bg-white rounded border">
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Skeleton className="w-full h-full" />
+      const PDFPreview = () => {
+        const [proxyUrl, setProxyUrl] = useState<string | null>(null);
+        const [proxyLoading, setProxyLoading] = useState(false);
+        const [proxyError, setProxyError] = useState(false);
+
+        React.useEffect(() => {
+          if (isCanvasFile(attachment.url)) {
+            setProxyLoading(true);
+            getCanvasProxyUrl(attachment.url)
+              .then((url) => {
+                if (url) {
+                  setProxyUrl(url);
+                } else {
+                  setProxyError(true);
+                }
+              })
+              .catch(() => {
+                setProxyError(true);
+              })
+              .finally(() => {
+                setProxyLoading(false);
+              });
+          }
+        }, []);
+
+        // Use proxy URL for Canvas files, direct URL for others
+        const pdfUrl = isCanvasFile(attachment.url) ? proxyUrl : attachment.url;
+
+        if (isCanvasFile(attachment.url) && proxyLoading) {
+          return (
+            <div className="relative h-96 bg-white rounded border">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Skeleton className="w-full h-full" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm text-gray-500">Loading Canvas file...</span>
+                </div>
+              </div>
             </div>
-          )}
-          <iframe
-            src={pdfUrl}
-            className="w-full h-full border-0 rounded"
-            title={fileName}
-            onLoad={handleLoad}
-            onError={handleError}
-          />
-        </div>
-      );
+          );
+        }
+
+        if (isCanvasFile(attachment.url) && proxyError) {
+          return (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-500 bg-gray-50 rounded">
+              <AlertCircle className="w-8 h-8 mb-2" />
+              <p className="text-sm font-medium mb-1">Canvas file preview failed</p>
+              <p className="text-xs text-center mb-3">
+                Unable to load Canvas file. You can download it to view the content.
+              </p>
+              <Button size="sm" asChild>
+                <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                  <Download className="w-3 h-3 mr-1" />
+                  Download from Canvas
+                </a>
+              </Button>
+            </div>
+          );
+        }
+
+        if (!pdfUrl) {
+          return null;
+        }
+
+        return (
+          <div className="relative h-96 bg-white rounded border">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Skeleton className="w-full h-full" />
+              </div>
+            )}
+            <iframe
+              src={pdfUrl}
+              className="w-full h-full border-0 rounded"
+              title={fileName}
+              onLoad={handleLoad}
+              onError={handleError}
+            />
+          </div>
+        );
+      };
+
+      return <PDFPreview />;
     }
 
     // Image files
