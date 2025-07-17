@@ -59,10 +59,23 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
 
     // PDF files
     if (contentType.includes('pdf') || fileExtension === 'pdf') {
-      // For Canvas URLs, try adding preview parameters to force inline display
+      // For Canvas URLs, try multiple preview parameters to force inline display
       let pdfUrl = attachment.url;
       if (attachment.url.includes('/files/') && (attachment.url.includes('/courses/') || attachment.url.includes('canvas'))) {
-        pdfUrl = `${attachment.url}${attachment.url.includes('?') ? '&' : '?'}preview=1`;
+        // Try multiple Canvas parameters in order of likelihood to work
+        const separator = attachment.url.includes('?') ? '&' : '?';
+        const canvasParams = [
+          'inline=1',
+          'disposition=inline', 
+          'download=0',
+          'wrap=1',
+          'preview=1&inline=1',
+          'verifier='
+        ];
+        
+        // Try the first parameter combination (most likely to work)
+        pdfUrl = `${attachment.url}${separator}${canvasParams[0]}`;
+        console.log('Trying Canvas PDF preview with parameters:', pdfUrl);
       }
       
       return (
