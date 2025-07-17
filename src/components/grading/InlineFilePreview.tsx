@@ -46,7 +46,9 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
 
   // Enhanced Canvas file detection
   const isCanvasFile = (url: string): boolean => {
-    const isCanvas = url.includes('/courses/') && (url.includes('/files/') || url.includes('/download'));
+    const isCanvas = url.includes('.instructure.com') && 
+                     url.includes('/files/') && 
+                     url.includes('download');
     console.log('Canvas file detection:', { url, isCanvas });
     return isCanvas;
   };
