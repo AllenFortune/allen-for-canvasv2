@@ -27,22 +27,12 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
   const [error, setError] = useState(false);
   const [proxyUrl, setProxyUrl] = useState<string | null>(null);
   const [proxyLoading, setProxyLoading] = useState(false);
-  const [proxyError, setProxyError] = useState(false);
+  const [proxyError, setProxyError] = useState<string | null>(null);
   const { session } = useAuth();
 
   const fileName = attachment.filename || attachment.display_name || 'Unknown file';
   const contentType = attachment['content-type'] || '';
   const fileExtension = fileName.toLowerCase().split('.').pop() || '';
-
-  const handleLoad = () => {
-    setLoading(false);
-    setError(false);
-  };
-
-  const handleError = () => {
-    setLoading(false);
-    setError(true);
-  };
 
   // Enhanced Canvas file detection
   const isCanvasFile = (url: string): boolean => {
@@ -53,6 +43,28 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
     return isCanvas;
   };
 
+  console.log('🔍 InlineFilePreview render state:', {
+    fileName,
+    contentType,
+    isExpanded,
+    proxyUrl: proxyUrl ? `${proxyUrl.substring(0, 50)}...` : null,
+    proxyLoading,
+    proxyError,
+    isCanvasFile: isCanvasFile(attachment.url)
+  });
+
+  const handleLoad = () => {
+    console.log('✅ File loaded successfully');
+    setLoading(false);
+    setError(false);
+  };
+
+  const handleError = () => {
+    console.log('❌ File failed to load');
+    setLoading(false);
+    setError(true);
+  };
+
   // Enhanced Canvas proxy URL generator with comprehensive logging
   const getCanvasProxyUrl = useCallback(async (fileUrl: string): Promise<string | null> => {
     console.log('🔄 Starting Canvas proxy URL generation for:', fileUrl);
@@ -60,6 +72,7 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
     try {
       if (!session?.access_token) {
         console.error('❌ No session token available for Canvas file proxy');
+        setProxyError('No authentication token available');
         return null;
       }
 
@@ -73,77 +86,96 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
         body: JSON.stringify({ fileUrl })
       });
 
-      console.log('📡 Canvas proxy response status:', response.status);
+      console.log('📡 Canvas proxy response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ Canvas file proxy error:', response.status, errorData);
+        setProxyError(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
         return null;
       }
 
       // Get the binary data as a blob
       const blob = await response.blob();
-      console.log('📄 Blob created:', { size: blob.size, type: blob.type });
+      console.log('📄 Blob created:', { 
+        size: blob.size, 
+        type: blob.type,
+        sizeInMB: (blob.size / 1024 / 1024).toFixed(2) + ' MB'
+      });
       
       // Validate blob size and type
       if (blob.size === 0) {
         console.error('❌ Empty blob received from Canvas proxy');
+        setProxyError('Empty file received from server');
         return null;
+      }
+
+      if (!blob.type.includes('pdf') && !blob.type.includes('application/octet-stream')) {
+        console.warn('⚠️ Unexpected blob type:', blob.type);
       }
 
       // Create a blob URL for iframe display
       const blobUrl = URL.createObjectURL(blob);
       console.log('✅ Blob URL created successfully:', blobUrl);
+      setProxyError(null); // Clear any previous errors
       return blobUrl;
       
     } catch (error) {
       console.error('❌ Error calling Canvas file proxy:', error);
+      setProxyError(error instanceof Error ? error.message : 'Unknown error occurred');
       return null;
     }
   }, [session?.access_token]);
 
   // Effect to manage Canvas proxy URL fetching
   useEffect(() => {
+    console.log('🔄 Proxy effect triggered:', {
+      isExpanded,
+      isCanvasFile: isCanvasFile(attachment.url),
+      isPdf: contentType.includes('pdf'),
+      hasProxyUrl: !!proxyUrl
+    });
+
     if (!isExpanded || !isCanvasFile(attachment.url) || !contentType.includes('pdf')) {
+      console.log('📂 Skipping proxy fetch - conditions not met');
+      return;
+    }
+
+    if (proxyUrl) {
+      console.log('📂 Proxy URL already exists, skipping fetch');
       return;
     }
 
     console.log('🚀 Starting Canvas PDF proxy fetch for expanded preview');
     setProxyLoading(true);
-    setProxyError(false);
+    setProxyError(null);
     
     getCanvasProxyUrl(attachment.url)
       .then((url) => {
         if (url) {
-          console.log('✅ Canvas proxy URL generated successfully');
+          console.log('✅ Setting proxy URL in state:', url.substring(0, 50) + '...');
           setProxyUrl(url);
         } else {
           console.error('❌ Canvas proxy URL generation failed');
-          setProxyError(true);
+          if (!proxyError) {
+            setProxyError('Failed to generate proxy URL');
+          }
         }
       })
       .catch((error) => {
         console.error('❌ Error getting Canvas proxy URL:', error);
-        setProxyError(true);
+        setProxyError(error instanceof Error ? error.message : 'Unknown error');
       })
       .finally(() => {
         setProxyLoading(false);
       });
+  }, [attachment.url, isExpanded, contentType, getCanvasProxyUrl, proxyUrl, proxyError]);
 
-    // Cleanup function
-    return () => {
-      if (proxyUrl) {
-        console.log('🧹 Cleaning up blob URL:', proxyUrl);
-        URL.revokeObjectURL(proxyUrl);
-      }
-    };
-  }, [attachment.url, isExpanded, getCanvasProxyUrl]);
-
-  // Cleanup blob URL when component unmounts or URL changes
+  // Cleanup blob URL when component unmounts
   useEffect(() => {
     return () => {
-      if (proxyUrl) {
-        console.log('🧹 Component cleanup - revoking blob URL:', proxyUrl);
+      if (proxyUrl && proxyUrl.startsWith('blob:')) {
+        console.log('🧹 Component unmount cleanup - revoking blob URL:', proxyUrl);
         URL.revokeObjectURL(proxyUrl);
       }
     };
@@ -192,18 +224,36 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
                 <p className="text-sm text-muted-foreground mb-2">
                   Unable to preview this Canvas PDF file
                 </p>
+                {proxyError && (
+                  <p className="text-xs text-red-600 mb-2 font-mono bg-red-50 p-2 rounded">
+                    Error: {proxyError}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mb-2">
                   This may be due to Canvas permissions or file access restrictions.
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.open(attachment.url, '_blank')}
-                  className="mt-2"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download File
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      console.log('🔄 Manual retry requested');
+                      setProxyUrl(null);
+                      setProxyError(null);
+                    }}
+                    className="mr-2"
+                  >
+                    Retry Preview
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.open(attachment.url, '_blank')}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download File
+                  </Button>
+                </div>
               </div>
             </div>
           );
