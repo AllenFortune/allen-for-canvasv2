@@ -59,6 +59,12 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
 
     // PDF files
     if (contentType.includes('pdf') || fileExtension === 'pdf') {
+      // For Canvas URLs, try adding preview parameters to force inline display
+      let pdfUrl = attachment.url;
+      if (attachment.url.includes('/files/') && (attachment.url.includes('/courses/') || attachment.url.includes('canvas'))) {
+        pdfUrl = `${attachment.url}${attachment.url.includes('?') ? '&' : '?'}preview=1`;
+      }
+      
       return (
         <div className="relative h-96 bg-white rounded border">
           {loading && (
@@ -67,7 +73,7 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
             </div>
           )}
           <iframe
-            src={attachment.url}
+            src={pdfUrl}
             className="w-full h-full border-0 rounded"
             title={fileName}
             onLoad={handleLoad}
