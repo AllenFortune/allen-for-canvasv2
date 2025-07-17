@@ -18,9 +18,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log('📡 Canvas file proxy request received');
+    
     // Get authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('❌ Missing authorization header');
       return new Response(JSON.stringify({
         error: 'Missing authorization header'
       }), {
@@ -48,7 +51,7 @@ serve(async (req) => {
     // Get user from token
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      console.error('User authentication error:', userError);
+      console.error('❌ User authentication error:', userError);
       return new Response(JSON.stringify({
         error: 'User not authenticated'
       }), {
@@ -60,9 +63,14 @@ serve(async (req) => {
       });
     }
 
+    console.log('✅ User authenticated:', user.email);
+
     // Get request body
     const { fileUrl } = await req.json();
+    console.log('🔗 File URL:', fileUrl);
+    
     if (!fileUrl) {
+      console.error('❌ Missing fileUrl parameter');
       return new Response(JSON.stringify({
         error: 'Missing fileUrl parameter'
       }), {
@@ -82,7 +90,7 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profile?.canvas_access_token) {
-      console.error('Canvas credentials error:', profileError);
+      console.error('❌ Canvas credentials error:', profileError);
       return new Response(JSON.stringify({
         error: 'Canvas credentials not found'
       }), {
@@ -94,7 +102,8 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Fetching Canvas file: ${fileUrl}`);
+    console.log('✅ Canvas credentials found for instance:', profile.canvas_instance_url);
+    console.log('📡 Fetching Canvas file:', fileUrl);
 
     // Fetch the file from Canvas with proper authorization
     const fileResponse = await fetch(fileUrl, {
@@ -104,10 +113,15 @@ serve(async (req) => {
       }
     });
 
+    console.log('📡 Canvas response status:', fileResponse.status);
+    console.log('📡 Canvas response headers:', Object.fromEntries(fileResponse.headers.entries()));
+
     if (!fileResponse.ok) {
-      console.error(`Canvas file fetch error: ${fileResponse.status} ${fileResponse.statusText}`);
+      const errorText = await fileResponse.text().catch(() => 'Unknown error');
+      console.error(`❌ Canvas file fetch error: ${fileResponse.status} ${fileResponse.statusText}`, errorText);
       return new Response(JSON.stringify({
-        error: `Failed to fetch file from Canvas: ${fileResponse.status} ${fileResponse.statusText}`
+        error: `Failed to fetch file from Canvas: ${fileResponse.status} ${fileResponse.statusText}`,
+        details: errorText
       }), {
         headers: {
           ...corsHeaders,
@@ -121,17 +135,23 @@ serve(async (req) => {
     const fileBuffer = await fileResponse.arrayBuffer();
     
     // Get original content type from Canvas response
-    const contentType = fileResponse.headers.get('Content-Type') || 'application/octet-stream';
+    const contentType = fileResponse.headers.get('Content-Type') || 'application/pdf';
+    const contentLength = fileBuffer.byteLength;
+    
+    console.log('✅ File fetched successfully:', {
+      contentType,
+      contentLength: `${contentLength} bytes`,
+      size: `${(contentLength / 1024 / 1024).toFixed(2)} MB`
+    });
     
     // Create response headers, forcing inline display
     const responseHeaders = {
       ...corsHeaders,
       'Content-Type': contentType,
       'Content-Disposition': 'inline', // Force inline display instead of download
-      'Cache-Control': 'private, max-age=3600' // Cache for 1 hour
+      'Cache-Control': 'private, max-age=3600', // Cache for 1 hour
+      'Content-Length': contentLength.toString()
     };
-
-    console.log(`Successfully proxied Canvas file, Content-Type: ${contentType}`);
 
     return new Response(fileBuffer, {
       headers: responseHeaders,
@@ -139,7 +159,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`Error in Canvas file proxy:`, error);
+    console.error('❌ Canvas file proxy error:', error);
     return new Response(JSON.stringify({
       error: error.message || 'An unknown error occurred'
     }), {
