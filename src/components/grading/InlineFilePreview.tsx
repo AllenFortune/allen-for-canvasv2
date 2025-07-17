@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InlineFilePreviewProps {
   attachment: {
@@ -24,6 +25,7 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { session } = useAuth();
 
   const fileName = attachment.filename || attachment.display_name || 'Unknown file';
   const contentType = attachment['content-type'] || '';
@@ -47,23 +49,32 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
   // Helper function to generate Canvas proxy URL for PDFs
   const getCanvasProxyUrl = async (fileUrl: string): Promise<string | null> => {
     try {
-      const response = await supabase.functions.invoke('canvas-file-proxy', {
-        body: { fileUrl }
-      });
-      
-      if (response.error) {
-        console.error('Canvas file proxy error:', response.error);
+      if (!session?.access_token) {
+        console.error('No session token available for Canvas file proxy');
         return null;
       }
-      
-      // The response.data should be the file blob directly
-      if (response.data) {
-        // Create a blob URL from the response data for iframe display
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        return URL.createObjectURL(blob);
+
+      const response = await fetch('https://fnxbysvezshnikqboplh.supabase.co/functions/v1/canvas-file-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ fileUrl })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Canvas file proxy error:', response.status, errorData);
+        return null;
       }
+
+      // Get the binary data as a blob
+      const blob = await response.blob();
       
-      return null;
+      // Create a blob URL for iframe display
+      return URL.createObjectURL(blob);
+      
     } catch (error) {
       console.error('Error calling Canvas file proxy:', error);
       return null;
@@ -114,7 +125,23 @@ const InlineFilePreview: React.FC<InlineFilePreviewProps> = ({
                 setProxyLoading(false);
               });
           }
+
+          // Cleanup blob URL on unmount
+          return () => {
+            if (proxyUrl) {
+              URL.revokeObjectURL(proxyUrl);
+            }
+          };
         }, []);
+
+        // Cleanup blob URL when URL changes
+        React.useEffect(() => {
+          return () => {
+            if (proxyUrl) {
+              URL.revokeObjectURL(proxyUrl);
+            }
+          };
+        }, [proxyUrl]);
 
         // Use proxy URL for Canvas files, direct URL for others
         const pdfUrl = isCanvasFile(attachment.url) ? proxyUrl : attachment.url;
