@@ -13,6 +13,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
@@ -55,7 +56,7 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, schoolName);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
@@ -119,18 +120,32 @@ const Auth = () => {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {!isLogin && (
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
-                  className="mt-1"
-                  placeholder="Enter your full name"
-                />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                    className="mt-1"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="schoolName">School/Institution (Optional)</Label>
+                  <Input
+                    id="schoolName"
+                    type="text"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter your school or institution"
+                  />
+                </div>
+              </>
             )}
 
             <div>
