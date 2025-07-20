@@ -118,6 +118,177 @@ export const useVoiceControls = (context?: any) => {
     return course;
   }, [context?.courses]);
 
+  // Helper function to find assignments by name
+  const findAssignmentByQuery = useCallback((query: string) => {
+    console.log('Voice Command Debug - findAssignmentByQuery called with:', query);
+    console.log('Voice Command Debug - context.assignments:', context?.assignments);
+    
+    if (!context?.assignments || !Array.isArray(context.assignments)) {
+      console.log('Voice Command Debug - No assignments found in context');
+      return null;
+    }
+
+    const normalizedQuery = query.toLowerCase().trim();
+    console.log('Voice Command Debug - Normalized query:', normalizedQuery);
+    
+    // Try exact name match
+    let assignment = context.assignments.find((a: any) => 
+      a.name.toLowerCase() === normalizedQuery
+    );
+    
+    if (assignment) {
+      console.log('Voice Command Debug - Found exact assignment match:', assignment.name);
+      return assignment;
+    }
+
+    // Try partial name match
+    assignment = context.assignments.find((a: any) => 
+      a.name.toLowerCase().includes(normalizedQuery)
+    );
+    
+    if (assignment) {
+      console.log('Voice Command Debug - Found partial assignment match:', assignment.name);
+      return assignment;
+    }
+
+    // Try word-by-word matching
+    const queryWords = normalizedQuery.split(/\s+/);
+    assignment = context.assignments.find((a: any) => {
+      const nameWords = a.name.toLowerCase().split(/\s+/);
+      const allWordsFound = queryWords.every(queryWord => 
+        nameWords.some(nameWord => nameWord.includes(queryWord))
+      );
+      
+      if (allWordsFound) {
+        console.log('Voice Command Debug - Found word-by-word assignment match:', a.name);
+        return true;
+      }
+      
+      return false;
+    });
+
+    if (!assignment) {
+      console.log('Voice Command Debug - No assignment found for query:', query);
+      console.log('Voice Command Debug - Available assignments:', context.assignments.map((a: any) => a.name));
+    }
+
+    return assignment;
+  }, [context?.assignments]);
+
+  // Helper function to find discussions by name
+  const findDiscussionByQuery = useCallback((query: string) => {
+    console.log('Voice Command Debug - findDiscussionByQuery called with:', query);
+    console.log('Voice Command Debug - context.discussions:', context?.discussions);
+    
+    if (!context?.discussions || !Array.isArray(context.discussions)) {
+      console.log('Voice Command Debug - No discussions found in context');
+      return null;
+    }
+
+    const normalizedQuery = query.toLowerCase().trim();
+    console.log('Voice Command Debug - Normalized query:', normalizedQuery);
+    
+    // Try exact title match
+    let discussion = context.discussions.find((d: any) => 
+      d.title.toLowerCase() === normalizedQuery
+    );
+    
+    if (discussion) {
+      console.log('Voice Command Debug - Found exact discussion match:', discussion.title);
+      return discussion;
+    }
+
+    // Try partial title match
+    discussion = context.discussions.find((d: any) => 
+      d.title.toLowerCase().includes(normalizedQuery)
+    );
+    
+    if (discussion) {
+      console.log('Voice Command Debug - Found partial discussion match:', discussion.title);
+      return discussion;
+    }
+
+    // Try word-by-word matching
+    const queryWords = normalizedQuery.split(/\s+/);
+    discussion = context.discussions.find((d: any) => {
+      const titleWords = d.title.toLowerCase().split(/\s+/);
+      const allWordsFound = queryWords.every(queryWord => 
+        titleWords.some(titleWord => titleWord.includes(queryWord))
+      );
+      
+      if (allWordsFound) {
+        console.log('Voice Command Debug - Found word-by-word discussion match:', d.title);
+        return true;
+      }
+      
+      return false;
+    });
+
+    if (!discussion) {
+      console.log('Voice Command Debug - No discussion found for query:', query);
+      console.log('Voice Command Debug - Available discussions:', context.discussions.map((d: any) => d.title));
+    }
+
+    return discussion;
+  }, [context?.discussions]);
+
+  // Helper function to find quizzes by name
+  const findQuizByQuery = useCallback((query: string) => {
+    console.log('Voice Command Debug - findQuizByQuery called with:', query);
+    console.log('Voice Command Debug - context.quizzes:', context?.quizzes);
+    
+    if (!context?.quizzes || !Array.isArray(context.quizzes)) {
+      console.log('Voice Command Debug - No quizzes found in context');
+      return null;
+    }
+
+    const normalizedQuery = query.toLowerCase().trim();
+    console.log('Voice Command Debug - Normalized query:', normalizedQuery);
+    
+    // Try exact title match
+    let quiz = context.quizzes.find((q: any) => 
+      q.title.toLowerCase() === normalizedQuery
+    );
+    
+    if (quiz) {
+      console.log('Voice Command Debug - Found exact quiz match:', quiz.title);
+      return quiz;
+    }
+
+    // Try partial title match
+    quiz = context.quizzes.find((q: any) => 
+      q.title.toLowerCase().includes(normalizedQuery)
+    );
+    
+    if (quiz) {
+      console.log('Voice Command Debug - Found partial quiz match:', quiz.title);
+      return quiz;
+    }
+
+    // Try word-by-word matching
+    const queryWords = normalizedQuery.split(/\s+/);
+    quiz = context.quizzes.find((q: any) => {
+      const titleWords = q.title.toLowerCase().split(/\s+/);
+      const allWordsFound = queryWords.every(queryWord => 
+        titleWords.some(titleWord => titleWord.includes(queryWord))
+      );
+      
+      if (allWordsFound) {
+        console.log('Voice Command Debug - Found word-by-word quiz match:', q.title);
+        return true;
+      }
+      
+      return false;
+    });
+
+    if (!quiz) {
+      console.log('Voice Command Debug - No quiz found for query:', query);
+      console.log('Voice Command Debug - Available quizzes:', context.quizzes.map((q: any) => q.title));
+    }
+
+    return quiz;
+  }, [context?.quizzes]);
+
   // Voice commands registry
   const commands: VoiceCommand[] = [
     // Navigation commands
@@ -185,6 +356,119 @@ export const useVoiceControls = (context?: any) => {
       },
       description: 'Open a course using alternative syntax',
       context: ['courses']
+    },
+    
+    // Course detail page commands
+    {
+      pattern: /^(show assignments|view assignments|assignments tab)$/i,
+      action: () => {
+        const assignmentsTab = document.querySelector('[data-value="assignments"]') as HTMLElement;
+        if (assignmentsTab) {
+          assignmentsTab.click();
+          toast({ title: 'Switched to assignments tab' });
+        }
+      },
+      description: 'Switch to assignments tab',
+      context: ['course-detail']
+    },
+    {
+      pattern: /^(show discussions|view discussions|discussions tab)$/i,
+      action: () => {
+        const discussionsTab = document.querySelector('[data-value="discussions"]') as HTMLElement;
+        if (discussionsTab) {
+          discussionsTab.click();
+          toast({ title: 'Switched to discussions tab' });
+        }
+      },
+      description: 'Switch to discussions tab',
+      context: ['course-detail']
+    },
+    {
+      pattern: /^(show quizzes|view quizzes|quizzes tab)$/i,
+      action: () => {
+        const quizzesTab = document.querySelector('[data-value="quizzes"]') as HTMLElement;
+        if (quizzesTab) {
+          quizzesTab.click();
+          toast({ title: 'Switched to quizzes tab' });
+        }
+      },
+      description: 'Switch to quizzes tab',
+      context: ['course-detail']
+    },
+    {
+      pattern: /^(grade assignment|grade) (.+)$/i,
+      action: (matches) => {
+        const assignmentName = matches[2];
+        console.log('Voice Command Debug - Attempting to grade assignment:', assignmentName);
+        const assignment = findAssignmentByQuery(assignmentName);
+        
+        if (assignment) {
+          const courseId = location.pathname.split('/')[2];
+          console.log('Voice Command Debug - Found assignment, navigating to grade:', `/courses/${courseId}/assignments/${assignment.id}/grade`);
+          navigate(`/courses/${courseId}/assignments/${assignment.id}/grade`);
+          toast({ title: `Grading ${assignment.name}` });
+        } else {
+          console.log('Voice Command Debug - Assignment not found, showing error');
+          const availableAssignments = context?.assignments?.map((a: any) => a.name).slice(0, 5) || [];
+          toast({ 
+            title: 'Assignment Not Found', 
+            description: `Could not find assignment matching "${assignmentName}". Available assignments include: ${availableAssignments.join(', ')}${availableAssignments.length >= 5 ? '...' : ''}`,
+            variant: 'destructive'
+          });
+        }
+      },
+      description: 'Grade a specific assignment by name',
+      context: ['course-detail']
+    },
+    {
+      pattern: /^(grade discussion|discussion) (.+)$/i,
+      action: (matches) => {
+        const discussionName = matches[2];
+        console.log('Voice Command Debug - Attempting to grade discussion:', discussionName);
+        const discussion = findDiscussionByQuery(discussionName);
+        
+        if (discussion) {
+          const courseId = location.pathname.split('/')[2];
+          console.log('Voice Command Debug - Found discussion, navigating to grade:', `/courses/${courseId}/discussions/${discussion.id}/grade`);
+          navigate(`/courses/${courseId}/discussions/${discussion.id}/grade`);
+          toast({ title: `Grading ${discussion.title}` });
+        } else {
+          console.log('Voice Command Debug - Discussion not found, showing error');
+          const availableDiscussions = context?.discussions?.map((d: any) => d.title).slice(0, 5) || [];
+          toast({ 
+            title: 'Discussion Not Found', 
+            description: `Could not find discussion matching "${discussionName}". Available discussions include: ${availableDiscussions.join(', ')}${availableDiscussions.length >= 5 ? '...' : ''}`,
+            variant: 'destructive'
+          });
+        }
+      },
+      description: 'Grade a specific discussion by name',
+      context: ['course-detail']
+    },
+    {
+      pattern: /^(grade quiz|quiz) (.+)$/i,
+      action: (matches) => {
+        const quizName = matches[2];
+        console.log('Voice Command Debug - Attempting to grade quiz:', quizName);
+        const quiz = findQuizByQuery(quizName);
+        
+        if (quiz) {
+          const courseId = location.pathname.split('/')[2];
+          console.log('Voice Command Debug - Found quiz, navigating to grade:', `/courses/${courseId}/quizzes/${quiz.id}/grade`);
+          navigate(`/courses/${courseId}/quizzes/${quiz.id}/grade`);
+          toast({ title: `Grading ${quiz.title}` });
+        } else {
+          console.log('Voice Command Debug - Quiz not found, showing error');
+          const availableQuizzes = context?.quizzes?.map((q: any) => q.title).slice(0, 5) || [];
+          toast({ 
+            title: 'Quiz Not Found', 
+            description: `Could not find quiz matching "${quizName}". Available quizzes include: ${availableQuizzes.join(', ')}${availableQuizzes.length >= 5 ? '...' : ''}`,
+            variant: 'destructive'
+          });
+        }
+      },
+      description: 'Grade a specific quiz by name',
+      context: ['course-detail']
     },
     
     // Grading commands (only active in grading context)
@@ -385,6 +669,9 @@ export const useVoiceControls = (context?: any) => {
     }
     if (location.pathname === '/courses') {
       return 'courses';
+    }
+    if (location.pathname.match(/^\/courses\/\d+$/)) {
+      return 'course-detail';
     }
     return 'general';
   }, [location.pathname]);

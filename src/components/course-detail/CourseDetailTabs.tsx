@@ -80,7 +80,7 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
   return (
     <Tabs defaultValue="assignments" className="w-full">
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="assignments" className="relative">
+        <TabsTrigger value="assignments" data-value="assignments" className="relative">
           Assignments
           {assignmentsNeedingGrading > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -88,7 +88,7 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="discussions" className="relative">
+        <TabsTrigger value="discussions" data-value="discussions" className="relative">
           Discussions
           {discussionsNeedingGrading > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -96,7 +96,7 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="quizzes" className="relative">
+        <TabsTrigger value="quizzes" data-value="quizzes" className="relative">
           Quizzes
           {quizzesNeedingGrading > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -104,8 +104,8 @@ const CourseDetailTabs: React.FC<CourseDetailTabsProps> = ({
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="students">Students</TabsTrigger>
-        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <TabsTrigger value="students" data-value="students">Students</TabsTrigger>
+        <TabsTrigger value="analytics" data-value="analytics">Analytics</TabsTrigger>
       </TabsList>
       
       <TabsContent value="assignments" className="mt-6">
