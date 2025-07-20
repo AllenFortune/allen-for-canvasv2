@@ -73,7 +73,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   };
 
   return (
-    <Card className="sticky top-6">
+    <Card>
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-blue-600" />
