@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RefreshCw, Filter, Info, AlertCircle } from 'lucide-react';
+import VoiceControls from '@/components/VoiceControls';
 
 interface CourseFiltersProps {
   filter: string;
@@ -45,6 +46,7 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? 'Refreshing...' : 'Refresh Courses'}
         </Button>
+        <VoiceControls className="ml-2" />
       </div>
       
       {error && (

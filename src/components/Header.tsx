@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import VoiceControls from "@/components/VoiceControls";
 
 interface UserProfile {
   full_name?: string;
@@ -144,8 +143,6 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
-          {user && <VoiceControls />}
-          
           {user ? (
             <>
               <span className="text-sm text-gray-600 hidden sm:inline">
