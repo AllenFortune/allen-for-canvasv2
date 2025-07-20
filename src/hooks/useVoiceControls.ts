@@ -34,6 +34,34 @@ export const useVoiceControls = (context?: any) => {
   const recognitionRef = useRef<any>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
+  // Helper function to find courses by name or code
+  const findCourseByQuery = useCallback((query: string) => {
+    if (!context?.courses || !Array.isArray(context.courses)) {
+      return null;
+    }
+
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // First try exact matches
+    let course = context.courses.find((c: any) => 
+      c.name.toLowerCase().includes(normalizedQuery) ||
+      c.course_code.toLowerCase().includes(normalizedQuery)
+    );
+
+    // If no exact match, try partial matches
+    if (!course) {
+      course = context.courses.find((c: any) => {
+        const nameWords = c.name.toLowerCase().split(/\s+/);
+        const codeWords = c.course_code.toLowerCase().split(/\s+/);
+        
+        return nameWords.some((word: string) => word.includes(normalizedQuery)) ||
+               codeWords.some((word: string) => word.includes(normalizedQuery));
+      });
+    }
+
+    return course;
+  }, [context?.courses]);
+
   // Voice commands registry
   const commands: VoiceCommand[] = [
     // Navigation commands
@@ -51,6 +79,48 @@ export const useVoiceControls = (context?: any) => {
       pattern: /^(assignments|show assignments|go to assignments)$/i,
       action: () => navigate('/assignments'),
       description: 'Navigate to assignments'
+    },
+    
+    // Course-specific commands (only active on courses page)
+    {
+      pattern: /^(open course|view course|go to course) (.+)$/i,
+      action: (matches) => {
+        const courseName = matches[2];
+        const course = findCourseByQuery(courseName);
+        
+        if (course) {
+          navigate(`/courses/${course.id}`);
+          toast({ title: `Opening ${course.name}` });
+        } else {
+          toast({ 
+            title: 'Course Not Found', 
+            description: `Could not find course matching "${courseName}"`,
+            variant: 'destructive'
+          });
+        }
+      },
+      description: 'Open a specific course by name or code',
+      context: ['courses']
+    },
+    {
+      pattern: /^(open|view|go to) (.+) course$/i,
+      action: (matches) => {
+        const courseName = matches[2];
+        const course = findCourseByQuery(courseName);
+        
+        if (course) {
+          navigate(`/courses/${course.id}`);
+          toast({ title: `Opening ${course.name}` });
+        } else {
+          toast({ 
+            title: 'Course Not Found', 
+            description: `Could not find course matching "${courseName}"`,
+            variant: 'destructive'
+          });
+        }
+      },
+      description: 'Open a course using alternative syntax',
+      context: ['courses']
     },
     
     // Grading commands (only active in grading context)
@@ -249,6 +319,9 @@ export const useVoiceControls = (context?: any) => {
     if (location.pathname.includes('/grade')) {
       return 'grading';
     }
+    if (location.pathname === '/courses') {
+      return 'courses';
+    }
     return 'general';
   }, [location.pathname]);
 
@@ -285,7 +358,7 @@ export const useVoiceControls = (context?: any) => {
       description: `Could not understand: "${transcript}"`,
       variant: 'destructive'
     });
-  }, [commands, context, getCurrentContext, toast]);
+  }, [commands, context, getCurrentContext, toast, findCourseByQuery]);
 
   const startListening = useCallback(() => {
     if (!state.isSupported) {

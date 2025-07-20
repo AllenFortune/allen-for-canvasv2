@@ -35,6 +35,7 @@ const Courses = () => {
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
                 error={error}
+                courses={courses}
               />
             </div>
 

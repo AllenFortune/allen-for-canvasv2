@@ -11,6 +11,7 @@ interface CourseFiltersProps {
   onRefresh: () => void;
   refreshing: boolean;
   error?: string | null;
+  courses: any[];
 }
 
 const CourseFilters: React.FC<CourseFiltersProps> = ({
@@ -18,7 +19,8 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
   setFilter,
   onRefresh,
   refreshing,
-  error
+  error,
+  courses
 }) => {
   return (
     <div className="space-y-3">
@@ -46,7 +48,7 @@ const CourseFilters: React.FC<CourseFiltersProps> = ({
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? 'Refreshing...' : 'Refresh Courses'}
         </Button>
-        <VoiceControls className="ml-2" />
+        <VoiceControls context={{ courses }} className="ml-2" />
       </div>
       
       {error && (
