@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -36,27 +35,84 @@ export const useVoiceControls = (context?: any) => {
 
   // Helper function to find courses by name or code
   const findCourseByQuery = useCallback((query: string) => {
+    console.log('Voice Command Debug - findCourseByQuery called with:', query);
+    console.log('Voice Command Debug - context.courses:', context?.courses);
+    
     if (!context?.courses || !Array.isArray(context.courses)) {
+      console.log('Voice Command Debug - No courses found in context');
       return null;
     }
 
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    // First try exact matches
-    let course = context.courses.find((c: any) => 
-      c.name.toLowerCase().includes(normalizedQuery) ||
-      c.course_code.toLowerCase().includes(normalizedQuery)
-    );
+    console.log('Voice Command Debug - Available courses:', context.courses.map((c: any) => ({ id: c.id, name: c.name, course_code: c.course_code })));
 
-    // If no exact match, try partial matches
+    const normalizedQuery = query.toLowerCase().trim();
+    console.log('Voice Command Debug - Normalized query:', normalizedQuery);
+    
+    // First try exact name matches
+    let course = context.courses.find((c: any) => 
+      c.name.toLowerCase() === normalizedQuery
+    );
+    
+    if (course) {
+      console.log('Voice Command Debug - Found exact name match:', course.name);
+      return course;
+    }
+
+    // Try exact course code matches
+    course = context.courses.find((c: any) => 
+      c.course_code && c.course_code.toLowerCase() === normalizedQuery
+    );
+    
+    if (course) {
+      console.log('Voice Command Debug - Found exact code match:', course.name);
+      return course;
+    }
+
+    // Try partial name matches (contains)
+    course = context.courses.find((c: any) => 
+      c.name.toLowerCase().includes(normalizedQuery)
+    );
+    
+    if (course) {
+      console.log('Voice Command Debug - Found partial name match:', course.name);
+      return course;
+    }
+
+    // Try partial code matches (contains) 
+    course = context.courses.find((c: any) => 
+      c.course_code && c.course_code.toLowerCase().includes(normalizedQuery)
+    );
+    
+    if (course) {
+      console.log('Voice Command Debug - Found partial code match:', course.name);
+      return course;
+    }
+
+    // Try word-by-word matching for more flexible search
+    const queryWords = normalizedQuery.split(/\s+/);
+    console.log('Voice Command Debug - Query words:', queryWords);
+    
+    course = context.courses.find((c: any) => {
+      const nameWords = c.name.toLowerCase().split(/\s+/);
+      const codeWords = c.course_code ? c.course_code.toLowerCase().split(/\s+/) : [];
+      
+      // Check if all query words are found in the course name or code
+      const allWordsFound = queryWords.every(queryWord => 
+        nameWords.some(nameWord => nameWord.includes(queryWord)) ||
+        codeWords.some(codeWord => codeWord.includes(queryWord))
+      );
+      
+      if (allWordsFound) {
+        console.log('Voice Command Debug - Found word-by-word match:', c.name);
+        return true;
+      }
+      
+      return false;
+    });
+
     if (!course) {
-      course = context.courses.find((c: any) => {
-        const nameWords = c.name.toLowerCase().split(/\s+/);
-        const codeWords = c.course_code.toLowerCase().split(/\s+/);
-        
-        return nameWords.some((word: string) => word.includes(normalizedQuery)) ||
-               codeWords.some((word: string) => word.includes(normalizedQuery));
-      });
+      console.log('Voice Command Debug - No course found for query:', query);
+      console.log('Voice Command Debug - Available course names:', context.courses.map((c: any) => c.name));
     }
 
     return course;
@@ -86,15 +142,19 @@ export const useVoiceControls = (context?: any) => {
       pattern: /^(open course|view course|go to course) (.+)$/i,
       action: (matches) => {
         const courseName = matches[2];
+        console.log('Voice Command Debug - Attempting to open course:', courseName);
         const course = findCourseByQuery(courseName);
         
         if (course) {
+          console.log('Voice Command Debug - Successfully found course, navigating to:', `/courses/${course.id}`);
           navigate(`/courses/${course.id}`);
           toast({ title: `Opening ${course.name}` });
         } else {
+          console.log('Voice Command Debug - Course not found, showing error');
+          const availableCourses = context?.courses?.map((c: any) => c.name).slice(0, 5) || [];
           toast({ 
             title: 'Course Not Found', 
-            description: `Could not find course matching "${courseName}"`,
+            description: `Could not find course matching "${courseName}". Available courses include: ${availableCourses.join(', ')}${availableCourses.length >= 5 ? '...' : ''}`,
             variant: 'destructive'
           });
         }
@@ -106,15 +166,19 @@ export const useVoiceControls = (context?: any) => {
       pattern: /^(open|view|go to) (.+) course$/i,
       action: (matches) => {
         const courseName = matches[2];
+        console.log('Voice Command Debug - Attempting to open course (alt syntax):', courseName);
         const course = findCourseByQuery(courseName);
         
         if (course) {
+          console.log('Voice Command Debug - Successfully found course, navigating to:', `/courses/${course.id}`);
           navigate(`/courses/${course.id}`);
           toast({ title: `Opening ${course.name}` });
         } else {
+          console.log('Voice Command Debug - Course not found, showing error');
+          const availableCourses = context?.courses?.map((c: any) => c.name).slice(0, 5) || [];
           toast({ 
             title: 'Course Not Found', 
-            description: `Could not find course matching "${courseName}"`,
+            description: `Could not find course matching "${courseName}". Available courses include: ${availableCourses.join(', ')}${availableCourses.length >= 5 ? '...' : ''}`,
             variant: 'destructive'
           });
         }
