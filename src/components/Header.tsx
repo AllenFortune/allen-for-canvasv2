@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import VoiceControls from "@/components/VoiceControls";
 
 interface UserProfile {
   full_name?: string;
@@ -111,7 +112,7 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 flex items-center justify-center">
@@ -143,6 +144,8 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
+          {user && <VoiceControls />}
+          
           {user ? (
             <>
               <span className="text-sm text-gray-600 hidden sm:inline">

@@ -11,6 +11,7 @@ import SubmissionIndicator from './SubmissionIndicator';
 import AIGradingSection from './AIGradingSection';
 import ActionButtons from './ActionButtons';
 import AIGradeReview from './AIGradeReview';
+import VoiceControls from '@/components/VoiceControls';
 
 interface EnhancedGradingFormProps {
   assignment: Assignment | null;
@@ -72,12 +73,34 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
     }
   };
 
+  // Voice controls context - pass all the necessary functions and state
+  const voiceContext = {
+    setGradeInput,
+    setCommentInput,
+    onSaveGrade,
+    onAIGrading: handleAIAssistedGrading,
+    setUseRubricForAI,
+    setIsSummativeAssessment,
+    setUseCustomPrompt,
+    setCustomPrompt,
+    // Current state for voice commands to reference
+    gradeInput,
+    commentInput,
+    useRubricForAI,
+    isSummativeAssessment,
+    useCustomPrompt,
+    customPrompt
+  };
+
   return (
     <Card>
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <Award className="w-5 h-5 text-blue-600" />
-          <CardTitle>Grade & Feedback</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-blue-600" />
+            <CardTitle>Grade & Feedback</CardTitle>
+          </div>
+          <VoiceControls context={voiceContext} />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

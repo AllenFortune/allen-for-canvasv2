@@ -7,6 +7,7 @@ import EnhancedAssignmentHeader from '@/components/grading/EnhancedAssignmentHea
 import GradeAssignmentContent from '@/components/grading/GradeAssignmentContent';
 import ErrorDisplay from '@/components/grading/ErrorDisplay';
 import LoadingDisplay from '@/components/grading/LoadingDisplay';
+import FloatingVoiceControls from '@/components/FloatingVoiceControls';
 import { useGradeAssignment } from '@/hooks/useGradeAssignment';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -56,6 +57,9 @@ const GradeAssignment = () => {
             setSubmissions={setSubmissions}
           />
         </div>
+        
+        {/* Floating voice controls for mobile */}
+        <FloatingVoiceControls />
       </div>
     </ProtectedRoute>
   );
