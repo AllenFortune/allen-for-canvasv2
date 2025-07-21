@@ -123,6 +123,33 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
     }
   };
 
+  // Create voice context for grading actions
+  const voiceContext = {
+    // Grading functions
+    setGradeInput,
+    setCommentInput: setFeedbackInput,
+    onAIGrading: handleAIGrading,
+    onSaveGrade: handleSaveGrade,
+    
+    // Assessment type toggles
+    setIsSummativeAssessment,
+    setUseRubricForAI,
+    setUseCustomPrompt,
+    
+    // Current state
+    gradeInput,
+    feedbackInput,
+    isSummativeAssessment,
+    useRubricForAI,
+    useCustomPrompt,
+    
+    // Navigation
+    onUserChange,
+    currentUserIndex,
+    totalUsers,
+    user
+  };
+
   return (
     <div className="space-y-6">
       <DiscussionStudentNavigation
@@ -160,6 +187,7 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
           onSaveGrade={handleSaveGrade}
           isGenerating={isGenerating}
           saving={saving}
+          voiceContext={voiceContext}
         />
 
         <AIGradeReview 

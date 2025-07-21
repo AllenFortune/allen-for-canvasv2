@@ -46,6 +46,27 @@ const GradeDiscussion = () => {
     console.warn('No discussion data found and not loading');
   }
 
+  // Create voice context for discussion grading
+  const voiceContext = {
+    discussion,
+    entries,
+    grades,
+    saveGrade,
+    setEntries,
+    setGrades,
+    // Add navigation functions that will be available in the grading form
+    participants: entries.reduce((acc, entry) => {
+      const userId = entry.user_id;
+      if (!acc.find(p => p.id === userId)) {
+        acc.push({
+          id: userId,
+          name: entry.user.name || entry.user.display_name || `User ${userId}`
+        });
+      }
+      return acc;
+    }, [] as Array<{ id: number; name: string }>)
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -56,6 +77,7 @@ const GradeDiscussion = () => {
             discussion={discussion}
             entries={entries}
             grades={grades}
+            voiceContext={voiceContext}
           />
 
           {error && (

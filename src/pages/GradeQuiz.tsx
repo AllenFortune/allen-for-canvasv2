@@ -77,6 +77,23 @@ const GradeQuiz = () => {
     setSubmissions(updatedSubmissions);
   };
 
+  // Create voice context for quiz grading
+  const voiceContext = {
+    quiz,
+    questions,
+    submissions,
+    gradeQuestion,
+    handleGradeUpdate,
+    setSubmissions: handleSetSubmissions,
+    submissionAnswers,
+    // Add navigation functions
+    students: submissions.map(s => ({
+      id: s.user_id,
+      name: s.user?.name || s.user?.display_name || `User ${s.user_id}`,
+      submissionId: s.id
+    }))
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -88,6 +105,7 @@ const GradeQuiz = () => {
             submissions={submissions}
             questions={questions}
             onRefreshSubmissions={refreshSubmissions}
+            voiceContext={voiceContext}
           />
 
           {error && (

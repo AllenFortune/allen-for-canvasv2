@@ -5,19 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Users, MessageSquare, BarChart3, ArrowLeft } from 'lucide-react';
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import DiscussionGradingStatusCard from './DiscussionGradingStatusCard';
+import VoiceControls from '@/components/VoiceControls';
 
 interface EnhancedDiscussionHeaderProps {
   courseId: string;
   discussion: Discussion | null;
   entries: DiscussionEntry[];
   grades: DiscussionGrade[];
+  voiceContext?: any;
 }
 
 const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
   courseId,
   discussion,
   entries,
-  grades
+  grades,
+  voiceContext
 }) => {
   const navigate = useNavigate();
 
@@ -65,15 +68,20 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
     <div className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Breadcrumb and Navigation */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <button 
-            onClick={() => navigate(`/courses/${courseId}`)}
-            className="hover:text-gray-700 transition-colors"
-          >
-            Course
-          </button>
-          <span>/</span>
-          <span>Grade Discussion</span>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <button 
+              onClick={() => navigate(`/courses/${courseId}`)}
+              className="hover:text-gray-700 transition-colors"
+            >
+              Course
+            </button>
+            <span>/</span>
+            <span>Grade Discussion</span>
+          </div>
+          
+          {/* Voice Controls in top-right */}
+          <VoiceControls context={voiceContext} />
         </div>
 
         <div className="flex items-center gap-4 mb-6">

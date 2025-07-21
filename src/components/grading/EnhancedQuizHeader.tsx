@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, Users, FileText, CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import VoiceControls from '@/components/VoiceControls';
 
 interface Quiz {
   id: number;
@@ -34,6 +36,7 @@ interface EnhancedQuizHeaderProps {
   submissions: QuizSubmission[];
   questions: QuizQuestion[];
   onRefreshSubmissions?: () => Promise<boolean>;
+  voiceContext?: any;
 }
 
 const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
@@ -41,10 +44,12 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
   quiz,
   submissions,
   questions,
-  onRefreshSubmissions
+  onRefreshSubmissions,
+  voiceContext
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  
   if (!quiz) {
     return (
       <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -115,27 +120,32 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Back Navigation Button */}
+        {/* Back Navigation Button and Voice Controls */}
         <div className="mb-4 flex items-center justify-between gap-4">
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/courses/${courseId}`} className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Course
-            </Link>
-          </Button>
-          
-          {onRefreshSubmissions && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefreshSubmissions}
-              disabled={isRefreshing}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/courses/${courseId}`} className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Course
+              </Link>
             </Button>
-          )}
+            
+            {onRefreshSubmissions && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshSubmissions}
+                disabled={isRefreshing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
+              </Button>
+            )}
+          </div>
+          
+          {/* Voice Controls in top-right */}
+          <VoiceControls context={voiceContext} />
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

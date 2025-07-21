@@ -19,8 +19,12 @@ const FloatingVoiceControls: React.FC<FloatingVoiceControlsProps> = ({ context }
     toggleListening
   } = useVoiceControls(context);
 
-  // Show only on grading pages (not on main navigation pages)
-  const shouldShow = location.pathname.includes('/grade') && isSupported && isVisible;
+  // Show only on assignment grading pages (not discussion or quiz grading)
+  const shouldShow = location.pathname.includes('/grade') && 
+                    !location.pathname.includes('/discussions/') && 
+                    !location.pathname.includes('/quizzes/') && 
+                    isSupported && 
+                    isVisible;
 
   if (!shouldShow) {
     return null;
