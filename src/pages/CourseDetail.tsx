@@ -9,7 +9,6 @@ import CourseHeader from '@/components/course-detail/CourseHeader';
 import CourseInfoCards from '@/components/course-detail/CourseInfoCards';
 import GradingAlert from '@/components/course-detail/GradingAlert';
 import CourseDetailTabs from '@/components/course-detail/CourseDetailTabs';
-import FloatingVoiceControls from '@/components/FloatingVoiceControls';
 import { Course, getCachedSession, withRetry } from '@/utils/courseUtils';
 import { useQuizSubmissionsData } from '@/hooks/useQuizSubmissionsData';
 
@@ -383,10 +382,10 @@ const CourseDetail = () => {
               courseId={courseId}
               quizSubmissionsMap={quizSubmissionsMap}
               quizSubmissionsLoading={quizSubmissionsLoading}
+              voiceControlsContext={voiceControlsContext}
             />
           </div>
         </div>
-        <FloatingVoiceControls context={voiceControlsContext} />
       </div>
     </ProtectedRoute>
   );
