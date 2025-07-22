@@ -53,7 +53,7 @@ const AIAssignmentIntegration = () => {
         <div className="py-12">
           <div className="max-w-6xl mx-auto px-6">
             {/* Header Section */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 pt-16">
               <div className="flex items-center justify-center mb-4">
                 <BookText className="w-8 h-8 text-primary mr-3" />
                 <h1 className="text-3xl font-bold text-foreground">AI Assignment Integration</h1>
