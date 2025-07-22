@@ -159,35 +159,35 @@ serve(async (req) => {
     console.log('Full Canvas API Response:', JSON.stringify(canvasRubricData, null, 2));
 
     // Extract rubric ID with multiple fallback strategies
-    let rubricId: number | null = null;
+    let canvasRubricId: number | null = null;
     
     if (canvasRubricData?.id) {
-      rubricId = canvasRubricData.id;
-      console.log('Found rubric ID directly:', rubricId);
+      canvasRubricId = canvasRubricData.id;
+      console.log('Found rubric ID directly:', canvasRubricId);
     } else if (canvasRubricData?.rubric?.id) {
-      rubricId = canvasRubricData.rubric.id;
-      console.log('Found rubric ID in nested rubric object:', rubricId);
+      canvasRubricId = canvasRubricData.rubric.id;
+      console.log('Found rubric ID in nested rubric object:', canvasRubricId);
     } else if (Array.isArray(canvasRubricData) && canvasRubricData[0]?.id) {
-      rubricId = canvasRubricData[0].id;
-      console.log('Found rubric ID in array response:', rubricId);
+      canvasRubricId = canvasRubricData[0].id;
+      console.log('Found rubric ID in array response:', canvasRubricId);
     } else {
       console.error('Could not extract rubric ID from Canvas response. Full response:', canvasRubricData);
       throw new Error('Canvas API did not return a valid rubric ID. Please check the Canvas response structure.');
     }
 
-    if (!rubricId) {
+    if (!canvasRubricId) {
       throw new Error('Failed to extract rubric ID from Canvas response');
     }
 
-    console.log('Successfully created Canvas rubric with ID:', rubricId);
+    console.log('Successfully created Canvas rubric with ID:', canvasRubricId);
 
     // Associate rubric with assignment
-    if (rubric.source_assignment_id && rubricId && courseId) {
+    if (rubric.source_assignment_id && canvasRubricId && courseId) {
       const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
       
       console.log('Associating rubric with assignment at URL:', associateUrl);
       console.log('Association data:', {
-        rubric_id: rubricId,
+        rubric_id: canvasRubricId,
         association_type: 'Assignment',
         association_id: rubric.source_assignment_id,
         use_for_grading: true,
@@ -202,7 +202,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           rubric_association: {
-            rubric_id: rubricId,
+            rubric_id: canvasRubricId,
             association_type: 'Assignment',
             association_id: rubric.source_assignment_id,
             use_for_grading: true,
@@ -228,7 +228,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('rubrics')
       .update({
-        canvas_rubric_id: rubricId,
+        canvas_rubric_id: canvasRubricId,
         exported_to_canvas: true,
         usage_count: (rubric.usage_count || 0) + 1,
         last_used_at: new Date().toISOString(),
@@ -236,7 +236,7 @@ serve(async (req) => {
           exported_at: new Date().toISOString(),
           canvas_response: canvasRubricData,
           success: true,
-          rubric_id: rubricId
+          rubric_id: canvasRubricId
         },
         updated_at: new Date().toISOString()
       })
@@ -249,11 +249,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        canvasRubricId: rubricId,
+        canvasRubricId: canvasRubricId,
         message: 'Rubric successfully exported to Canvas',
         debugInfo: {
           canvasResponse: canvasRubricData,
-          extractedRubricId: rubricId
+          extractedRubricId: canvasRubricId
         }
       }),
       {
