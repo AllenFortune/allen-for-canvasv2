@@ -89,7 +89,7 @@ const GradeQuiz = () => {
     // Add navigation functions
     students: submissions.map(s => ({
       id: s.user_id,
-      name: s.user?.name || s.user?.display_name || `User ${s.user_id}`,
+      name: s.user?.name || `User ${s.user_id}`,
       submissionId: s.id
     }))
   };

@@ -187,7 +187,6 @@ const DiscussionGradingForm: React.FC<DiscussionGradingFormProps> = ({
           onSaveGrade={handleSaveGrade}
           isGenerating={isGenerating}
           saving={saving}
-          voiceContext={voiceContext}
         />
 
         <AIGradeReview 
