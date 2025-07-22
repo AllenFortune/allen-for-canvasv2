@@ -107,21 +107,25 @@ const AIAssignmentIntegration = () => {
               </Collapsible>
             </div>
 
-            {/* Main Content - Single Column Flow */}
+            {/* Main Content - Improved container with better overflow handling */}
             <div className="max-w-4xl mx-auto space-y-8">
-              {/* Input Section */}
-              <AssignmentInputForm 
-                onIntegrationGenerated={handleIntegrationGenerated}
-                loading={loading}
-                setLoading={setLoading}
-              />
+              {/* Input Section - Removed height constraints */}
+              <div className="w-full">
+                <AssignmentInputForm 
+                  onIntegrationGenerated={handleIntegrationGenerated}
+                  loading={loading}
+                  setLoading={setLoading}
+                />
+              </div>
 
               {/* Results Section */}
               {integration && (
-                <DiverSuggestions 
-                  integration={integration} 
-                  originalAssignment={originalAssignment}
-                />
+                <div className="w-full">
+                  <DiverSuggestions 
+                    integration={integration} 
+                    originalAssignment={originalAssignment}
+                  />
+                </div>
               )}
             </div>
           </div>
