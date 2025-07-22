@@ -43,11 +43,16 @@ interface CanvasAssignmentSelectorProps {
     assignmentId?: string;
   }) => void;
   loading: boolean;
+  // New props for export mode
+  exportMode?: boolean;
+  onAssignmentSelected?: (courseId: string, assignmentId: string) => void;
 }
 
 const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
   onAssignmentImported,
-  loading
+  loading,
+  exportMode = false,
+  onAssignmentSelected
 }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [groupedCourses, setGroupedCourses] = useState<{ term: any; courses: CourseWithTerm[] }[]>([]);
@@ -166,12 +171,33 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
     }
   };
 
+  const handleAssignmentChange = (assignmentId: string) => {
+    setSelectedAssignment(assignmentId);
+    
+    // In export mode, immediately notify parent of selection
+    if (exportMode && onAssignmentSelected && selectedCourse) {
+      onAssignmentSelected(selectedCourse, assignmentId);
+    }
+  };
+
+  // In export mode, call onAssignmentImported with the selection info
+  React.useEffect(() => {
+    if (exportMode && selectedCourse && selectedAssignment && onAssignmentImported) {
+      onAssignmentImported({
+        title: '',
+        content: '',
+        courseId: selectedCourse,
+        assignmentId: selectedAssignment
+      });
+    }
+  }, [selectedCourse, selectedAssignment, exportMode, onAssignmentImported]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
           <BookOpen className="w-6 h-6 mr-2" />
-          Import from Canvas
+          {exportMode ? 'Select Canvas Assignment' : 'Import from Canvas'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -278,7 +304,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
                               key={assignment.id}
                               value={assignment.name}
                               onSelect={() => {
-                                setSelectedAssignment(assignment.id.toString());
+                                handleAssignmentChange(assignment.id.toString());
                                 setAssignmentSearchOpen(false);
                               }}
                             >
@@ -304,7 +330,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
               </div>
             )}
 
-            {selectedAssignment && (
+            {!exportMode && selectedAssignment && (
               <Button 
                 onClick={importAssignment}
                 disabled={importingAssignment || loading}

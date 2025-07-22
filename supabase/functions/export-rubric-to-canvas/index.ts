@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
@@ -29,6 +30,7 @@ interface RubricData {
   criteria: RubricCriterion[];
   performance_levels: string[];
   source_assignment_id?: number;
+  course_id?: number;
   user_id: string;
 }
 
@@ -90,26 +92,26 @@ serve(async (req) => {
 
     const { rubricId } = await req.json();
 
-  // Get the rubric from database
-  const { data: rubric, error: rubricError } = await supabase
-    .from('rubrics')
-    .select('*')
-    .eq('id', rubricId)
-    .eq('user_id', user.id)
-    .single();
+    // Get the rubric from database
+    const { data: rubric, error: rubricError } = await supabase
+      .from('rubrics')
+      .select('*')
+      .eq('id', rubricId)
+      .eq('user_id', user.id)
+      .single();
 
-  if (rubricError || !rubric) {
-    throw new Error('Rubric not found');
-  }
+    if (rubricError || !rubric) {
+      throw new Error('Rubric not found');
+    }
 
-  // Check if assignment ID and course ID are available
-  if (!rubric.source_assignment_id || !rubric.course_id) {
-    const missingFields = [];
-    if (!rubric.source_assignment_id) missingFields.push('assignment ID');
-    if (!rubric.course_id) missingFields.push('course ID');
-    
-    throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
-  }
+    // Check if assignment ID and course ID are available
+    if (!rubric.source_assignment_id || !rubric.course_id) {
+      const missingFields = [];
+      if (!rubric.source_assignment_id) missingFields.push('assignment ID');
+      if (!rubric.course_id) missingFields.push('course ID');
+      
+      throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
+    }
 
     // Get user's Canvas credentials
     const { data: profile, error: profileError } = await supabase
@@ -182,12 +184,14 @@ serve(async (req) => {
       }
     }
 
-    // Update the rubric in our database
+    // Update the rubric in our database and increment usage count
     const { error: updateError } = await supabase
       .from('rubrics')
       .update({
         canvas_rubric_id: canvasRubricData.id,
         exported_to_canvas: true,
+        usage_count: (rubric.usage_count || 0) + 1,
+        last_used_at: new Date().toISOString(),
         export_log: {
           exported_at: new Date().toISOString(),
           canvas_response: canvasRubricData,

@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Library, Download, Trash2, Eye, Plus } from 'lucide-react';
+import { Loader2, Library, Download, Trash2, Eye, Plus, Upload } from 'lucide-react';
 import { RubricBuilderState } from '@/types/rubric';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import RubricViewModal from '../RubricViewModal';
+import AssignmentExportModal from '../AssignmentExportModal';
 
 interface RubricLibraryStepProps {
   state: RubricBuilderState;
@@ -26,6 +28,8 @@ interface SavedRubric {
   created_at: string;
   usage_count: number | null;
   status: string;
+  exported_to_canvas: boolean | null;
+  canvas_rubric_id: number | null;
 }
 
 const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
@@ -39,6 +43,8 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewingRubric, setViewingRubric] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportingRubric, setExportingRubric] = useState<{id: string, title: string} | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -49,7 +55,7 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
     try {
       const { data, error } = await supabase
         .from('rubrics')
-        .select('id, title, description, rubric_type, points_possible, created_at, usage_count, status')
+        .select('id, title, description, rubric_type, points_possible, created_at, usage_count, status, exported_to_canvas, canvas_rubric_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -106,6 +112,18 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
     setViewingRubric(null);
   };
 
+  const handleExportToAssignment = (rubric: SavedRubric) => {
+    setExportingRubric({ id: rubric.id, title: rubric.title });
+    setExportModalOpen(true);
+  };
+
+  const handleCloseExportModal = () => {
+    setExportModalOpen(false);
+    setExportingRubric(null);
+    // Refresh rubrics to show updated export status
+    fetchRubrics();
+  };
+
   useEffect(() => {
     fetchRubrics();
   }, [user]);
@@ -157,12 +175,17 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
                           {rubric.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Badge variant="secondary">{rubric.rubric_type}</Badge>
                         <Badge variant="outline">{rubric.points_possible} points</Badge>
                         <Badge variant="outline">
                           Used {rubric.usage_count || 0} times
                         </Badge>
+                        {rubric.exported_to_canvas && (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Exported to Canvas
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
                         Created {new Date(rubric.created_at).toLocaleDateString()}
@@ -174,10 +197,19 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleViewRubric(rubric.id)}
+                        title="View rubric details"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleExportToAssignment(rubric)}
+                        title="Export to Canvas assignment"
+                      >
+                        <Upload className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Download rubric">
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button 
@@ -185,6 +217,7 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
                         size="sm"
                         onClick={() => deleteRubric(rubric.id)}
                         disabled={deleting === rubric.id}
+                        title="Delete rubric"
                       >
                         {deleting === rubric.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -215,6 +248,15 @@ const RubricLibraryStep: React.FC<RubricLibraryStepProps> = ({
         onClose={handleCloseModal}
         rubricId={viewingRubric}
       />
+
+      {exportingRubric && (
+        <AssignmentExportModal
+          isOpen={exportModalOpen}
+          onClose={handleCloseExportModal}
+          rubricId={exportingRubric.id}
+          rubricTitle={exportingRubric.title}
+        />
+      )}
     </div>
   );
 };
