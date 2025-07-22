@@ -100,9 +100,19 @@ const ContentInputStep: React.FC<ContentInputStepProps> = ({ state, updateState,
           <CardContent>
             <CanvasAssignmentSelector
               onAssignmentImported={(assignment) => {
-                updateState({ 
-                  selectedAssignment: assignment,
-                  assignmentContent: assignment.content || assignment.title 
+                updateState({
+                  assignmentContent: assignment.content,
+                  sourceContent: assignment.content,
+                  rubricTitle: assignment.title,
+                  sourceTitle: assignment.title,
+                  selectedAssignment: {
+                    ...assignment,
+                    id: parseInt(assignment.assignmentId || '0'), // Convert string to number for Canvas API
+                    course_id: parseInt(assignment.courseId || '0')
+                  },
+                  subjectArea: assignment.subject || '',
+                  gradeLevel: assignment.gradeLevel || '',
+                  assignmentId: assignment.assignmentId
                 });
               }}
               loading={false}

@@ -23,6 +23,7 @@ export interface RubricData {
   performanceLevels: string[];
   sourceType?: 'canvas_assignment' | 'manual_input' | 'file_upload';
   sourceAssignmentId?: number;
+  courseId?: number;
   sourceContent?: string;
   diverAlignment?: {
     components?: string[];

@@ -308,6 +308,7 @@ export type Database = {
         Row: {
           ai_literacy_components: Json | null
           canvas_rubric_id: number | null
+          course_id: number | null
           created_at: string
           criteria: Json
           description: string | null
@@ -331,6 +332,7 @@ export type Database = {
         Insert: {
           ai_literacy_components?: Json | null
           canvas_rubric_id?: number | null
+          course_id?: number | null
           created_at?: string
           criteria?: Json
           description?: string | null
@@ -354,6 +356,7 @@ export type Database = {
         Update: {
           ai_literacy_components?: Json | null
           canvas_rubric_id?: number | null
+          course_id?: number | null
           created_at?: string
           criteria?: Json
           description?: string | null

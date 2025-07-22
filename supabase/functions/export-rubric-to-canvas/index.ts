@@ -90,17 +90,26 @@ serve(async (req) => {
 
     const { rubricId } = await req.json();
 
-    // Get the rubric from database
-    const { data: rubric, error: rubricError } = await supabase
-      .from('rubrics')
-      .select('*')
-      .eq('id', rubricId)
-      .eq('user_id', user.id)
-      .single();
+  // Get the rubric from database
+  const { data: rubric, error: rubricError } = await supabase
+    .from('rubrics')
+    .select('*')
+    .eq('id', rubricId)
+    .eq('user_id', user.id)
+    .single();
 
-    if (rubricError || !rubric) {
-      throw new Error('Rubric not found');
-    }
+  if (rubricError || !rubric) {
+    throw new Error('Rubric not found');
+  }
+
+  // Check if assignment ID and course ID are available
+  if (!rubric.source_assignment_id || !rubric.course_id) {
+    const missingFields = [];
+    if (!rubric.source_assignment_id) missingFields.push('assignment ID');
+    if (!rubric.course_id) missingFields.push('course ID');
+    
+    throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
+  }
 
     // Get user's Canvas credentials
     const { data: profile, error: profileError } = await supabase
@@ -116,31 +125,9 @@ serve(async (req) => {
     // Convert rubric to Canvas format
     const canvasRubric = convertToCanvasFormat(rubric);
 
-    let courseId = null;
-    
-    // Get course ID if we have a source assignment
-    if (rubric.source_assignment_id) {
-      const assignmentUrl = `${profile.canvas_instance_url}/api/v1/assignments/${rubric.source_assignment_id}`;
-      
-      const assignmentResponse = await fetch(assignmentUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (assignmentResponse.ok) {
-        const assignmentData = await assignmentResponse.json();
-        courseId = assignmentData.course_id;
-        console.log('Found course ID:', courseId, 'for assignment:', rubric.source_assignment_id);
-      } else {
-        console.warn('Failed to fetch assignment details:', await assignmentResponse.text());
-        throw new Error('Could not retrieve course information for the assignment');
-      }
-    } else {
-      throw new Error('No assignment ID found. Canvas rubrics require a course context.');
-    }
+    // Use the course ID from the rubric record
+    const courseId = rubric.course_id;
+    console.log('Using course ID:', courseId, 'for assignment:', rubric.source_assignment_id);
 
     // Create rubric in Canvas using the correct course-based endpoint
     const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
