@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, ArrowLeft, FileText } from 'lucide-react';
 
 interface MetadataStepProps {
@@ -15,6 +17,12 @@ interface MetadataStepProps {
   setGradeLevel: (value: string) => void;
   estimatedTime: string;
   setEstimatedTime: (value: string) => void;
+  classFormat: string;
+  setClassFormat: (value: string) => void;
+  assignmentType: string;
+  setAssignmentType: (value: string) => void;
+  completionLocation: string;
+  setCompletionLocation: (value: string) => void;
   onPrevious: () => void;
   onSubmit: () => void;
   loading: boolean;
@@ -30,6 +38,12 @@ const MetadataStep: React.FC<MetadataStepProps> = ({
   setGradeLevel,
   estimatedTime,
   setEstimatedTime,
+  classFormat,
+  setClassFormat,
+  assignmentType,
+  setAssignmentType,
+  completionLocation,
+  setCompletionLocation,
   onPrevious,
   onSubmit,
   loading
@@ -37,11 +51,11 @@ const MetadataStep: React.FC<MetadataStepProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold mb-2">Optional Details</h3>
-        <p className="text-muted-foreground text-sm">Add subject and grade level for more targeted suggestions.</p>
+        <h3 className="text-lg font-semibold mb-2">Assignment Context</h3>
+        <p className="text-muted-foreground text-sm">Add context information for more targeted AI suggestions.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="subject">Subject</Label>
           <Select value={subject} onValueChange={onSubjectChange}>
@@ -94,6 +108,55 @@ const MetadataStep: React.FC<MetadataStepProps> = ({
           onChange={e => setEstimatedTime(e.target.value)} 
           placeholder="e.g., 2 weeks, 3 class periods" 
         />
+      </div>
+
+      {/* New contextual fields */}
+      <div className="space-y-6 pt-4 border-t">
+        <h4 className="font-medium text-foreground">Assignment Context</h4>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Class Format</Label>
+            <RadioGroup value={classFormat} onValueChange={setClassFormat}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="online" id="online" />
+                <Label htmlFor="online" className="text-sm font-normal">Online Class</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="in-person" id="in-person" />
+                <Label htmlFor="in-person" className="text-sm font-normal">In-Person Class</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Assignment Type</Label>
+            <RadioGroup value={assignmentType} onValueChange={setAssignmentType}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="discussion" id="discussion" />
+                <Label htmlFor="discussion" className="text-sm font-normal">Discussion</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="assignment" id="assignment" />
+                <Label htmlFor="assignment" className="text-sm font-normal">Assignment</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Completion Location</Label>
+            <RadioGroup value={completionLocation} onValueChange={setCompletionLocation}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="in-class" id="in-class" />
+                <Label htmlFor="in-class" className="text-sm font-normal">In-Class</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="outside-class" id="outside-class" />
+                <Label htmlFor="outside-class" className="text-sm font-normal">Outside Class</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between pt-4">

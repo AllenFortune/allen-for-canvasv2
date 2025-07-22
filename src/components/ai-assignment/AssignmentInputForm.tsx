@@ -27,6 +27,11 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [canvasIds, setCanvasIds] = useState<{courseId?: string; assignmentId?: string}>({});
   
+  // New contextual state
+  const [classFormat, setClassFormat] = useState('');
+  const [assignmentType, setAssignmentType] = useState('');
+  const [completionLocation, setCompletionLocation] = useState('');
+  
   // Wizard state
   const [currentStep, setCurrentStep] = useState('method');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -35,7 +40,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const steps = [
     { id: 'method', title: 'Choose Method', description: 'How to input assignment' },
     { id: 'content', title: 'Assignment Details', description: 'Title and content' },
-    { id: 'metadata', title: 'Optional Details', description: 'Subject and grade level' }
+    { id: 'metadata', title: 'Assignment Context', description: 'Subject and contextual details' }
   ];
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +133,10 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
           assignmentText,
           subject: getSubjectValue(),
           gradeLevel,
-          estimatedTime
+          estimatedTime,
+          classFormat,
+          assignmentType,
+          completionLocation
         }
       });
       if (error) throw error;
@@ -138,6 +146,9 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         subject: getSubjectValue(),
         gradeLevel,
         estimatedTime,
+        classFormat,
+        assignmentType,
+        completionLocation,
         courseId: canvasIds.courseId,
         assignmentId: canvasIds.assignmentId
       };
@@ -173,7 +184,13 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
             setAssignmentText={setAssignmentText}
             inputMethod={inputMethod}
             file={file}
-            onFileUpload={handleFileUpload}
+            onFileUpload={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const uploadedFile = event.target.files?.[0];
+              if (uploadedFile) {
+                setFile(uploadedFile);
+                setAssignmentText(`[File uploaded: ${uploadedFile.name}]`);
+              }
+            }}
             onNext={handleNext}
             onPrevious={handlePrevious}
             canProceed={canProceedFromContent}
@@ -192,6 +209,12 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
             setGradeLevel={setGradeLevel}
             estimatedTime={estimatedTime}
             setEstimatedTime={setEstimatedTime}
+            classFormat={classFormat}
+            setClassFormat={setClassFormat}
+            assignmentType={assignmentType}
+            setAssignmentType={setAssignmentType}
+            completionLocation={completionLocation}
+            setCompletionLocation={setCompletionLocation}
             onPrevious={handlePrevious}
             onSubmit={handleSubmit}
             loading={loading}
