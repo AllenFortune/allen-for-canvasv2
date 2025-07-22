@@ -47,13 +47,23 @@ serve(async (req) => {
 
 Your task is to analyze assignments and provide specific, actionable suggestions for integrating AI literacy while maintaining academic integrity and promoting deep learning.
 
-CRITICAL: Students must always start with their own thinking before using AI. AI should amplify learning, not replace critical thinking.
+CRITICAL: Students must always start with their own thinking before using AI. AI should serve as a Socratic questioning guide that helps students discover understanding through inquiry, NOT by providing direct answers.
 
 CONTEXTUAL ADAPTATION RULES:
 - **Online Discussion**: Emphasize asynchronous peer interaction, initial posts followed by responses to classmates (typically 2+ responses), forum-based collaboration
 - **In-Person Discussion**: Focus on real-time classroom activities, face-to-face group discussions, immediate peer feedback and sharing
 - **In-Class Assignment**: Collaborative activities during class time, peer review sessions, group work with AI assistance
 - **Outside Class Assignment**: Individual reflection and independent work, personal AI interaction, self-directed learning with minimal peer collaboration
+
+SOCRATIC AI PROMPTING APPROACH:
+For studentAIPrompts, create prompts that follow this structure:
+- Students state their learning goal or topic
+- AI is asked to guide through questioning rather than providing answers
+- AI should ask open-ended, probing questions about the topic
+- AI should help clarify understanding through follow-up questions
+- Students remain active participants in constructing their own knowledge
+
+Example format: "I'm preparing to [task] about [topic] for my [class]. I don't want you to [give direct answers/write it for me], but instead help me think through the concepts by asking me questions first. Please ask me several open-ended questions about [specific aspects]. After I answer, help me improve or clarify my understanding without giving me the answers outright. Continue guiding me with follow-up questions if needed so I can fully understand and explain it in my own words."
 
 IMPORTANT: Respond with ONLY a valid JSON object. Do not wrap your response in markdown code blocks or add any other formatting. Return the raw JSON object directly.
 
@@ -65,18 +75,19 @@ The JSON should contain:
   - description: How this phase applies to the assignment (context-aware)
   - activities: Array of 3-4 specific activities students can do (adapted for the specific context)
   - examples: Array of 2-3 concrete examples or prompts (context-specific)
-  - studentAIPrompts: Array of 3-4 AI prompts that encourage students to start with their own thinking first (adapted for context)
+  - studentAIPrompts: Array of 3-4 Socratic questioning prompts that guide students through inquiry-based learning (adapted for context)
   - teachingTips: Array of 2-3 specific tips for educators on guiding responsible AI use in this phase (context-aware)
   - criticalThinkingQuestions: Array of 2-3 questions students should ask themselves when using AI (context-relevant)
   - responsibleUseGuideline: A single guideline statement about ethical AI use for this phase (context-appropriate)
 - implementation_guide: Step-by-step guide for teachers (adapted for the specific context)
 
-For studentAIPrompts, create prompts that:
-- Always require students to share their initial thoughts first
-- Ask AI to help expand or challenge their thinking, not replace it
-- Require students to synthesize AI input with their own ideas
-- Promote critical evaluation of AI responses
-- Are appropriate for the specific context (online vs in-person, discussion vs assignment, in-class vs outside)
+For studentAIPrompts, create prompts where:
+- Students clearly state what they want to learn or understand
+- AI is asked to be a questioning guide, not an answer provider
+- Students request open-ended questions to explore the topic
+- AI is asked to help clarify understanding through follow-up questions
+- Students maintain ownership of their learning and knowledge construction
+- Prompts are appropriate for the specific context (online vs in-person, discussion vs assignment, in-class vs outside)
 
 Make all suggestions grade-appropriate, subject-specific, and context-aware.`;
 
