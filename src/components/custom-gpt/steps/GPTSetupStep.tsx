@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, Settings, Sparkles, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Bot, Settings, Sparkles, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -78,8 +80,27 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
     handleChange('subject_area', value);
   };
 
-  const canGenerateDescription = data.name && data.subject_area && data.grade_level && data.purpose;
-  const isValid = data.name && data.description && data.subject_area && data.grade_level && data.purpose;
+  const handlePurposeChange = (purposeValue: string, checked: boolean) => {
+    const currentPurposes = data.purposes || [];
+    let updatedPurposes;
+    
+    if (checked) {
+      updatedPurposes = [...currentPurposes, purposeValue];
+    } else {
+      updatedPurposes = currentPurposes.filter((p: string) => p !== purposeValue);
+    }
+    
+    onUpdate({ purposes: updatedPurposes });
+  };
+
+  const removePurpose = (purposeToRemove: string) => {
+    const currentPurposes = data.purposes || [];
+    const updatedPurposes = currentPurposes.filter((p: string) => p !== purposeToRemove);
+    onUpdate({ purposes: updatedPurposes });
+  };
+
+  const canGenerateDescription = data.name && data.subject_area && data.grade_level && data.purposes?.length > 0;
+  const isValid = data.name && data.description && data.subject_area && data.grade_level && data.purposes?.length > 0;
 
   const generateDescription = async () => {
     if (!canGenerateDescription || isGenerating) return;
@@ -91,7 +112,7 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
           name: data.name,
           subjectArea: data.subject_area,
           gradeLevel: data.grade_level,
-          purpose: data.purpose
+          purposes: data.purposes
         }
       });
 
@@ -204,20 +225,61 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="purpose">Primary Purpose *</Label>
-              <Select onValueChange={(value) => handleChange('purpose', value)} value={data.purpose}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select primary purpose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {purposes.map((purpose) => (
-                    <SelectItem key={purpose} value={purpose.toLowerCase().replace(/\s+/g, '_')}>
-                      {purpose}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Primary Purposes *</Label>
+                <p className="text-sm text-muted-foreground">Select all purposes this teaching assistant will serve (choose multiple)</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {purposes.map((purpose) => {
+                  const purposeValue = purpose.toLowerCase().replace(/\s+/g, '_');
+                  const isSelected = data.purposes?.includes(purposeValue) || false;
+                  
+                  return (
+                    <div key={purpose} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={purposeValue}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handlePurposeChange(purposeValue, checked as boolean)}
+                      />
+                      <Label 
+                        htmlFor={purposeValue} 
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {purpose}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {data.purposes && data.purposes.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Selected Purposes ({data.purposes.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.purposes.map((purposeValue: string) => {
+                      const purposeLabel = purposes.find(p => 
+                        p.toLowerCase().replace(/\s+/g, '_') === purposeValue
+                      ) || purposeValue;
+                      
+                      return (
+                        <Badge 
+                          key={purposeValue} 
+                          variant="secondary" 
+                          className="flex items-center gap-1"
+                        >
+                          {purposeLabel}
+                          <X 
+                            className="w-3 h-3 cursor-pointer" 
+                            onClick={() => removePurpose(purposeValue)}
+                          />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

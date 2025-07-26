@@ -15,11 +15,28 @@ serve(async (req) => {
   }
 
   try {
-    const { name, subjectArea, gradeLevel, purpose } = await req.json();
+    const { name, subjectArea, gradeLevel, purposes } = await req.json();
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
+
+    // Format purposes for natural language
+    const formatPurposes = (purposesList: string[]) => {
+      if (!purposesList || purposesList.length === 0) return '';
+      
+      const purposeLabels = purposesList.map(p => {
+        return p.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      });
+      
+      if (purposeLabels.length === 1) return purposeLabels[0];
+      if (purposeLabels.length === 2) return `${purposeLabels[0]} and ${purposeLabels[1]}`;
+      
+      const lastPurpose = purposeLabels.pop();
+      return `${purposeLabels.join(', ')}, and ${lastPurpose}`;
+    };
+
+    const formattedPurposes = formatPurposes(purposes);
 
     // Create a detailed prompt for generating the description
     const prompt = `Create a compelling, professional description for a custom GPT teaching assistant with these specifications:
@@ -27,7 +44,7 @@ serve(async (req) => {
 Name: ${name}
 Subject Area: ${subjectArea}
 Grade Level: ${gradeLevel}  
-Primary Purpose: ${purpose}
+Primary Purposes: ${formattedPurposes}
 
 Requirements:
 - Write 2-3 sentences (50-100 words)
@@ -37,6 +54,8 @@ Requirements:
 - Make it engaging and professional for teachers
 - Focus on how it will help students learn and succeed
 - Be specific about the functionality and approach
+- Seamlessly incorporate all the listed purposes into the description
+- Show how the assistant serves multiple functions cohesively
 
 Write only the description text, no additional formatting or quotes.`;
 
