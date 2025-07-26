@@ -26,7 +26,7 @@ const subjectAreas = [
   'Art',
   'Music',
   'Physical Education',
-  'Other'
+  'Custom Subject'
 ];
 
 const gradeLevels = [
@@ -53,10 +53,29 @@ const purposes = [
 
 export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNext }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCustomSubject, setIsCustomSubject] = useState(data.subject_area === 'custom_subject');
   const { toast } = useToast();
 
   const handleChange = (field: string, value: string) => {
     onUpdate({ [field]: value });
+  };
+
+  const handleSubjectChange = (value: string) => {
+    const isCustom = value === 'custom_subject';
+    setIsCustomSubject(isCustom);
+    
+    if (isCustom) {
+      handleChange('subject_area', '');
+      handleChange('custom_subject', '');
+    } else {
+      handleChange('subject_area', value);
+      handleChange('custom_subject', '');
+    }
+  };
+
+  const handleCustomSubjectChange = (value: string) => {
+    handleChange('custom_subject', value);
+    handleChange('subject_area', value);
   };
 
   const canGenerateDescription = data.name && data.subject_area && data.grade_level && data.purpose;
@@ -145,7 +164,7 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subject_area">Subject Area *</Label>
-                <Select onValueChange={(value) => handleChange('subject_area', value)} value={data.subject_area}>
+                <Select onValueChange={handleSubjectChange} value={isCustomSubject ? 'custom_subject' : data.subject_area}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select subject area" />
                   </SelectTrigger>
@@ -157,6 +176,15 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
                     ))}
                   </SelectContent>
                 </Select>
+                {isCustomSubject && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Enter your subject area..."
+                      value={data.custom_subject || ''}
+                      onChange={(e) => handleCustomSubjectChange(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
