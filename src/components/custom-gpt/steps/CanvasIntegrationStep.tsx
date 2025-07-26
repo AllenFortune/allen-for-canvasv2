@@ -74,7 +74,7 @@ export const CanvasIntegrationStep: React.FC<CanvasIntegrationStepProps> = ({ da
               <Label htmlFor="tool_description">Tool Description</Label>
               <Input
                 id="tool_description"
-                placeholder="Brief description of what this tool does for students"
+                placeholder="Short summary of your GPT for Canvas (auto-populated from setup)"
                 value={data.canvas_config.description || ''}
                 onChange={(e) => updateCanvasConfig('description', e.target.value)}
               />
