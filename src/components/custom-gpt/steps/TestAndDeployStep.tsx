@@ -28,18 +28,38 @@ export const TestAndDeployStep: React.FC<TestAndDeployStepProps> = ({ data, onUp
 
     setTesting(true);
     try {
-      // This would call an edge function to test the GPT
-      // For now, we'll simulate a response
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data: responseData, error } = await supabase.functions.invoke('chat-with-custom-gpt', {
+        body: {
+          gpt_id: data.id,
+          message: testMessage,
+          conversation_history: []
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setTestResponse(responseData.response);
       
-      setTestResponse(`I understand you're asking about "${testMessage}". Let me guide you through this step by step. What specific aspect would you like to explore first?`);
+      // Show which files were referenced if any
+      if (responseData.referenced_files && responseData.referenced_files.length > 0) {
+        setTestResponse(prev => 
+          prev + `\n\n📚 Referenced materials: ${responseData.referenced_files.join(', ')}`
+        );
+      }
+      
+      setTestMessage('');
       
       toast({
-        title: "Test Successful",
-        description: "Your teaching assistant is responding correctly.",
+        title: "Test Successful", 
+        description: responseData.knowledge_context_used 
+          ? "Your GPT responded using course materials!"
+          : "Your teaching assistant is responding correctly.",
       });
     } catch (error) {
       console.error('Error testing GPT:', error);
+      setTestResponse('Sorry, there was an error testing the GPT. Please try again.');
       toast({
         title: "Test Failed",
         description: "There was an error testing your teaching assistant.",
