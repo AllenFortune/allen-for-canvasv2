@@ -21,6 +21,7 @@ interface PolicyOptions {
   includePermittedUses: boolean;
   includeCitationGuidelines: boolean;
   includeAssignmentSpecific: boolean;
+  assignmentSpecificDetails: string;
   policyTone: 'formal' | 'friendly' | 'balanced';
   enforcementLevel: 'strict' | 'moderate' | 'flexible';
 }
@@ -73,6 +74,7 @@ const SyllabusBuilderWizard = () => {
     includePermittedUses: true,
     includeCitationGuidelines: true,
     includeAssignmentSpecific: false,
+    assignmentSpecificDetails: '',
     policyTone: 'balanced',
     enforcementLevel: 'moderate'
   });

@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Shield, BookOpen, Quote, Target } from 'lucide-react';
 
 interface PolicyOptions {
@@ -11,6 +12,7 @@ interface PolicyOptions {
   includePermittedUses: boolean;
   includeCitationGuidelines: boolean;
   includeAssignmentSpecific: boolean;
+  assignmentSpecificDetails: string;
   policyTone: 'formal' | 'friendly' | 'balanced';
   enforcementLevel: 'strict' | 'moderate' | 'flexible';
 }
@@ -100,10 +102,24 @@ const PolicyOptionsStep: React.FC<PolicyOptionsStepProps> = ({ options, onChange
                         {component.description}
                       </p>
                       {component.id === 'includeAssignmentSpecific' && isEnabled && (
-                        <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <p className="text-xs text-blue-700 dark:text-blue-300">
-                            <strong>Focus on learning, not policing:</strong> Encourage students to document their AI collaboration process through reflection journals, process logs, or brief explanations of how AI assisted their thinking. This builds metacognitive awareness rather than fear.
-                          </p>
+                        <div className="space-y-3">
+                          <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Focus on learning, not policing:</strong> Encourage students to document their AI collaboration process through reflection journals, process logs, or brief explanations of how AI assisted their thinking. This builds metacognitive awareness rather than fear.
+                            </p>
+                          </div>
+                          <div>
+                            <Label htmlFor="assignment-specific-details" className="text-sm font-medium">
+                              Custom Documentation Requirements
+                            </Label>
+                            <Textarea
+                              id="assignment-specific-details"
+                              placeholder="Example: For essays, students must include a brief reflection on how AI assisted their research and writing process. For problem sets, document which problems used AI assistance and explain the reasoning behind AI choices."
+                              className="mt-2 min-h-[100px]"
+                              value={options.assignmentSpecificDetails}
+                              onChange={(e) => updateOption('assignmentSpecificDetails', e.target.value)}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
