@@ -298,7 +298,7 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
                   ) : (
                     <Sparkles className="w-4 h-4 mr-1" />
                   )}
-                  {isGenerating ? 'Generating...' : 'Generate with AI'}
+                  {isGenerating ? 'ALLEN is working...' : 'Use ALLEN Assist'}
                 </Button>
               </div>
               <Textarea
