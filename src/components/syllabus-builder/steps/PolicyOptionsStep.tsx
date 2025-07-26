@@ -59,8 +59,8 @@ const PolicyOptionsStep: React.FC<PolicyOptionsStepProps> = ({ options, onChange
     },
     {
       id: 'includeAssignmentSpecific',
-      title: 'Assignment-Specific Rules',
-      description: 'Tailored policies for different types of coursework',
+      title: 'Assignment-Specific Documentation',
+      description: 'Guidelines for how students document and reflect on AI use for different assignment types',
       icon: Target,
       recommended: false
     }
@@ -99,6 +99,13 @@ const PolicyOptionsStep: React.FC<PolicyOptionsStepProps> = ({ options, onChange
                       <p className="text-sm text-muted-foreground mb-3">
                         {component.description}
                       </p>
+                      {component.id === 'includeAssignmentSpecific' && isEnabled && (
+                        <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            <strong>Focus on learning, not policing:</strong> Encourage students to document their AI collaboration process through reflection journals, process logs, or brief explanations of how AI assisted their thinking. This builds metacognitive awareness rather than fear.
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
                     <Switch
