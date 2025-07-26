@@ -55,30 +55,58 @@ serve(async (req) => {
       );
     }
 
-    // Search knowledge base for relevant content
-    const knowledgeResponse = await supabaseClient.functions.invoke('process-knowledge-base', {
-      body: {
-        gpt_id: gpt_id,
-        query: message,
-        limit: 3
-      }
-    });
+    // Detect if this is the start of a new conversation
+    const isFirstInteraction = conversation_history.length === 0 || 
+      (conversation_history.length === 1 && conversation_history[0].role === 'user');
 
     let knowledgeContext = '';
-    if (knowledgeResponse.data?.relevant_content?.length > 0) {
-      knowledgeContext = '\n\nRELEVANT COURSE MATERIALS:\n';
-      knowledgeResponse.data.relevant_content.forEach((content: any, index: number) => {
-        knowledgeContext += `\nFrom "${content.filename}":\n`;
-        content.excerpts.forEach((excerpt: string) => {
-          knowledgeContext += `- ${excerpt.trim()}\n`;
-        });
-      });
-      knowledgeContext += '\nPlease reference these materials when relevant to help guide the student to specific resources.\n';
-    }
+    let systemPrompt = '';
 
-    // Build enhanced system prompt
-    const socraticConfig = gpt.socratic_config || {};
-    const systemPrompt = `You are a ${gpt.subject_area || 'subject'} teaching assistant for ${gpt.grade_level || 'students'}. 
+    if (isFirstInteraction) {
+      // For first interactions, focus only on engaging questions
+      const socraticConfig = gpt.socratic_config || {};
+      systemPrompt = `You are a ${gpt.subject_area || 'subject'} teaching assistant for ${gpt.grade_level || 'students'}. 
+
+COURSE CONTEXT:
+${gpt.description || ''}
+
+CRITICAL INSTRUCTION: This is the student's first question on this topic. Your response should ONLY be an engaging question that activates their prior knowledge or experience related to the topic they asked about. Do NOT explain the concept yet.
+
+TEACHING APPROACH:
+- Ask ONE engaging question that connects to their everyday experience
+- Use ${socraticConfig.questioning_style || 'guided'} questioning style
+- Keep it ${socraticConfig.response_length || 'short'} and focused
+- Use an ${socraticConfig.encouragement_style || 'supportive'} tone
+
+Examples of good engaging questions:
+- "Have you ever noticed how a baby reacts when you play peek-a-boo?"
+- "Think about when you lose your keys - how do you feel when you can't see them?"
+- "What happens when you put a toy under a blanket in front of a young child?"
+
+Do NOT provide explanations or definitions yet. Just ask the engaging question and wait for their response.`;
+    } else {
+      // For follow-up interactions, use knowledge base to guide understanding
+      const knowledgeResponse = await supabaseClient.functions.invoke('process-knowledge-base', {
+        body: {
+          gpt_id: gpt_id,
+          query: message,
+          limit: 3
+        }
+      });
+
+      if (knowledgeResponse.data?.relevant_content?.length > 0) {
+        knowledgeContext = '\n\nRELEVANT COURSE MATERIALS:\n';
+        knowledgeResponse.data.relevant_content.forEach((content: any, index: number) => {
+          knowledgeContext += `\nFrom "${content.filename}":\n`;
+          content.excerpts.forEach((excerpt: string) => {
+            knowledgeContext += `- ${excerpt.trim()}\n`;
+          });
+        });
+        knowledgeContext += '\nPlease reference these materials when relevant to help guide the student to specific resources.\n';
+      }
+
+      const socraticConfig = gpt.socratic_config || {};
+      systemPrompt = `You are a ${gpt.subject_area || 'subject'} teaching assistant for ${gpt.grade_level || 'students'}. 
 
 TEACHING APPROACH:
 - Use ${socraticConfig.questioning_style || 'guided'} questioning to help students discover answers
@@ -92,7 +120,8 @@ ${gpt.description || ''}
 INSTRUCTIONS:
 ${socraticConfig.custom_instructions || 'Help students learn through guided questioning and discovery.'}
 
-When course materials are available, reference them to guide students to specific resources. Always maintain a Socratic teaching approach by asking follow-up questions that help students think through the concepts.${knowledgeContext}`;
+Now that the student has engaged with your initial question, guide them through understanding the concept using the course materials. Reference specific resources when available and continue with Socratic questioning to deepen their understanding.${knowledgeContext}`;
+    }
 
     // Prepare conversation for OpenAI
     const messages = [
@@ -135,11 +164,27 @@ When course materials are available, reference them to guide students to specifi
       .update({ usage_stats: updatedUsageStats })
       .eq('id', gpt_id);
 
+    // Prepare response data
+    let knowledgeContextUsed = false;
+    let referencedFiles = [];
+    
+    if (!isFirstInteraction) {
+      const knowledgeResponse = await supabaseClient.functions.invoke('process-knowledge-base', {
+        body: {
+          gpt_id: gpt_id,
+          query: message,
+          limit: 3
+        }
+      });
+      knowledgeContextUsed = knowledgeResponse.data?.relevant_content?.length > 0;
+      referencedFiles = knowledgeResponse.data?.relevant_content?.map((c: any) => c.filename) || [];
+    }
+
     return new Response(
       JSON.stringify({ 
         response: assistantMessage,
-        knowledge_context_used: knowledgeResponse.data?.relevant_content?.length > 0,
-        referenced_files: knowledgeResponse.data?.relevant_content?.map((c: any) => c.filename) || []
+        knowledge_context_used: knowledgeContextUsed,
+        referenced_files: referencedFiles
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
