@@ -155,6 +155,7 @@ const SyllabusBuilderWizard = () => {
             generatedContent={generatedContent}
             syllabusData={syllabusData}
             policyOptions={policyOptions}
+            onContentChange={setGeneratedContent}
           />
         );
       default:
