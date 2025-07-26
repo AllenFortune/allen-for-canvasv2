@@ -31,6 +31,7 @@ import AdminPortal from "./pages/AdminPortal";
 import AdminSetup from "./pages/AdminSetup";
 import AIRubricBuilder from "@/pages/AIRubricBuilder";
 import CustomGPTBuilder from "./pages/CustomGPTBuilder";
+import AISyllabusBuilder from "./pages/AISyllabusBuilder";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ function App() {
               <Route path="/admin-setup" element={<AdminSetup />} />
               <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />
               <Route path="/custom-gpt-builder" element={<CustomGPTBuilder />} />
+              <Route path="/ai-syllabus-builder" element={<AISyllabusBuilder />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

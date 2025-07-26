@@ -93,6 +93,57 @@ const AIPedagogyHub = () => {
           </CardContent>
         </Card>
 
+        {/* AI Syllabus Policy Builder Card */}
+        <Card className="mb-12 border-l-4 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <FileText className="w-6 h-6 text-blue-600" />
+              AI Syllabus Policy Builder
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              Enhance your syllabus with comprehensive AI literacy policies and downloadable student use guides. Create customized academic integrity guidelines and responsible AI use frameworks tailored to your course.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Academic Integrity Policies</h4>
+                  <p className="text-sm text-gray-600">Clear guidelines for AI use and academic honesty</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Student Use Guides</h4>
+                  <p className="text-sm text-gray-600">Step-by-step tutorials for responsible AI integration</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Downloadable Resources</h4>
+                  <p className="text-sm text-gray-600">PDF exports and Canvas-ready content modules</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Customizable Policies</h4>
+                  <p className="text-sm text-gray-600">Tailored to your subject area and grade level</p>
+                </div>
+              </div>
+            </div>
+            <Link to="/ai-syllabus-builder">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Build Syllabus Policies
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {/* AI Rubric Builder Card - Coming Soon */}
         <Card className="mb-12 border-l-4 border-l-violet-600 bg-gradient-to-r from-violet-50 to-white relative">
           <div className="absolute top-4 right-4">

@@ -1,0 +1,229 @@
+import React, { useState } from 'react';
+import StepWizard from "@/components/ai-assignment/StepWizard";
+import SyllabusInputStep from "./steps/SyllabusInputStep";
+import PolicyOptionsStep from "./steps/PolicyOptionsStep";
+import GuideGenerationStep from "./steps/GuideGenerationStep";
+import ReviewAndExportStep from "./steps/ReviewAndExportStep";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+
+interface SyllabusData {
+  content: string;
+  subject: string;
+  gradeLevel: string;
+  courseName: string;
+  inputMethod: 'upload' | 'paste' | 'canvas';
+  fileName?: string;
+}
+
+interface PolicyOptions {
+  includeAcademicIntegrity: boolean;
+  includePermittedUses: boolean;
+  includeCitationGuidelines: boolean;
+  includeAssignmentSpecific: boolean;
+  policyTone: 'formal' | 'friendly' | 'balanced';
+  enforcementLevel: 'strict' | 'moderate' | 'flexible';
+}
+
+interface GeneratedContent {
+  enhancedSyllabus?: string;
+  aiPolicies?: string;
+  studentGuide?: string;
+  canvasContent?: string;
+}
+
+const steps = [
+  {
+    id: 'input',
+    title: 'Input Syllabus',
+    description: 'Upload or paste your current syllabus'
+  },
+  {
+    id: 'policies',
+    title: 'Policy Options',
+    description: 'Customize AI use policies'
+  },
+  {
+    id: 'generation',
+    title: 'Generate Content',
+    description: 'AI creates your policies and guides'
+  },
+  {
+    id: 'export',
+    title: 'Review & Export',
+    description: 'Download your enhanced materials'
+  }
+];
+
+const SyllabusBuilderWizard = () => {
+  const [currentStep, setCurrentStep] = useState('input');
+  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const [syllabusData, setSyllabusData] = useState<SyllabusData>({
+    content: '',
+    subject: '',
+    gradeLevel: '',
+    courseName: '',
+    inputMethod: 'paste'
+  });
+  
+  const [policyOptions, setPolicyOptions] = useState<PolicyOptions>({
+    includeAcademicIntegrity: true,
+    includePermittedUses: true,
+    includeCitationGuidelines: true,
+    includeAssignmentSpecific: false,
+    policyTone: 'balanced',
+    enforcementLevel: 'moderate'
+  });
+  
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent>({});
+
+  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  
+  const handleNext = () => {
+    const nextStepIndex = currentStepIndex + 1;
+    if (nextStepIndex < steps.length) {
+      // Mark current step as completed
+      if (!completedSteps.includes(currentStep)) {
+        setCompletedSteps([...completedSteps, currentStep]);
+      }
+      setCurrentStep(steps[nextStepIndex].id);
+    }
+  };
+
+  const handlePrevious = () => {
+    const prevStepIndex = currentStepIndex - 1;
+    if (prevStepIndex >= 0) {
+      setCurrentStep(steps[prevStepIndex].id);
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    setLoading(true);
+    try {
+      // TODO: Implement Supabase edge function call
+      // For now, simulate content generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setGeneratedContent({
+        enhancedSyllabus: "Enhanced syllabus with AI policies integrated...",
+        aiPolicies: "Comprehensive AI use policies for your course...",
+        studentGuide: "Student guide for responsible AI use...",
+        canvasContent: "Canvas-ready content modules..."
+      });
+      
+      handleNext();
+    } catch (error) {
+      console.error('Error generating content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'input':
+        return (
+          <SyllabusInputStep
+            data={syllabusData}
+            onChange={setSyllabusData}
+          />
+        );
+      case 'policies':
+        return (
+          <PolicyOptionsStep
+            options={policyOptions}
+            onChange={setPolicyOptions}
+            syllabusData={syllabusData}
+          />
+        );
+      case 'generation':
+        return (
+          <GuideGenerationStep
+            syllabusData={syllabusData}
+            policyOptions={policyOptions}
+            onGenerate={handleGenerateContent}
+            loading={loading}
+          />
+        );
+      case 'export':
+        return (
+          <ReviewAndExportStep
+            generatedContent={generatedContent}
+            syllabusData={syllabusData}
+            policyOptions={policyOptions}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 'input':
+        return syllabusData.content.trim() !== '' && syllabusData.courseName.trim() !== '';
+      case 'policies':
+        return true;
+      case 'generation':
+        return Object.keys(generatedContent).length > 0;
+      case 'export':
+        return false; // No next step
+      default:
+        return false;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <StepWizard 
+        steps={steps} 
+        currentStep={currentStep} 
+        completedSteps={completedSteps}
+      >
+        {renderStepContent()}
+      </StepWizard>
+
+      {/* Navigation */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={handlePrevious}
+          disabled={currentStepIndex === 0 || loading}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Previous
+        </Button>
+
+        {currentStep !== 'export' && currentStep !== 'generation' && (
+          <Button
+            onClick={handleNext}
+            disabled={!canProceed() || loading}
+          >
+            Next
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        )}
+
+        {currentStep === 'generation' && (
+          <Button
+            onClick={handleGenerateContent}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Content'
+            )}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SyllabusBuilderWizard;
