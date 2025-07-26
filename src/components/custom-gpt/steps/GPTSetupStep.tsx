@@ -90,17 +90,6 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe what your teaching assistant will help students with..."
-                value={data.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                rows={3}
-              />
-            </div>
-
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subject_area">Subject Area *</Label>
@@ -149,6 +138,17 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe what your teaching assistant will help students with..."
+                value={data.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                rows={3}
+              />
             </div>
           </CardContent>
         </Card>
