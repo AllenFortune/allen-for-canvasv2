@@ -6,6 +6,8 @@ import GuideGenerationStep from "./steps/GuideGenerationStep";
 import ReviewAndExportStep from "./steps/ReviewAndExportStep";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SyllabusData {
   content: string;
@@ -60,6 +62,7 @@ const SyllabusBuilderWizard = () => {
   const [currentStep, setCurrentStep] = useState('input');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   
   const [syllabusData, setSyllabusData] = useState<SyllabusData>({
     content: '',
@@ -103,21 +106,57 @@ const SyllabusBuilderWizard = () => {
 
   const handleGenerateContent = async () => {
     setLoading(true);
+    
     try {
-      // TODO: Implement Supabase edge function call
-      // For now, simulate content generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setGeneratedContent({
-        enhancedSyllabus: "Enhanced syllabus with AI policies integrated...",
-        aiPolicies: "Comprehensive AI use policies for your course...",
-        studentGuide: "Student guide for responsible AI use...",
-        canvasContent: "Canvas-ready content modules..."
+      const { data, error } = await supabase.functions.invoke('generate-ai-syllabus-content', {
+        body: {
+          syllabusData: {
+            content: syllabusData.content,
+            subject: syllabusData.subject,
+            gradeLevel: syllabusData.gradeLevel,
+            courseName: syllabusData.courseName,
+            inputMethod: syllabusData.inputMethod
+          },
+          policyOptions: {
+            academicIntegrity: policyOptions.includeAcademicIntegrity,
+            permittedUses: policyOptions.includePermittedUses,
+            citationRequirements: policyOptions.includeCitationGuidelines,
+            tone: policyOptions.policyTone,
+            enforcement: policyOptions.enforcementLevel
+          }
+        }
       });
-      
+
+      if (error) {
+        console.error('Error generating content:', error);
+        toast({
+          title: "Generation Failed",
+          description: "Failed to generate content. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setGeneratedContent({
+        enhancedSyllabus: data.enhancedSyllabus,
+        aiPolicies: data.aiPolicyDocument,
+        studentGuide: data.studentGuide,
+        canvasContent: data.canvasResources
+      });
+
+      toast({
+        title: "Content Generated Successfully",
+        description: "Your AI syllabus resources have been generated and are ready for review.",
+      });
       handleNext();
+
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Generation Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
