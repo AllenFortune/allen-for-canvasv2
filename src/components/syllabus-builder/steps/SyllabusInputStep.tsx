@@ -166,25 +166,12 @@ const SyllabusInputStep: React.FC<SyllabusInputStepProps> = ({ data, onChange })
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="subject">Subject Area</Label>
-              <Select 
-                value={data.subject} 
-                onValueChange={(value) => onChange({ ...data, subject: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="english">English & Literature</SelectItem>
-                  <SelectItem value="history">History & Social Studies</SelectItem>
-                  <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="math">Mathematics</SelectItem>
-                  <SelectItem value="psychology">Psychology</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
-                  <SelectItem value="art">Arts & Humanities</SelectItem>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="subject"
+                placeholder="e.g., Biology, American History, Creative Writing"
+                value={data.subject}
+                onChange={(e) => onChange({ ...data, subject: e.target.value })}
+              />
             </div>
 
             <div>
