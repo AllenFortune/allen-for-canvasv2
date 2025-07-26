@@ -121,6 +121,8 @@ const SyllabusBuilderWizard = () => {
             academicIntegrity: policyOptions.includeAcademicIntegrity,
             permittedUses: policyOptions.includePermittedUses,
             citationRequirements: policyOptions.includeCitationGuidelines,
+            includeAssignmentSpecific: policyOptions.includeAssignmentSpecific,
+            assignmentSpecificDetails: policyOptions.assignmentSpecificDetails,
             tone: policyOptions.policyTone,
             enforcement: policyOptions.enforcementLevel
           }

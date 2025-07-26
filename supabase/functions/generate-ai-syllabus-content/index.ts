@@ -18,6 +18,8 @@ interface PolicyOptions {
   academicIntegrity: boolean;
   permittedUses: boolean;
   citationRequirements: boolean;
+  includeAssignmentSpecific: boolean;
+  assignmentSpecificDetails: string;
   tone: string;
   enforcement: string;
 }
@@ -29,6 +31,8 @@ serve(async (req) => {
 
   try {
     const { syllabusData, policyOptions }: { syllabusData: SyllabusData; policyOptions: PolicyOptions } = await req.json();
+
+    console.log('Received policy options:', JSON.stringify(policyOptions, null, 2));
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -50,8 +54,13 @@ Policy Configuration:
 - Academic Integrity Guidelines: ${policyOptions.academicIntegrity ? 'Include' : 'Basic mention'}
 - Permitted AI Uses: ${policyOptions.permittedUses ? 'Detailed list' : 'General guidelines'}
 - Citation Requirements: ${policyOptions.citationRequirements ? 'Specific format required' : 'Standard requirements'}
+- Assignment-Specific Documentation: ${policyOptions.includeAssignmentSpecific ? 'Include specific requirements' : 'General guidance only'}
 - Tone: ${policyOptions.tone}
 - Enforcement Level: ${policyOptions.enforcement}
+
+${policyOptions.includeAssignmentSpecific && policyOptions.assignmentSpecificDetails ? 
+`Additional Assignment-Specific Requirements:
+${policyOptions.assignmentSpecificDetails}` : ''}
 
 Please enhance this syllabus by seamlessly integrating AI use policies throughout the document. The enhanced syllabus should:
 1. Maintain all original content and structure
