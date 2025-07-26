@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, Settings } from 'lucide-react';
+import { Bot, Settings, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface GPTSetupStepProps {
   data: any;
@@ -50,11 +52,61 @@ const purposes = [
 ];
 
 export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNext }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
+
   const handleChange = (field: string, value: string) => {
     onUpdate({ [field]: value });
   };
 
+  const canGenerateDescription = data.name && data.subject_area && data.grade_level && data.purpose;
   const isValid = data.name && data.description && data.subject_area && data.grade_level && data.purpose;
+
+  const generateDescription = async () => {
+    if (!canGenerateDescription || isGenerating) return;
+
+    setIsGenerating(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('generate-gpt-description', {
+        body: {
+          name: data.name,
+          subjectArea: data.subject_area,
+          gradeLevel: data.grade_level,
+          purpose: data.purpose
+        }
+      });
+
+      if (error) throw error;
+
+      if (result?.description) {
+        // If description already exists, ask user before replacing
+        if (data.description && data.description.trim()) {
+          const shouldReplace = window.confirm(
+            'You already have a description. Would you like to replace it with the AI-generated one?'
+          );
+          if (!shouldReplace) {
+            setIsGenerating(false);
+            return;
+          }
+        }
+        
+        handleChange('description', result.description);
+        toast({
+          title: "Description Generated",
+          description: "AI has created a description for your teaching assistant.",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Unable to generate description. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -141,7 +193,24 @@ export const GPTSetupStep: React.FC<GPTSetupStepProps> = ({ data, onUpdate, onNe
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Description *</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateDescription}
+                  disabled={!canGenerateDescription || isGenerating}
+                  className="h-8 px-3"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-1" />
+                  )}
+                  {isGenerating ? 'Generating...' : 'Generate with AI'}
+                </Button>
+              </div>
               <Textarea
                 id="description"
                 placeholder="Describe what your teaching assistant will help students with..."
