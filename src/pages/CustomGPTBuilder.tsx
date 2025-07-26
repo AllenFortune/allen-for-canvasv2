@@ -12,7 +12,7 @@ const CustomGPTBuilder: React.FC = () => {
       <div className="min-h-screen bg-background">
         <Header />
         
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-4 pb-8 pt-20">
           {/* Hero Section */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
