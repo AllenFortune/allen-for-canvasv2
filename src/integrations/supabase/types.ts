@@ -86,6 +86,107 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_gpt_files: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          custom_gpt_id: string
+          file_size: number | null
+          filename: string
+          id: string
+          openai_file_id: string | null
+          processed_content: string | null
+          upload_status: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          custom_gpt_id: string
+          file_size?: number | null
+          filename: string
+          id?: string
+          openai_file_id?: string | null
+          processed_content?: string | null
+          upload_status?: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          custom_gpt_id?: string
+          file_size?: number | null
+          filename?: string
+          id?: string
+          openai_file_id?: string | null
+          processed_content?: string | null
+          upload_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_gpt_files_custom_gpt_id_fkey"
+            columns: ["custom_gpt_id"]
+            isOneToOne: false
+            referencedRelation: "custom_gpts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_gpts: {
+        Row: {
+          canvas_config: Json | null
+          created_at: string
+          description: string | null
+          gpt_id: string | null
+          grade_level: string | null
+          id: string
+          knowledge_base_files: Json | null
+          name: string
+          openai_config: Json | null
+          purpose: string | null
+          socratic_config: Json | null
+          status: string
+          subject_area: string | null
+          updated_at: string
+          usage_stats: Json | null
+          user_id: string
+        }
+        Insert: {
+          canvas_config?: Json | null
+          created_at?: string
+          description?: string | null
+          gpt_id?: string | null
+          grade_level?: string | null
+          id?: string
+          knowledge_base_files?: Json | null
+          name: string
+          openai_config?: Json | null
+          purpose?: string | null
+          socratic_config?: Json | null
+          status?: string
+          subject_area?: string | null
+          updated_at?: string
+          usage_stats?: Json | null
+          user_id: string
+        }
+        Update: {
+          canvas_config?: Json | null
+          created_at?: string
+          description?: string | null
+          gpt_id?: string | null
+          grade_level?: string | null
+          id?: string
+          knowledge_base_files?: Json | null
+          name?: string
+          openai_config?: Json | null
+          purpose?: string | null
+          socratic_config?: Json | null
+          status?: string
+          subject_area?: string | null
+          updated_at?: string
+          usage_stats?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       feature_notifications: {
         Row: {
           created_at: string | null

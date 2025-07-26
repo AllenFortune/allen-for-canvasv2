@@ -150,13 +150,8 @@ const AIPedagogyHub = () => {
           </CardContent>
         </Card>
 
-        {/* CustomGPT Teaching Assistant Builder Card - Coming Soon */}
-        <Card className="mb-12 border-l-4 border-l-orange-600 bg-gradient-to-r from-orange-50 to-white relative">
-          <div className="absolute top-4 right-4">
-            <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
-              Coming Soon
-            </Badge>
-          </div>
+        {/* CustomGPT Teaching Assistant Builder Card */}
+        <Card className="mb-12 border-l-4 border-l-orange-600 bg-gradient-to-r from-orange-50 to-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <MessageCircle className="w-6 h-6 text-orange-600" />
@@ -197,13 +192,12 @@ const AIPedagogyHub = () => {
                 </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setGptModalOpen(true)}
-              className="border-orange-200 text-orange-600 hover:bg-orange-50"
-            >
-              Coming Soon - Notify Me
-            </Button>
+            <Link to="/custom-gpt-builder">
+              <Button className="bg-orange-600 hover:bg-orange-700">
+                Create Teaching Assistant
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
         
