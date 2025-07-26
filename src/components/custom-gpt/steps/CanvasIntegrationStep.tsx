@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,20 @@ export const CanvasIntegrationStep: React.FC<CanvasIntegrationStepProps> = ({ da
     };
     onUpdate({ canvas_config: updatedConfig });
   };
+
+  // Auto-populate canvas fields from GPT setup data if they're empty
+  useEffect(() => {
+    const canvasConfig = data.canvas_config || {};
+    
+    // Only populate if fields are empty and we have GPT data
+    if (data.name && !canvasConfig.external_tool_name) {
+      updateCanvasConfig('external_tool_name', data.name);
+    }
+    
+    if (data.description && !canvasConfig.description) {
+      updateCanvasConfig('description', data.description);
+    }
+  }, [data.name, data.description]);
 
   return (
     <div className="space-y-6">
