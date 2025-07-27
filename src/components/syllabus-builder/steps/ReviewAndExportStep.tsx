@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Eye, Copy, Check, Edit, Save, X } from 'lucide-react';
+import { Download, Eye, Copy, Check, Edit, Save, X, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { renderMarkdownToHtml, stripMarkdown } from "@/utils/markdownRenderer";
 
 interface GeneratedContent {
   enhancedSyllabus?: string;
@@ -86,6 +87,10 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
     }
   ];
 
+  const [viewModes, setViewModes] = useState<Record<string, 'formatted' | 'raw'>>(
+    Object.fromEntries(contentItems.map(item => [item.id, 'formatted']))
+  );
+
   const handleCopy = async (content: string, itemId: string) => {
     try {
       await navigator.clipboard.writeText(content);
@@ -113,8 +118,9 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
   };
 
   const convertToRTF = (content: string, title: string): string => {
-    // Basic RTF conversion - escape special characters and add formatting
-    const escapedContent = content
+    // Convert markdown to plain text for RTF, then escape special characters
+    const plainText = stripMarkdown(content);
+    const escapedContent = plainText
       .replace(/\\/g, '\\\\')
       .replace(/\{/g, '\\{')
       .replace(/\}/g, '\\}')
@@ -125,6 +131,13 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
 \\par
 ${escapedContent}
 }`;
+  };
+
+  const toggleViewMode = (itemId: string) => {
+    setViewModes(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] === 'formatted' ? 'raw' : 'formatted'
+    }));
   };
 
   const handleDownload = (content: string, filename: string, format: 'txt' | 'rtf' = 'txt') => {
@@ -287,6 +300,19 @@ ${escapedContent}
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => toggleViewMode(item.id)}
+                          title={viewModes[item.id] === 'formatted' ? 'Show raw text' : 'Show formatted view'}
+                        >
+                          {viewModes[item.id] === 'formatted' ? (
+                            <FileText className="w-4 h-4 mr-1" />
+                          ) : (
+                            <Eye className="w-4 h-4 mr-1" />
+                          )}
+                          {viewModes[item.id] === 'formatted' ? 'Raw' : 'Formatted'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleEditToggle(item.id)}
                         >
                           <Edit className="w-4 h-4 mr-1" />
@@ -344,9 +370,18 @@ ${escapedContent}
                   </div>
                 ) : (
                   <div className="bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-foreground">
-                      {item.content || 'Content will appear here after generation...'}
-                    </pre>
+                    {viewModes[item.id] === 'formatted' ? (
+                      <div 
+                        className="text-sm"
+                        dangerouslySetInnerHTML={{ 
+                          __html: renderMarkdownToHtml(item.content || 'Content will appear here after generation...') 
+                        }}
+                      />
+                    ) : (
+                      <pre className="whitespace-pre-wrap text-sm text-foreground">
+                        {item.content || 'Content will appear here after generation...'}
+                      </pre>
+                    )}
                   </div>
                 )}
               </CardContent>
