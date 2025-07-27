@@ -13,7 +13,6 @@ import { BookOpen, ArrowRight, ClipboardCheck, MessageCircle, FileText, Brain } 
 import { Link } from "react-router-dom";
 
 const AIPedagogyHub = () => {
-  const [rubricModalOpen, setRubricModalOpen] = useState(false);
   const [gptModalOpen, setGptModalOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,13 +143,8 @@ const AIPedagogyHub = () => {
           </CardContent>
         </Card>
 
-        {/* AI Rubric Builder Card - Coming Soon */}
-        <Card className="mb-12 border-l-4 border-l-violet-600 bg-gradient-to-r from-violet-50 to-white relative">
-          <div className="absolute top-4 right-4">
-            <Badge variant="secondary" className="bg-violet-100 text-violet-700 border-violet-200">
-              Coming Soon
-            </Badge>
-          </div>
+        {/* AI Rubric Builder Card */}
+        <Card className="mb-12 border-l-4 border-l-violet-600 bg-gradient-to-r from-violet-50 to-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <ClipboardCheck className="w-6 h-6 text-violet-600" />
@@ -191,13 +185,12 @@ const AIPedagogyHub = () => {
                 </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setRubricModalOpen(true)}
-              className="border-violet-200 text-violet-600 hover:bg-violet-50"
-            >
-              Coming Soon - Notify Me
-            </Button>
+            <Link to="/ai-rubric-builder">
+              <Button className="bg-violet-600 hover:bg-violet-700">
+                Build Rubric
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -265,13 +258,6 @@ const AIPedagogyHub = () => {
       <Footer />
       
       {/* Notification Modals */}
-      <NotifyMeModal
-        open={rubricModalOpen}
-        onOpenChange={setRubricModalOpen}
-        featureName="AI Rubric Builder"
-        featureDescription="Be the first to know when our AI-powered rubric generation tool launches. Automatically create comprehensive assessment rubrics from your assignments."
-      />
-      
       <NotifyMeModal
         open={gptModalOpen}
         onOpenChange={setGptModalOpen}
