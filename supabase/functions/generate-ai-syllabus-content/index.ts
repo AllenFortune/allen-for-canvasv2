@@ -39,8 +39,35 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    // Helper function to clean AI response content
+    const cleanAIContent = (content: string): string => {
+      const introPatterns = [
+        /^(Certainly!?|Sure!?|Of course!?|Absolutely!?)[^\n]*\n+/i,
+        /^(Here is|Here's|Below is|Here you'll find)[^\n]*\n+/i,
+        /^(I'll|I will|Let me)[^\n]*\n+/i,
+        /^(This is|This enhanced)[^\n]*\n+/i,
+        /^\*?[^*\n]*\*?\s*(syllabus|document|guide)[^.\n]*\.\s*\n+/i,
+        /^[^.\n]*enhanced.*below[^.\n]*\.\s*\n+/i,
+        /^[^.\n]*comprehensive[^.\n]*integrated[^.\n]*\.\s*\n+/i
+      ];
+      
+      let cleaned = content;
+      for (const pattern of introPatterns) {
+        cleaned = cleaned.replace(pattern, '');
+      }
+      
+      // Remove leading whitespace and ensure proper formatting
+      return cleaned.trim();
+    };
+
     // Generate Enhanced Syllabus
-    const enhancedSyllabusPrompt = `You are an expert educator helping to enhance a course syllabus with comprehensive AI literacy policies. 
+    const enhancedSyllabusPrompt = `You are a professional syllabus editor. Your task is to enhance the provided syllabus with AI literacy policies. 
+
+CRITICAL OUTPUT REQUIREMENTS:
+- Start immediately with the course title or first line of the syllabus
+- Do NOT include any introductory text, explanations, or meta-commentary
+- Do NOT begin with phrases like "Certainly", "Here is", "Below is", etc.
+- Your response must be the actual syllabus content only
 
 Course Information:
 - Course Name: ${syllabusData.courseName}
@@ -62,23 +89,14 @@ ${policyOptions.includeAssignmentSpecific && policyOptions.assignmentSpecificDet
 `Additional Assignment-Specific Requirements:
 ${policyOptions.assignmentSpecificDetails}` : ''}
 
-CRITICAL INSTRUCTIONS:
-- You MUST include ALL of the original syllabus content in your response
-- Do NOT use placeholders like "[Original content retained]" or "[Keep existing content]"
-- Copy the ENTIRE original syllabus text and enhance it by adding AI policy sections
-- Weave AI policies naturally into the existing structure - add new sections where appropriate
-- If the original syllabus has specific sections, enhance them with AI-related content
-- The final output should be a complete, standalone syllabus that a teacher can use immediately
+CONTENT REQUIREMENTS:
+- Include ALL original syllabus content word-for-word
+- Add AI policy sections seamlessly integrated into the structure
+- Use ${policyOptions.tone} tone for all AI-related additions
+- Apply ${policyOptions.enforcement} enforcement approach
+- No placeholders - include complete, usable content
 
-Please enhance this syllabus by seamlessly integrating AI use policies throughout the document. The enhanced syllabus should:
-1. Include ALL original content word-for-word, with AI enhancements woven throughout
-2. Add appropriate AI policy sections that complement the existing structure
-3. Include clear expectations for AI tool usage in coursework
-4. Address academic integrity concerns related to AI within existing or new sections
-5. Use a ${policyOptions.tone} tone throughout all additions
-6. Reflect a ${policyOptions.enforcement} approach to enforcement
-
-Return the complete enhanced syllabus with all original content included, properly formatted and ready for classroom use.`;
+Begin with the course title or first syllabus line immediately:`;
 
     const enhancedSyllabusResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -86,16 +104,25 @@ Return the complete enhanced syllabus with all original content included, proper
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: enhancedSyllabusPrompt }],
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a professional syllabus editor. Respond only with syllabus content. Do not include introductory text, explanations, or conversational elements. Start immediately with the actual syllabus content.'
+          },
+          { 
+            role: 'user', 
+            content: enhancedSyllabusPrompt 
+          }
+        ],
         temperature: 0.7,
         max_tokens: 3000,
       }),
     });
 
     // Generate AI Policy Document
-    const policyDocumentPrompt = `Create a comprehensive standalone AI policy document for ${syllabusData.courseName} (${syllabusData.subject}, ${syllabusData.gradeLevel}).
+    const policyDocumentPrompt = `Generate an AI policy document for ${syllabusData.courseName} (${syllabusData.subject}, ${syllabusData.gradeLevel}). Start immediately with the document title.
 
 Policy Requirements:
 - Academic Integrity: ${policyOptions.academicIntegrity ? 'Detailed guidelines with examples' : 'Basic principles'}
@@ -104,7 +131,7 @@ Policy Requirements:
 - Tone: ${policyOptions.tone}
 - Enforcement: ${policyOptions.enforcement}
 
-Create a policy document that includes:
+Include these sections:
 1. Introduction to AI in education
 2. Acceptable use guidelines
 3. Prohibited practices
@@ -113,7 +140,7 @@ Create a policy document that includes:
 6. Examples of appropriate and inappropriate AI use
 7. Resources for students
 
-Make it comprehensive but accessible, using a ${policyOptions.tone} tone and ${policyOptions.enforcement} enforcement approach.`;
+Use ${policyOptions.tone} tone and ${policyOptions.enforcement} enforcement approach. Begin with the policy title:`;
 
     const policyDocumentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -121,18 +148,27 @@ Make it comprehensive but accessible, using a ${policyOptions.tone} tone and ${p
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: policyDocumentPrompt }],
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a policy document writer. Respond only with document content. Do not include introductory text or explanations. Start immediately with the document title.'
+          },
+          { 
+            role: 'user', 
+            content: policyDocumentPrompt 
+          }
+        ],
         temperature: 0.7,
         max_tokens: 3000,
       }),
     });
 
     // Generate Student Guide
-    const studentGuidePrompt = `Create a practical student guide for responsible AI use in ${syllabusData.courseName} (${syllabusData.subject}, ${syllabusData.gradeLevel}).
+    const studentGuidePrompt = `Generate a student guide for responsible AI use in ${syllabusData.courseName} (${syllabusData.subject}, ${syllabusData.gradeLevel}). Start immediately with the guide title.
 
-The guide should be student-friendly and include:
+Include these sections:
 1. What AI tools are and how they work
 2. Step-by-step instructions for appropriate AI use in coursework
 3. Examples of good AI collaboration vs. problematic dependence
@@ -141,8 +177,7 @@ The guide should be student-friendly and include:
 6. Common mistakes to avoid
 7. Resources for learning more about AI literacy
 
-Tone: ${policyOptions.tone}
-Focus on practical, actionable advice that helps students succeed while using AI responsibly.`;
+Use ${policyOptions.tone} tone and focus on practical, actionable advice. Begin with the guide title:`;
 
     const studentGuideResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -150,26 +185,34 @@ Focus on practical, actionable advice that helps students succeed while using AI
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: studentGuidePrompt }],
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a student guide writer. Respond only with guide content. Do not include introductory text or explanations. Start immediately with the guide title.'
+          },
+          { 
+            role: 'user', 
+            content: studentGuidePrompt 
+          }
+        ],
         temperature: 0.7,
         max_tokens: 2500,
       }),
     });
 
     // Generate Canvas Resources
-    const canvasResourcesPrompt = `Create Canvas LMS-ready content modules for AI literacy in ${syllabusData.courseName}.
+    const canvasResourcesPrompt = `Generate Canvas LMS-ready content modules for AI literacy in ${syllabusData.courseName}. Start immediately with the first module.
 
-Create the following modules:
+Create these modules:
 1. Course AI Policy Announcement (for Canvas announcements)
 2. AI Tools Tutorial Module (step-by-step Canvas module content)
 3. Academic Integrity Reminder (for assignment instructions)
 4. AI Citation Template (for student reference)
 5. Discussion Forum Prompts (3-4 prompts for AI literacy discussions)
 
-Format each section clearly with headers. Make content ready to copy-paste into Canvas.
-Tone: ${policyOptions.tone}`;
+Format with clear headers, ready to copy-paste into Canvas. Use ${policyOptions.tone} tone. Begin with the first module:`;
 
     const canvasResourcesResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -177,9 +220,18 @@ Tone: ${policyOptions.tone}`;
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: canvasResourcesPrompt }],
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a Canvas LMS content creator. Respond only with module content. Do not include introductory text or explanations. Start immediately with the first module.'
+          },
+          { 
+            role: 'user', 
+            content: canvasResourcesPrompt 
+          }
+        ],
         temperature: 0.7,
         max_tokens: 2500,
       }),
@@ -193,11 +245,11 @@ Tone: ${policyOptions.tone}`;
       canvasResourcesResponse.json(),
     ]);
 
-    // Extract content from responses with validation
-    const enhancedSyllabusContent = enhancedData.choices[0]?.message?.content || '';
-    const policyDocumentContent = policyData.choices[0]?.message?.content || '';
-    const studentGuideContent = guideData.choices[0]?.message?.content || '';
-    const canvasResourcesContent = canvasData.choices[0]?.message?.content || '';
+    // Extract content from responses with validation and cleaning
+    const enhancedSyllabusContent = cleanAIContent(enhancedData.choices[0]?.message?.content || '');
+    const policyDocumentContent = cleanAIContent(policyData.choices[0]?.message?.content || '');
+    const studentGuideContent = cleanAIContent(guideData.choices[0]?.message?.content || '');
+    const canvasResourcesContent = cleanAIContent(canvasData.choices[0]?.message?.content || '');
 
     // Validate that enhanced syllabus contains substantial original content
     const originalWordCount = syllabusData.content.split(/\s+/).length;
@@ -212,12 +264,12 @@ Tone: ${policyOptions.tone}`;
       console.warn('Enhanced syllabus appears to have placeholders or missing content, retrying...');
       
       // Retry with more explicit instructions
-      const retryPrompt = `IMPORTANT: You must include the COMPLETE original syllabus content below, with AI policies integrated throughout. Do NOT use any placeholders.
+      const retryPrompt = `CRITICAL: Start immediately with the course title. Do not include any introductory text.
 
 Original Syllabus (INCLUDE ALL OF THIS):
 ${syllabusData.content}
 
-Add AI policy sections with a ${policyOptions.tone} tone and ${policyOptions.enforcement} enforcement approach. Include ALL original text while enhancing it with AI guidelines.`;
+Add AI policy sections with ${policyOptions.tone} tone and ${policyOptions.enforcement} enforcement. Include ALL original text while enhancing it with AI guidelines. Begin with the course title:`;
       
       const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -226,15 +278,24 @@ Add AI policy sections with a ${policyOptions.tone} tone and ${policyOptions.enf
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4.1-2025-04-14',
-          messages: [{ role: 'user', content: retryPrompt }],
-          temperature: 0.5,
-          max_tokens: 4000,
-        }),
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a professional syllabus editor. Respond only with syllabus content. Start immediately with the course title. No introductory text.'
+          },
+          { 
+            role: 'user', 
+            content: retryPrompt 
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 4000,
+      }),
       });
       
       const retryData = await retryResponse.json();
-      finalEnhancedContent = retryData.choices[0]?.message?.content || enhancedSyllabusContent;
+      finalEnhancedContent = cleanAIContent(retryData.choices[0]?.message?.content || enhancedSyllabusContent);
     }
 
     const generatedContent = {
