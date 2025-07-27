@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Copy, Check, Edit, Save, X } from 'lucide-react';
+import { Download, Copy, Check, Edit, Save, X, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { renderMarkdownToHtml, stripMarkdown } from "@/utils/markdownRenderer";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 
 interface GeneratedContent {
   enhancedSyllabus?: string;
@@ -114,60 +115,139 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
     }
   };
 
-  const convertToRTF = (content: string, title: string): string => {
-    // Convert markdown to plain text for RTF, then escape special characters
-    const plainText = stripMarkdown(content);
-    const escapedContent = plainText
-      .replace(/\\/g, '\\\\')
-      .replace(/\{/g, '\\{')
-      .replace(/\}/g, '\\}')
-      .replace(/\n/g, '\\par\n');
+  const convertToDocx = async (content: string): Promise<Blob> => {
+    const lines = content.split('\n');
+    const paragraphs: Paragraph[] = [];
     
-    return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
-\\f0\\fs24 {\\b ${title}\\par}
-\\par
-${escapedContent}
-}`;
-  };
-
-
-  const handleDownload = (content: string, filename: string, format: 'txt' | 'rtf' = 'txt') => {
-    let blob: Blob;
-    let downloadFilename: string;
-    
-    if (format === 'rtf') {
-      const rtfContent = convertToRTF(content, filename.split('_')[0]);
-      blob = new Blob([rtfContent], { type: 'application/rtf' });
-      downloadFilename = filename.replace('.pdf', '.rtf').replace('.html', '.rtf').replace('.txt', '.rtf');
-    } else {
-      blob = new Blob([content], { type: 'text/plain' });
-      downloadFilename = filename.replace('.pdf', '.txt').replace('.html', '.txt');
+    for (const line of lines) {
+      if (line.trim() === '') {
+        paragraphs.push(new Paragraph({ text: "" }));
+        continue;
+      }
+      
+      // Handle headers
+      if (line.startsWith('### ')) {
+        paragraphs.push(new Paragraph({
+          text: line.replace('### ', ''),
+          heading: HeadingLevel.HEADING_3,
+        }));
+      } else if (line.startsWith('## ')) {
+        paragraphs.push(new Paragraph({
+          text: line.replace('## ', ''),
+          heading: HeadingLevel.HEADING_2,
+        }));
+      } else if (line.startsWith('# ')) {
+        paragraphs.push(new Paragraph({
+          text: line.replace('# ', ''),
+          heading: HeadingLevel.HEADING_1,
+        }));
+      } else {
+        // Handle regular text with formatting
+        const textRuns: TextRun[] = [];
+        let remainingText = line;
+        
+        // Simple bold formatting
+        const boldPattern = /\*\*(.*?)\*\*/g;
+        let lastIndex = 0;
+        let match;
+        
+        while ((match = boldPattern.exec(remainingText)) !== null) {
+          if (match.index > lastIndex) {
+            textRuns.push(new TextRun({
+              text: remainingText.substring(lastIndex, match.index)
+            }));
+          }
+          textRuns.push(new TextRun({
+            text: match[1],
+            bold: true
+          }));
+          lastIndex = match.index + match[0].length;
+        }
+        
+        if (lastIndex < remainingText.length) {
+          textRuns.push(new TextRun({
+            text: remainingText.substring(lastIndex)
+          }));
+        }
+        
+        if (textRuns.length === 0) {
+          textRuns.push(new TextRun({ text: line }));
+        }
+        
+        paragraphs.push(new Paragraph({ children: textRuns }));
+      }
     }
     
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = downloadFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Download started",
-      description: `${downloadFilename} is being downloaded.`,
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: paragraphs,
+      }],
     });
+    
+    return await Packer.toBlob(doc);
   };
 
-  const handleDownloadAll = () => {
-    contentItems.forEach(item => {
-      if (item.content) {
-        // Download both TXT and RTF versions
-        handleDownload(item.content, item.downloadName, 'txt');
-        setTimeout(() => {
-          handleDownload(item.content!, item.downloadName, 'rtf');
-        }, 100);
+  const handleDownload = async (content: string, filename: string, format: 'docx' | 'google-docs' = 'docx') => {
+    if (format === 'docx') {
+      try {
+        const blob = await convertToDocx(content);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const downloadFilename = filename.replace('.pdf', '.docx').replace('.html', '.docx').replace('.txt', '.docx');
+        a.download = downloadFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Downloaded",
+          description: `${downloadFilename} has been downloaded`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to generate DOCX file",
+          variant: "destructive",
+        });
       }
+    } else if (format === 'google-docs') {
+      // Create Google Docs import URL - using a simple approach
+      const encodedTitle = encodeURIComponent(filename.replace(/\.(pdf|html|txt|docx)$/, ''));
+      const encodedContent = encodeURIComponent(content);
+      
+      // Simple approach: copy content to clipboard and open Google Docs
+      try {
+        await navigator.clipboard.writeText(content);
+        window.open('https://docs.google.com/document/create', '_blank');
+        
+        toast({
+          title: "Content copied & Google Docs opened",
+          description: "Content copied to clipboard. Paste it in the new Google Doc.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to copy content or open Google Docs",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    for (const item of contentItems) {
+      if (item.content) {
+        await handleDownload(item.content, item.downloadName, 'docx');
+        // Small delay to avoid overwhelming the browser
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    toast({
+      title: "All Documents Downloaded",
+      description: "All content has been downloaded as DOCX files",
     });
   };
 
@@ -243,7 +323,7 @@ ${escapedContent}
       <div className="flex flex-wrap gap-2 justify-center">
         <Button onClick={handleDownloadAll} variant="default">
           <Download className="w-4 h-4 mr-2" />
-          Download All (TXT + RTF)
+          Download All (DOCX)
         </Button>
       </div>
 
@@ -312,18 +392,18 @@ ${escapedContent}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'txt')}
+                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'docx')}
                           >
-                            <Download className="w-4 h-4 mr-1" />
-                            TXT
+                            <FileText className="w-4 h-4 mr-1" />
+                            DOCX
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'rtf')}
+                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'google-docs')}
                           >
-                            <Download className="w-4 h-4 mr-1" />
-                            RTF
+                            <ExternalLink className="w-4 h-4 mr-1" />
+                            Google Docs
                           </Button>
                         </div>
                       </>
