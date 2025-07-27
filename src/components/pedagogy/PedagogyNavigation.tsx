@@ -2,33 +2,40 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Brain, Users, Lightbulb, Search } from 'lucide-react';
+import { BookOpen, Brain, Users, Lightbulb, Search, Shield } from 'lucide-react';
+import { getCategoryCount } from '@/utils/articleUtils';
 
 const PedagogyNavigation = () => {
   const categories = [
     {
       icon: Brain,
       name: "Learning Theory",
-      count: 1,
+      count: getCategoryCount("Learning Theory"),
       color: "bg-blue-100 text-blue-600"
     },
     {
       icon: Lightbulb,
       name: "Teaching Frameworks",
-      count: 1,
+      count: getCategoryCount("Teaching Frameworks"),
       color: "bg-green-100 text-green-600"
     },
     {
-      icon: Users,
-      name: "Classroom Management",
-      count: 0,
+      icon: Shield,
+      name: "Digital Citizenship",
+      count: getCategoryCount("Digital Citizenship"),
       color: "bg-purple-100 text-purple-600"
     },
     {
       icon: BookOpen,
       name: "Assessment & Feedback",
-      count: 0,
+      count: getCategoryCount("Assessment & Feedback"),
       color: "bg-orange-100 text-orange-600"
+    },
+    {
+      icon: Users,
+      name: "AI Implementation",
+      count: getCategoryCount("AI Implementation"),
+      color: "bg-indigo-100 text-indigo-600"
     }
   ];
 
