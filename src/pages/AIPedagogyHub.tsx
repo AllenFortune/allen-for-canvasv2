@@ -17,7 +17,8 @@ const AIPedagogyHub = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="py-20">
+        <div className="max-w-7xl mx-auto px-6 py-8">
         <PedagogyHero />
         
         {/* AI Literacy Tools Card */}
@@ -253,6 +254,7 @@ const AIPedagogyHub = () => {
             <FeaturedArticle />
             <ArticlesList />
           </div>
+        </div>
         </div>
       </div>
       <Footer />
