@@ -62,15 +62,23 @@ ${policyOptions.includeAssignmentSpecific && policyOptions.assignmentSpecificDet
 `Additional Assignment-Specific Requirements:
 ${policyOptions.assignmentSpecificDetails}` : ''}
 
+CRITICAL INSTRUCTIONS:
+- You MUST include ALL of the original syllabus content in your response
+- Do NOT use placeholders like "[Original content retained]" or "[Keep existing content]"
+- Copy the ENTIRE original syllabus text and enhance it by adding AI policy sections
+- Weave AI policies naturally into the existing structure - add new sections where appropriate
+- If the original syllabus has specific sections, enhance them with AI-related content
+- The final output should be a complete, standalone syllabus that a teacher can use immediately
+
 Please enhance this syllabus by seamlessly integrating AI use policies throughout the document. The enhanced syllabus should:
-1. Maintain all original content and structure
-2. Add appropriate AI policy sections that feel natural and integrated
+1. Include ALL original content word-for-word, with AI enhancements woven throughout
+2. Add appropriate AI policy sections that complement the existing structure
 3. Include clear expectations for AI tool usage in coursework
-4. Address academic integrity concerns related to AI
-5. Use a ${policyOptions.tone} tone throughout
+4. Address academic integrity concerns related to AI within existing or new sections
+5. Use a ${policyOptions.tone} tone throughout all additions
 6. Reflect a ${policyOptions.enforcement} approach to enforcement
 
-Return only the enhanced syllabus content, properly formatted and ready for classroom use.`;
+Return the complete enhanced syllabus with all original content included, properly formatted and ready for classroom use.`;
 
     const enhancedSyllabusResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -185,12 +193,55 @@ Tone: ${policyOptions.tone}`;
       canvasResourcesResponse.json(),
     ]);
 
-    // Extract content from responses
+    // Extract content from responses with validation
+    const enhancedSyllabusContent = enhancedData.choices[0]?.message?.content || '';
+    const policyDocumentContent = policyData.choices[0]?.message?.content || '';
+    const studentGuideContent = guideData.choices[0]?.message?.content || '';
+    const canvasResourcesContent = canvasData.choices[0]?.message?.content || '';
+
+    // Validate that enhanced syllabus contains substantial original content
+    const originalWordCount = syllabusData.content.split(/\s+/).length;
+    const enhancedWordCount = enhancedSyllabusContent.split(/\s+/).length;
+    const hasPlaceholders = enhancedSyllabusContent.includes('[Original content retained]') || 
+                           enhancedSyllabusContent.includes('[Keep existing content]') ||
+                           enhancedSyllabusContent.includes('...keep existing');
+
+    let finalEnhancedContent = enhancedSyllabusContent;
+
+    if (hasPlaceholders || enhancedWordCount < originalWordCount * 0.8) {
+      console.warn('Enhanced syllabus appears to have placeholders or missing content, retrying...');
+      
+      // Retry with more explicit instructions
+      const retryPrompt = `IMPORTANT: You must include the COMPLETE original syllabus content below, with AI policies integrated throughout. Do NOT use any placeholders.
+
+Original Syllabus (INCLUDE ALL OF THIS):
+${syllabusData.content}
+
+Add AI policy sections with a ${policyOptions.tone} tone and ${policyOptions.enforcement} enforcement approach. Include ALL original text while enhancing it with AI guidelines.`;
+      
+      const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-2025-04-14',
+          messages: [{ role: 'user', content: retryPrompt }],
+          temperature: 0.5,
+          max_tokens: 4000,
+        }),
+      });
+      
+      const retryData = await retryResponse.json();
+      finalEnhancedContent = retryData.choices[0]?.message?.content || enhancedSyllabusContent;
+    }
+
     const generatedContent = {
-      enhancedSyllabus: enhancedData.choices[0]?.message?.content || 'Error generating enhanced syllabus',
-      aiPolicyDocument: policyData.choices[0]?.message?.content || 'Error generating AI policy document',
-      studentGuide: guideData.choices[0]?.message?.content || 'Error generating student guide',
-      canvasResources: canvasData.choices[0]?.message?.content || 'Error generating Canvas resources',
+      enhancedSyllabus: finalEnhancedContent,
+      aiPolicyDocument: policyDocumentContent,
+      studentGuide: studentGuideContent,
+      canvasResources: canvasResourcesContent,
     };
 
     console.log('Successfully generated AI syllabus content');

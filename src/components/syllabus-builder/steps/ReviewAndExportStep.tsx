@@ -112,14 +112,38 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
     }
   };
 
-  const handleDownload = (content: string, filename: string) => {
-    // For now, download as text file. In a real implementation, 
-    // you'd convert to PDF or proper format
-    const blob = new Blob([content], { type: 'text/plain' });
+  const convertToRTF = (content: string, title: string): string => {
+    // Basic RTF conversion - escape special characters and add formatting
+    const escapedContent = content
+      .replace(/\\/g, '\\\\')
+      .replace(/\{/g, '\\{')
+      .replace(/\}/g, '\\}')
+      .replace(/\n/g, '\\par\n');
+    
+    return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
+\\f0\\fs24 {\\b ${title}\\par}
+\\par
+${escapedContent}
+}`;
+  };
+
+  const handleDownload = (content: string, filename: string, format: 'txt' | 'rtf' = 'txt') => {
+    let blob: Blob;
+    let downloadFilename: string;
+    
+    if (format === 'rtf') {
+      const rtfContent = convertToRTF(content, filename.split('_')[0]);
+      blob = new Blob([rtfContent], { type: 'application/rtf' });
+      downloadFilename = filename.replace('.pdf', '.rtf').replace('.html', '.rtf').replace('.txt', '.rtf');
+    } else {
+      blob = new Blob([content], { type: 'text/plain' });
+      downloadFilename = filename.replace('.pdf', '.txt').replace('.html', '.txt');
+    }
+    
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename.replace('.pdf', '.txt').replace('.html', '.txt');
+    a.download = downloadFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -127,14 +151,18 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
     
     toast({
       title: "Download started",
-      description: `${filename} is being downloaded.`,
+      description: `${downloadFilename} is being downloaded.`,
     });
   };
 
   const handleDownloadAll = () => {
     contentItems.forEach(item => {
       if (item.content) {
-        handleDownload(item.content, item.downloadName);
+        // Download both TXT and RTF versions
+        handleDownload(item.content, item.downloadName, 'txt');
+        setTimeout(() => {
+          handleDownload(item.content!, item.downloadName, 'rtf');
+        }, 100);
       }
     });
   };
@@ -211,7 +239,7 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
       <div className="flex flex-wrap gap-2 justify-center">
         <Button onClick={handleDownloadAll} variant="default">
           <Download className="w-4 h-4 mr-2" />
-          Download All
+          Download All (TXT + RTF)
         </Button>
       </div>
 
@@ -276,14 +304,24 @@ const ReviewAndExportStep: React.FC<ReviewAndExportStepProps> = ({
                           )}
                           {copiedItems.has(item.id) ? 'Copied' : 'Copy'}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => item.content && handleDownload(item.content, item.downloadName)}
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          Download
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'txt')}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            TXT
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => item.content && handleDownload(item.content, item.downloadName, 'rtf')}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            RTF
+                          </Button>
+                        </div>
                       </>
                     )}
                   </div>
