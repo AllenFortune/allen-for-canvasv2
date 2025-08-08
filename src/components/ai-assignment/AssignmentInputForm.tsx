@@ -25,7 +25,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
   const [gradeLevel, setGradeLevel] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [canvasIds, setCanvasIds] = useState<{courseId?: string; assignmentId?: string}>({});
+  const [canvasIds, setCanvasIds] = useState<{courseId?: string; assignmentId?: string; discussionId?: string}>({});
   
   // New contextual state
   const [classFormat, setClassFormat] = useState('');
@@ -59,6 +59,7 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
     estimatedTime?: string;
     courseId?: string;
     assignmentId?: string;
+    discussionId?: string;
   }) => {
     setAssignmentTitle(importedAssignment.title);
     setAssignmentText(importedAssignment.content);
@@ -77,7 +78,8 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
     setEstimatedTime(importedAssignment.estimatedTime || '');
     setCanvasIds({
       courseId: importedAssignment.courseId,
-      assignmentId: importedAssignment.assignmentId
+      assignmentId: importedAssignment.assignmentId,
+      discussionId: importedAssignment.discussionId
     });
     
     // Auto-advance to content step
@@ -150,7 +152,8 @@ const AssignmentInputForm: React.FC<AssignmentInputFormProps> = ({
         assignmentType,
         completionLocation,
         courseId: canvasIds.courseId,
-        assignmentId: canvasIds.assignmentId
+        assignmentId: canvasIds.assignmentId,
+        discussionId: canvasIds.discussionId
       };
       onIntegrationGenerated(data, assignmentData);
     } catch (error) {

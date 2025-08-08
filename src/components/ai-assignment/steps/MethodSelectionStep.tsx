@@ -24,7 +24,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold mb-2">How would you like to input your assignment?</h3>
+        <h3 className="text-lg font-semibold mb-2">How would you like to input your assignment or discussion?</h3>
         <p className="text-muted-foreground text-sm">Choose the method that works best for you.</p>
       </div>
       
@@ -51,7 +51,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
           <CardContent className="p-6 text-center">
             <Monitor className="w-8 h-8 mx-auto mb-3 text-primary" />
             <h4 className="font-semibold mb-2">Import from Canvas</h4>
-            <p className="text-sm text-muted-foreground">Select an existing assignment from Canvas</p>
+            <p className="text-sm text-muted-foreground">Select an existing assignment or discussion from Canvas</p>
           </CardContent>
         </Card>
       </div>

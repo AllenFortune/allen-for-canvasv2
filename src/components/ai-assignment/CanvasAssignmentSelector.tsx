@@ -32,6 +32,15 @@ interface Assignment {
   submission_types: string[];
 }
 
+interface Discussion {
+  id: number;
+  title: string;
+  is_assignment?: boolean;
+  needs_grading_count?: number;
+  assignment_id?: number | null;
+  posted_at?: string | null;
+}
+
 interface CanvasAssignmentSelectorProps {
   onAssignmentImported: (assignment: {
     title: string;
@@ -41,6 +50,7 @@ interface CanvasAssignmentSelectorProps {
     estimatedTime?: string;
     courseId?: string;
     assignmentId?: string;
+    discussionId?: string;
   }) => void;
   loading: boolean;
   // New props for export mode
@@ -54,16 +64,21 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
   exportMode = false,
   onAssignmentSelected
 }) => {
+  const [mode, setMode] = useState<'assignments' | 'discussions'>('assignments');
   const [courses, setCourses] = useState<Course[]>([]);
   const [groupedCourses, setGroupedCourses] = useState<{ term: any; courses: CourseWithTerm[] }[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedAssignment, setSelectedAssignment] = useState<string>('');
+  const [selectedDiscussion, setSelectedDiscussion] = useState<string>('');
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [loadingDiscussions, setLoadingDiscussions] = useState(false);
   const [importingAssignment, setImportingAssignment] = useState(false);
   const [courseSearchOpen, setCourseSearchOpen] = useState(false);
   const [assignmentSearchOpen, setAssignmentSearchOpen] = useState(false);
+  const [discussionSearchOpen, setDiscussionSearchOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchCourses = async () => {
@@ -120,41 +135,98 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
     }
   };
 
-  const importAssignment = async () => {
-    if (!selectedCourse || !selectedAssignment) return;
-    
-    setImportingAssignment(true);
+  const fetchDiscussions = async (courseId: string) => {
+    if (!courseId) return;
+    setLoadingDiscussions(true);
     try {
-      const { data, error } = await supabase.functions.invoke('import-canvas-assignment', {
-        body: { 
-          courseId: selectedCourse,
-          assignmentId: selectedAssignment
-        }
+      const { data, error } = await supabase.functions.invoke('get-canvas-discussions', {
+        body: { courseId }
       });
       
       if (error) throw error;
       
-      if (data?.assignment) {
-        const assignment = data.assignment;
-        onAssignmentImported({
-          title: assignment.name,
-          content: assignment.description || '',
-          subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
-          estimatedTime: assignment.due_at ? `Due: ${new Date(assignment.due_at).toLocaleDateString()}` : undefined,
-          courseId: selectedCourse,
-          assignmentId: selectedAssignment
-        });
-        
-        toast({
-          title: "Success",
-          description: "Assignment imported from Canvas successfully!"
-        });
+      if (data?.discussions) {
+        setDiscussions(data.discussions);
+      } else {
+        throw new Error('No discussions data received');
       }
     } catch (error) {
-      console.error('Error importing assignment:', error);
+      console.error('Error fetching discussions:', error);
       toast({
         title: "Error",
-        description: "Failed to import assignment from Canvas.",
+        description: "Failed to fetch Canvas discussions.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingDiscussions(false);
+    }
+  };
+
+  const importSelection = async () => {
+    if (!selectedCourse) return;
+    
+    setImportingAssignment(true);
+    try {
+      if (mode === 'assignments') {
+        if (!selectedAssignment) return;
+        const { data, error } = await supabase.functions.invoke('import-canvas-assignment', {
+          body: { 
+            courseId: selectedCourse,
+            assignmentId: selectedAssignment
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data?.assignment) {
+          const assignment = data.assignment;
+          onAssignmentImported({
+            title: assignment.name,
+            content: assignment.description || '',
+            subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
+            estimatedTime: assignment.due_at ? `Due: ${new Date(assignment.due_at).toLocaleDateString()}` : undefined,
+            courseId: selectedCourse,
+            assignmentId: selectedAssignment
+          });
+          
+          toast({
+            title: "Success",
+            description: "Assignment imported from Canvas successfully!"
+          });
+        }
+      } else {
+        if (!selectedDiscussion) return;
+        const { data, error } = await supabase.functions.invoke('import-canvas-discussion', {
+          body: {
+            courseId: selectedCourse,
+            discussionId: selectedDiscussion
+          }
+        });
+
+        if (error) throw error;
+
+        if (data?.discussion) {
+          const discussion = data.discussion;
+          onAssignmentImported({
+            title: discussion.title,
+            content: discussion.message || '',
+            subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
+            estimatedTime: discussion.due_at ? `Due: ${new Date(discussion.due_at).toLocaleDateString()}` : undefined,
+            courseId: selectedCourse,
+            discussionId: selectedDiscussion
+          });
+
+          toast({
+            title: "Success",
+            description: "Discussion imported from Canvas successfully!"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error importing from Canvas:', error);
+      toast({
+        title: "Error",
+        description: "Failed to import from Canvas.",
         variant: "destructive"
       });
     } finally {
@@ -165,9 +237,15 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
   const handleCourseChange = (courseId: string) => {
     setSelectedCourse(courseId);
     setSelectedAssignment('');
+    setSelectedDiscussion('');
     setAssignments([]);
+    setDiscussions([]);
     if (courseId) {
-      fetchAssignments(courseId);
+      if (mode === 'assignments') {
+        fetchAssignments(courseId);
+      } else {
+        fetchDiscussions(courseId);
+      }
     }
   };
 
@@ -178,6 +256,10 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
     if (exportMode && onAssignmentSelected && selectedCourse) {
       onAssignmentSelected(selectedCourse, assignmentId);
     }
+  };
+
+  const handleDiscussionChange = (discussionId: string) => {
+    setSelectedDiscussion(discussionId);
   };
 
   // In export mode, call onAssignmentImported with the selection info
@@ -191,6 +273,16 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
       });
     }
   }, [selectedCourse, selectedAssignment, exportMode, onAssignmentImported]);
+
+  React.useEffect(() => {
+    if (selectedCourse) {
+      if (mode === 'assignments') {
+        fetchAssignments(selectedCourse);
+      } else {
+        fetchDiscussions(selectedCourse);
+      }
+    }
+  }, [mode, selectedCourse]);
 
   return (
     <Card>
@@ -218,6 +310,14 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
           </Button>
         ) : (
           <>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant={mode === 'assignments' ? 'default' : 'outline'} size="sm" onClick={() => setMode('assignments')}>
+                Assignments
+              </Button>
+              <Button variant={mode === 'discussions' ? 'default' : 'outline'} size="sm" onClick={() => setMode('discussions')}>
+                Discussions
+              </Button>
+            </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Select Course</label>
               <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
@@ -234,7 +334,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-popover border">
+                <PopoverContent className="w-full p-0 bg-popover border z-50">
                   <Command>
                     <CommandInput placeholder="Search courses..." className="h-9" />
                     <CommandList>
@@ -269,14 +369,14 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
               </Popover>
             </div>
 
-            {loadingAssignments && (
+            {(mode === 'assignments' ? loadingAssignments : loadingDiscussions) && (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading assignments...
+                {mode === 'assignments' ? 'Loading assignments...' : 'Loading discussions...'}
               </div>
             )}
 
-            {assignments.length > 0 && (
+            {mode === 'assignments' && assignments.length > 0 && (
               <div>
                 <label className="text-sm font-medium mb-2 block">Select Assignment</label>
                 <Popover open={assignmentSearchOpen} onOpenChange={setAssignmentSearchOpen}>
@@ -293,7 +393,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
                       <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-popover border">
+                  <PopoverContent className="w-full p-0 bg-popover border z-50">
                     <Command>
                       <CommandInput placeholder="Search assignments..." className="h-9" />
                       <CommandList>
@@ -330,21 +430,74 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
               </div>
             )}
 
-            {!exportMode && selectedAssignment && (
+            {mode === 'discussions' && discussions.length > 0 && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Select Discussion</label>
+                <Popover open={discussionSearchOpen} onOpenChange={setDiscussionSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={discussionSearchOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedDiscussion
+                        ? discussions.find((d) => d.id.toString() === selectedDiscussion)?.title
+                        : "Choose a discussion"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover border z-50">
+                    <Command>
+                      <CommandInput placeholder="Search discussions..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No discussions found.</CommandEmpty>
+                        <CommandGroup>
+                          {discussions.map((discussion) => (
+                            <CommandItem
+                              key={discussion.id}
+                              value={discussion.title}
+                              onSelect={() => {
+                                handleDiscussionChange(discussion.id.toString());
+                                setDiscussionSearchOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium">{discussion.title}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {discussion.is_assignment ? 'Graded discussion' : 'Ungraded discussion'}
+                                </span>
+                              </div>
+                              <Check
+                                className={`ml-auto h-4 w-4 ${
+                                  selectedDiscussion === discussion.id.toString() ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            {!exportMode && ((mode === 'assignments' && selectedAssignment) || (mode === 'discussions' && selectedDiscussion)) && (
               <Button 
-                onClick={importAssignment}
+                onClick={importSelection}
                 disabled={importingAssignment || loading}
                 className="w-full"
               >
                 {importingAssignment ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Importing Assignment...
+                    Importing {mode === 'assignments' ? 'Assignment' : 'Discussion'}...
                   </>
                 ) : (
                   <>
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    Import Assignment
+                    Import {mode === 'assignments' ? 'Assignment' : 'Discussion'}
                   </>
                 )}
               </Button>
