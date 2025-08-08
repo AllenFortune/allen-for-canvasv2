@@ -4,14 +4,26 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 const FallPromotionBanner = () => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check URL parameters for testing override
+    const urlParams = new URLSearchParams(window.location.search);
+    const showBanner = urlParams.get('showBanner');
+    
+    if (showBanner === 'true') {
+      localStorage.removeItem("fall2025-banner-dismissed");
+      setIsVisible(true);
+      return;
+    }
+
     // Check if user has dismissed the banner
     const isDismissed = localStorage.getItem("fall2025-banner-dismissed");
-    if (!isDismissed) {
-      setIsVisible(true);
+    console.log("Banner dismissed status:", isDismissed);
+    
+    if (isDismissed) {
+      setIsVisible(false);
     }
   }, []);
 
