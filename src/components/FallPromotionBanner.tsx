@@ -39,7 +39,7 @@ const FallPromotionBanner = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white">
+    <div className="fixed top-16 left-0 right-0 z-60 overflow-hidden bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white">
       <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 via-transparent to-amber-600/20" />
       <div className="relative max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
