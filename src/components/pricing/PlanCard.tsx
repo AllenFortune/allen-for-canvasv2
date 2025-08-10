@@ -61,7 +61,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
     } p-8`}>
       {plan.popular && !isCurrentPlan && (
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-          <span className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium">
+          <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
             Most Popular
           </span>
         </div>
