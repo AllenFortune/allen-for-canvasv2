@@ -5,24 +5,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Clock, Shield, BarChart3, BookOpen, Users, Lightbulb, GraduationCap, FileText, User } from 'lucide-react';
+import { CheckCircle, Clock, Shield, BarChart3, BookOpen, Users, Lightbulb, GraduationCap, FileText, User, Mic, UserPlus, Brain, Target, Settings, Bot } from 'lucide-react';
 const Features = () => {
   const navigate = useNavigate();
   const currentFeatures = [{
     icon: <CheckCircle className="w-8 h-8 text-indigo-600" />,
     title: "AI-Enhanced Grading",
-    description: "Intelligent assignment and discussion grading with rubric integration. Save 60% of your grading time while maintaining quality feedback.",
-    features: ["Assignment grading automation", "Discussion post evaluation", "Rubric-based assessment", "Consistent feedback generation"]
+    description: "Intelligent assignment, discussion, and quiz grading with rubric integration. Save 60% of your grading time while maintaining quality feedback.",
+    features: ["Assignment grading automation", "Discussion post evaluation", "Quiz question-by-question grading", "Rubric-based assessment", "Consistent feedback generation"]
   }, {
     icon: <FileText className="w-8 h-8 text-indigo-600" />,
     title: "Canvas Integration",
     description: "Seamless connection with your Canvas LMS for streamlined workflow and automatic grade passback.",
     features: ["Secure API connection", "Real-time submission sync", "Automatic grade passback", "Course management"]
   }, {
+    icon: <Target className="w-8 h-8 text-indigo-600" />,
+    title: "AI Rubric Builder",
+    description: "Generate comprehensive rubrics automatically from your assignments or create custom rubrics with AI assistance.",
+    features: ["Automatic rubric generation", "Canvas assignment import", "Multiple rubric formats", "Direct Canvas export"]
+  }, {
+    icon: <FileText className="w-8 h-8 text-indigo-600" />,
+    title: "AI Syllabus Policy Builder",
+    description: "Create comprehensive AI policies and student use guides with downloadable resources for your courses.",
+    features: ["AI use policy generation", "Student guide creation", "Downloadable resources", "Academic integrity integration"]
+  }, {
+    icon: <Brain className="w-8 h-8 text-indigo-600" />,
+    title: "AI Literacy Builder (DIVER Framework)",
+    description: "Transform existing assignments to integrate AI literacy components using the evidence-based DIVER framework.",
+    features: ["Assignment transformation", "DIVER framework integration", "Critical thinking development", "Responsible AI use guidance"]
+  }, {
+    icon: <Bot className="w-8 h-8 text-indigo-600" />,
+    title: "CustomGPT Teaching Assistant Builder",
+    description: "Create personalized AI teaching assistants with Socratic learning approach and Canvas integration.",
+    features: ["Step-by-step GPT setup", "Knowledge base integration", "Socratic teaching methods", "Canvas course connection"]
+  }, {
+    icon: <BookOpen className="w-8 h-8 text-indigo-600" />,
+    title: "AI Pedagogy Hub",
+    description: "Comprehensive resource center with research-backed articles on AI integration and teaching strategies.",
+    features: ["Evidence-based articles", "Teaching frameworks", "Digital citizenship resources", "Implementation guides"]
+  }, {
+    icon: <Mic className="w-8 h-8 text-indigo-600" />,
+    title: "Voice Controls",
+    description: "Hands-free navigation and grading functionality to streamline your workflow and reduce repetitive tasks.",
+    features: ["Voice navigation", "Hands-free grading", "Command shortcuts", "Accessibility features"]
+  }, {
+    icon: <UserPlus className="w-8 h-8 text-indigo-600" />,
+    title: "Referral Program",
+    description: "Earn additional submissions by referring other educators to the platform and help grow the community.",
+    features: ["Earn submission credits", "Referral tracking", "Community growth", "Reward system"]
+  }, {
     icon: <BarChart3 className="w-8 h-8 text-indigo-600" />,
     title: "Teacher Dashboard",
     description: "Comprehensive overview of your courses, assignments, and grading progress in one centralized location.",
     features: ["Assignment overview", "Course filtering", "Progress tracking", "Quick grading access"]
+  }, {
+    icon: <Settings className="w-8 h-8 text-indigo-600" />,
+    title: "Admin Portal",
+    description: "Advanced management tools for institutional administrators to oversee usage, manage users, and track analytics.",
+    features: ["User management", "Usage analytics", "Plan distribution", "Institutional oversight"]
   }, {
     icon: <Shield className="w-8 h-8 text-indigo-600" />,
     title: "Security & Privacy",
@@ -60,8 +100,7 @@ const Features = () => {
             Features That Transform Teaching
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Discover how A.L.L.E.N. revolutionizes grading and prepares students for an AI-enhanced future. 
-            From current AI-powered grading to upcoming AI literacy tools.
+            Discover A.L.L.E.N.'s comprehensive suite of AI-powered educational tools. From intelligent grading and rubric building to AI literacy frameworks and custom teaching assistants - everything you need to transform your classroom.
           </p>
           <div className="flex justify-center space-x-4">
             <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate("/canvas-setup")}>
@@ -89,7 +128,7 @@ const Features = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentFeatures.map((feature, index) => <Card key={index} className="hover:shadow-lg transition-shadow h-full">
                 <CardHeader>
                   <div className="flex items-center mb-4">
