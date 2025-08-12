@@ -12,6 +12,54 @@ serve(async (req) => {
   }
 
   try {
+    const requestBody = await req.json();
+    
+    // Handle quiz question grading
+    if (requestBody.isQuizQuestion) {
+      const {
+        questionText,
+        questionType,
+        questionName,
+        studentAnswer,
+        pointsPossible,
+        currentGrade,
+        isSummativeAssessment = true,
+        customPrompt
+      } = requestBody;
+
+      console.log('Generating AI grading for quiz question:', questionName);
+      console.log('Question type:', questionType);
+      console.log('Assessment type:', isSummativeAssessment ? 'Summative' : 'Formative');
+
+      // Import quiz prompt generator
+      const { generateQuizSystemPrompt, generateQuizUserPrompt } = await import('./quiz-prompt-generator.ts');
+
+      const systemPrompt = generateQuizSystemPrompt(
+        isSummativeAssessment,
+        pointsPossible,
+        customPrompt
+      );
+
+      const userPrompt = generateQuizUserPrompt(
+        questionText,
+        questionType,
+        studentAnswer,
+        pointsPossible,
+        currentGrade,
+        questionName
+      );
+
+      const aiResponseContent = await callOpenAI(systemPrompt, userPrompt);
+      const parsedResponse = parseAIResponse(aiResponseContent, isSummativeAssessment);
+
+      console.log('AI quiz grading generated successfully');
+      
+      return new Response(JSON.stringify(parsedResponse), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle regular assignment grading
     const { 
       submissionContent, 
       assignmentName, 
@@ -21,21 +69,13 @@ serve(async (req) => {
       rubric,
       useRubric = false,
       isSummativeAssessment = true,
-      customPrompt,
-      isQuizQuestion = false,
-      questionType,
-      questionText
-    } = await req.json();
+      customPrompt
+    } = requestBody;
 
-    const gradingType = isQuizQuestion ? 'quiz question' : 'assignment';
-    console.log(`Generating comprehensive AI grading for ${gradingType}:`, assignmentName);
+    console.log('Generating comprehensive AI grading for assignment:', assignmentName);
     console.log('Using rubric for grading:', useRubric);
     console.log('Assessment type:', isSummativeAssessment ? 'Summative' : 'Formative');
     console.log('Custom prompt provided:', !!customPrompt);
-    
-    if (isQuizQuestion) {
-      console.log('Question type:', questionType);
-    }
 
     const gradingRequest: GradingRequest = {
       submissionContent,
@@ -46,27 +86,23 @@ serve(async (req) => {
       rubric,
       useRubric,
       isSummativeAssessment,
-      customPrompt,
-      isQuizQuestion,
-      questionType,
-      questionText
+      customPrompt
     };
 
     const systemPrompt = generateSystemPrompt(
       isSummativeAssessment, 
       pointsPossible, 
-      customPrompt,
-      isQuizQuestion
+      customPrompt
     );
     const userPrompt = generateUserPrompt(gradingRequest);
 
     const aiResponseContent = await callOpenAI(systemPrompt, userPrompt);
     const parsedResponse = parseAIResponse(aiResponseContent, isSummativeAssessment);
 
-    const gradingMode = useRubric && rubric ? 'rubric criteria' : (isQuizQuestion ? 'question context' : 'assignment description');
+    const gradingMode = useRubric && rubric ? 'rubric criteria' : 'assignment description';
     const assessmentType = isSummativeAssessment ? 'summative' : 'formative';
 
-    console.log(`AI grading generated successfully for ${gradingType} using:`, gradingMode, 'for', assessmentType);
+    console.log(`AI grading generated successfully for assignment using:`, gradingMode, 'for', assessmentType);
     console.log('10% leniency buffer methodology applied');
     if (customPrompt) {
       console.log('Custom grading instructions applied');

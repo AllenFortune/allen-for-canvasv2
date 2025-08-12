@@ -5,8 +5,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuizAIFeedback } from '@/hooks/useQuizAIFeedback';
+import { useSubscription } from '@/hooks/useSubscription';
+import AssessmentTypeToggle from './AssessmentTypeToggle';
+import CustomPromptToggle from './CustomPromptToggle';
+import AIGradeReview from './AIGradeReview';
+import ActionButtons from './ActionButtons';
+import VoiceControls from '@/components/VoiceControls';
 
 interface QuizQuestion {
   id: number;
@@ -59,7 +66,14 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
   const [score, setScore] = useState(submissionAnswer?.points?.toString() || '');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSummativeAssessment, setIsSummativeAssessment] = useState(false);
+  const [useCustomPrompt, setUseCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [aiGradeReview, setAiGradeReview] = useState('');
+  
   const { toast } = useToast();
+  const { generateQuizFeedback, isGenerating } = useQuizAIFeedback();
+  const { incrementUsage } = useSubscription();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,12 +158,65 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
     );
   };
 
+  const handleAIGrading = async () => {
+    if (!submissionAnswer || !question) return;
+
+    // Check usage limit before proceeding
+    const canProceed = await incrementUsage();
+    if (!canProceed) {
+      return; // incrementUsage will show appropriate error message
+    }
+
+    const aiResult = await generateQuizFeedback(
+      question,
+      submissionAnswer,
+      score,
+      isSummativeAssessment,
+      useCustomPrompt ? customPrompt : undefined
+    );
+
+    if (aiResult) {
+      if (aiResult.grade !== null && aiResult.grade !== undefined) {
+        setScore(aiResult.grade.toString());
+      }
+      setComment(aiResult.feedback || 'AI feedback could not be generated. Please try again.');
+      setAiGradeReview(aiResult.gradeReview || '');
+    }
+  };
+
+  // Voice controls context
+  const voiceContext = {
+    setGradeInput: setScore,
+    setCommentInput: setComment,
+    onSaveGrade: () => handleSubmit(new Event('submit') as any),
+    onAIGrading: handleAIGrading,
+    setUseRubricForAI: () => {}, // Not applicable for quiz
+    setIsSummativeAssessment,
+    setUseCustomPrompt,
+    setCustomPrompt,
+    gradeInput: score,
+    commentInput: comment,
+    useRubricForAI: false,
+    isSummativeAssessment,
+    useCustomPrompt,
+    customPrompt
+  };
+
+  // Check if this question type supports AI grading
+  const supportsAIGrading = submissionAnswer && ['essay_question', 'short_answer_question', 'text_only_question'].includes(question.question_type);
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Grade Question</CardTitle>
-          {getGradingStatus()}
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-blue-600" />
+            <CardTitle className="text-lg">Grade Question</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {getGradingStatus()}
+            <VoiceControls context={voiceContext} />
+          </div>
         </div>
         <div className="text-sm text-gray-600">
           Student: {submission.user.name} • Points Possible: {question.points_possible}
@@ -188,14 +255,60 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
             />
           </div>
 
+        </form>
+
+        <AIGradeReview 
+          gradeReview={aiGradeReview}
+          isVisible={!!aiGradeReview}
+        />
+
+        {supportsAIGrading && (
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+            <AssessmentTypeToggle
+              isSummativeAssessment={isSummativeAssessment}
+              setIsSummativeAssessment={setIsSummativeAssessment}
+            />
+            
+            <CustomPromptToggle
+              useCustomPrompt={useCustomPrompt}
+              setUseCustomPrompt={setUseCustomPrompt}
+              customPrompt={customPrompt}
+              setCustomPrompt={setCustomPrompt}
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          {supportsAIGrading && (
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center gap-2"
+              onClick={handleAIGrading}
+              disabled={isGenerating || !submissionAnswer}
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  Generating {isSummativeAssessment ? 'Summative' : 'Formative'} Feedback...
+                </>
+              ) : (
+                <>
+                  <Award className="w-4 h-4" />
+                  AI-Assisted Grading
+                </>
+              )}
+            </Button>
+          )}
+
           <Button 
-            type="submit" 
+            onClick={() => handleSubmit(new Event('submit') as any)}
             disabled={isSubmitting || !score}
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            size="lg"
           >
             {isSubmitting ? 'Submitting Grade...' : 'Submit Grade'}
           </Button>
-        </form>
+        </div>
 
         {submissionAnswer?.points !== null && submissionAnswer?.points !== undefined && (
           <div className="mt-4 p-3 bg-green-50 rounded-lg">
