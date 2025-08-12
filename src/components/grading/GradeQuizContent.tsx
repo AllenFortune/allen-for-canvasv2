@@ -54,7 +54,7 @@ interface GradeQuizContentProps {
   quiz: Quiz | null;
   questions: QuizQuestion[];
   submissions: QuizSubmission[];
-  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string, userId: number) => Promise<boolean>;
   onGradeUpdate?: (submissionId: number, score: string, questionId?: number) => void;
   setSubmissions: (submissions: QuizSubmission[]) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};

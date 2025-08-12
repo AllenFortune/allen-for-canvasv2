@@ -54,7 +54,7 @@ interface QuizGradingLayoutProps {
   selectedQuestionId: number | null;
   selectedSubmission: QuizSubmission;
   onQuestionSelect: (questionId: number) => void;
-  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string, userId: number) => Promise<boolean>;
   onGradeUpdate?: (submissionId: number, score: string, questionId?: number) => void;
   submissionAnswers: {[submissionId: number]: SubmissionAnswer[]};
   loadingAnswers: {[submissionId: number]: boolean};

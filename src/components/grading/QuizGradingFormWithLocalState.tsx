@@ -50,7 +50,7 @@ interface QuizGradingFormWithLocalStateProps {
   submission: QuizSubmission;
   question: QuizQuestion;
   submissionAnswer?: SubmissionAnswer;
-  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string) => Promise<boolean>;
+  gradeQuestion: (submissionId: number, questionId: number, score: string, comment: string, userId: number) => Promise<boolean>;
   onGradeUpdate?: (submissionId: number, score: string, questionId: number) => void;
   locallyGraded?: boolean;
 }
@@ -100,7 +100,7 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
     setIsSubmitting(true);
     
     try {
-      const success = await gradeQuestion(submission.id, question.id, score, comment);
+      const success = await gradeQuestion(submission.id, question.id, score, comment, submission.user_id);
       
       if (success) {
         toast({

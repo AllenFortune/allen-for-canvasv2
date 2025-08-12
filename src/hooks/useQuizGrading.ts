@@ -14,7 +14,7 @@ export const useQuizGrading = (
     questionId: number,
     score: string,
     comment: string,
-    userId?: number
+    userId: number
   ): Promise<boolean> => {
     if (!courseId || !quizId || !session?.access_token) {
       console.error('Missing required data for grading');
