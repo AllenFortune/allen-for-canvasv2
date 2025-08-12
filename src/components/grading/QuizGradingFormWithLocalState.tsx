@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,10 +70,17 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
   const [aiGradeReview, setAiGradeReview] = useState('');
+  const [isGradedLocally, setIsGradedLocally] = useState(false);
   
   const { toast } = useToast();
   const { generateQuizFeedback, isGenerating } = useQuizAIFeedback();
   const { incrementUsage } = useSubscription();
+
+  // Reset local grading state when question or submission changes
+  useEffect(() => {
+    setIsGradedLocally(false);
+    setScore(submissionAnswer?.points?.toString() || '');
+  }, [question.id, submission.id, submissionAnswer?.points]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +115,9 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
           description: `Successfully graded question for ${submission.user.name}`,
         });
 
+        // Mark as graded locally to show updated score
+        setIsGradedLocally(true);
+
         // Update parent component with new grade and question ID
         if (onGradeUpdate) {
           onGradeUpdate(submission.id, score, question.id);
@@ -132,7 +142,7 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
   };
 
   const getGradingStatus = () => {
-    if (locallyGraded) {
+    if (locallyGraded || isGradedLocally) {
       return (
         <Badge variant="default" className="bg-green-100 text-green-800 flex items-center gap-1">
           <CheckCircle className="w-3 h-3" />
@@ -310,11 +320,13 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
           </Button>
         </div>
 
-        {submissionAnswer?.points !== null && submissionAnswer?.points !== undefined && (
+        {(isGradedLocally || (submissionAnswer?.points !== null && submissionAnswer?.points !== undefined)) && (
           <div className="mt-4 p-3 bg-green-50 rounded-lg">
             <div className="flex items-center gap-2 text-green-800">
               <CheckCircle className="w-4 h-4" />
-              <span className="font-medium">Current Grade: {submissionAnswer.points} points</span>
+              <span className="font-medium">
+                Current Grade: {isGradedLocally ? score : submissionAnswer?.points} points
+              </span>
             </div>
           </div>
         )}
