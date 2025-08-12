@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DiscussionEntry } from '@/types/grading';
+import { sanitizeUserContent } from '@/utils/sanitizeHtml';
 
 interface DiscussionPostProps {
   entry: DiscussionEntry;
@@ -67,7 +68,7 @@ const DiscussionPost: React.FC<DiscussionPostProps> = ({ entry, type, replyToUse
       </div>
       <div 
         className="prose prose-sm max-w-none text-gray-800"
-        dangerouslySetInnerHTML={{ __html: entry.message }}
+        dangerouslySetInnerHTML={{ __html: sanitizeUserContent(entry.message) }}
       />
     </div>
   );

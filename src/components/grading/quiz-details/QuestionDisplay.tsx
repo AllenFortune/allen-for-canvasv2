@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { getQuestionTypeDisplay } from '../utils/quizSubmissionUtils';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface QuizQuestion {
   id: number;
@@ -30,7 +31,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({ question }) => {
         <h4 className="font-medium text-sm text-gray-700 mb-2">Question:</h4>
         <div 
           className="prose prose-sm max-w-none p-3 bg-blue-50 rounded-lg"
-          dangerouslySetInnerHTML={{ __html: question.question_text }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.question_text) }}
         />
       </div>
     </div>

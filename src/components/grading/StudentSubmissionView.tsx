@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Submission } from '@/types/grading';
+import { sanitizeUserContent } from '@/utils/sanitizeHtml';
 
 interface StudentSubmissionViewProps {
   submission: Submission;
@@ -70,7 +71,7 @@ const StudentSubmissionView: React.FC<StudentSubmissionViewProps> = ({ submissio
         <CardContent>
           {submission.body ? (
             <div className="prose max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: submission.body }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeUserContent(submission.body) }} />
             </div>
           ) : submission.url ? (
             <div>

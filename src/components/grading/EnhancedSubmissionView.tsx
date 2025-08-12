@@ -8,6 +8,7 @@ import { Clock, FileText, Link, AlertCircle, MessageCircle, Download } from 'luc
 import { Submission } from '@/types/grading';
 import InlineFilePreview from './InlineFilePreview';
 import { getFilePreviewability, getFileTypeIcon } from '@/utils/filePreviewUtils';
+import { sanitizeUserContent } from '@/utils/sanitizeHtml';
 
 interface EnhancedSubmissionViewProps {
   submission: Submission;
@@ -102,7 +103,7 @@ const EnhancedSubmissionView: React.FC<EnhancedSubmissionViewProps> = ({ submiss
             <div className="mb-6">
               <h4 className="font-medium text-gray-700 mb-2">Text Submission:</h4>
               <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border">
-                <div dangerouslySetInnerHTML={{ __html: submission.body }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeUserContent(submission.body) }} />
               </div>
             </div>
           ) : null}

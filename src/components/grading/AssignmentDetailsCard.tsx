@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, FileText, Users, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface Assignment {
   id: number;
@@ -135,7 +136,7 @@ const AssignmentDetailsCard: React.FC<AssignmentDetailsCardProps> = ({
                   <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md prose prose-sm max-w-none">
                     <div 
                       dangerouslySetInnerHTML={{ 
-                        __html: cleanDescription(assignment.description) 
+                        __html: sanitizeHtml(cleanDescription(assignment.description)) 
                       }} 
                     />
                   </div>

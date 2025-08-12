@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, FileText } from 'lucide-react';
 import { getQuestionTypeDisplay, isContentEffectivelyEmpty } from '../utils/quizSubmissionUtils';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface QuizQuestion {
   id: number;
@@ -113,7 +114,7 @@ const QuizQuestionButton: React.FC<QuizQuestionButtonProps> = ({
         <div 
           className="text-sm text-left text-gray-600 line-clamp-2"
           dangerouslySetInnerHTML={{ 
-            __html: question.question_name || question.question_text 
+            __html: sanitizeHtml(question.question_name || question.question_text) 
           }}
         />
       </div>

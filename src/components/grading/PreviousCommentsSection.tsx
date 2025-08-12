@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Clock } from 'lucide-react';
 import { SubmissionComment } from '@/types/grading';
+import { sanitizeUserContent } from '@/utils/sanitizeHtml';
 
 interface PreviousCommentsSectionProps {
   comments: SubmissionComment[];
@@ -64,7 +65,7 @@ const PreviousCommentsSection: React.FC<PreviousCommentsSectionProps> = ({ comme
                 </div>
                 <div 
                   className="text-sm text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: comment.comment }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeUserContent(comment.comment) }}
                 />
               </div>
             </div>

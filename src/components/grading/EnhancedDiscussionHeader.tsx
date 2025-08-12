@@ -6,6 +6,7 @@ import { Calendar, Users, MessageSquare, BarChart3, ArrowLeft } from 'lucide-rea
 import { Discussion, DiscussionEntry, DiscussionGrade } from '@/types/grading';
 import DiscussionGradingStatusCard from './DiscussionGradingStatusCard';
 import VoiceControls from '@/components/VoiceControls';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface EnhancedDiscussionHeaderProps {
   courseId: string;
@@ -127,7 +128,7 @@ const EnhancedDiscussionHeader: React.FC<EnhancedDiscussionHeaderProps> = ({
                 <h3 className="text-lg font-semibold mb-2">Discussion Prompt</h3>
                 <div 
                   className="prose prose-sm max-w-none text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: discussion.message }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(discussion.message) }}
                 />
               </div>
             )}

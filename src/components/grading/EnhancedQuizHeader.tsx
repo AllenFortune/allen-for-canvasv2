@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Users, FileText, CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import VoiceControls from '@/components/VoiceControls';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface Quiz {
   id: number;
@@ -233,7 +234,7 @@ const EnhancedQuizHeader: React.FC<EnhancedQuizHeaderProps> = ({
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <div 
               className="text-sm text-gray-700"
-              dangerouslySetInnerHTML={{ __html: quiz.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(quiz.description) }}
             />
           </div>
         )}
