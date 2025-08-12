@@ -57,10 +57,46 @@ export const generateQuizUserPrompt = (
   currentGrade?: string,
   questionName?: string
 ): string => {
+  const cleanHtmlContent = (htmlString: string): string => {
+    // Remove HTML tags but preserve line breaks and basic formatting
+    return htmlString
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+  };
+
   const formatAnswer = (answer: any): string => {
-    if (typeof answer === 'string') return answer;
-    if (Array.isArray(answer)) return answer.join(', ');
-    if (typeof answer === 'object') return JSON.stringify(answer, null, 2);
+    if (typeof answer === 'string') {
+      // Check if the string contains HTML tags and clean it
+      const hasHtml = answer.includes('<');
+      return hasHtml ? cleanHtmlContent(answer) : answer;
+    }
+    
+    if (Array.isArray(answer)) {
+      return answer.map(item => {
+        if (typeof item === 'string' && item.includes('<')) {
+          return cleanHtmlContent(item);
+        }
+        return String(item);
+      }).join(', ');
+    }
+    
+    if (typeof answer === 'object' && answer !== null) {
+      // Handle object answers that might contain HTML content
+      if (answer.text && typeof answer.text === 'string') {
+        return answer.text.includes('<') ? cleanHtmlContent(answer.text) : answer.text;
+      }
+      if (answer.answer_text && typeof answer.answer_text === 'string') {
+        return answer.answer_text.includes('<') ? cleanHtmlContent(answer.answer_text) : answer.answer_text;
+      }
+      return JSON.stringify(answer, null, 2);
+    }
+    
     return String(answer);
   };
 
