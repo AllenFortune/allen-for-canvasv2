@@ -191,7 +191,6 @@ serve(async (req) => {
     console.log('Successfully created Canvas rubric with ID:', canvasRubricId);
 
     // Associate rubric with assignment or discussion
-    const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
     const canvasAssociationType = associationType === 'assignment' ? 'Assignment' : 'DiscussionTopic';
     
     if (contentId && canvasRubricId && finalCourseId) {
