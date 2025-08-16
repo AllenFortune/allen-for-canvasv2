@@ -90,7 +90,7 @@ serve(async (req) => {
       throw new Error('Invalid token');
     }
 
-    const { rubricId, assignmentId, courseId } = await req.json();
+    const { rubricId, assignmentId, discussionId, courseId, associationType = 'assignment' } = await req.json();
 
     // Get the rubric from database
     const { data: rubric, error: rubricError } = await supabase
@@ -106,15 +106,20 @@ serve(async (req) => {
 
     // Use provided IDs or fall back to database values
     const finalAssignmentId = assignmentId || rubric.source_assignment_id;
+    const finalDiscussionId = discussionId;
     const finalCourseId = courseId || rubric.course_id;
 
-    // Check if assignment ID and course ID are available
-    if (!finalAssignmentId || !finalCourseId) {
+    // Check if appropriate content ID and course ID are available
+    const hasAssignmentId = finalAssignmentId && associationType === 'assignment';
+    const hasDiscussionId = finalDiscussionId && associationType === 'discussion';
+    
+    if (!finalCourseId || (!hasAssignmentId && !hasDiscussionId)) {
       const missingFields = [];
-      if (!finalAssignmentId) missingFields.push('assignment ID');
       if (!finalCourseId) missingFields.push('course ID');
+      if (associationType === 'assignment' && !finalAssignmentId) missingFields.push('assignment ID');
+      if (associationType === 'discussion' && !finalDiscussionId) missingFields.push('discussion ID');
       
-      throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
+      throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both ${associationType} and course context.`);
     }
 
     // Get user's Canvas credentials
@@ -131,8 +136,9 @@ serve(async (req) => {
     // Convert rubric to Canvas format
     const canvasRubric = convertToCanvasFormat(rubric);
 
-    // Use the final course ID (from parameters or database)
-    console.log('Using course ID:', finalCourseId, 'for assignment:', finalAssignmentId);
+    // Use the final course ID and content ID (from parameters or database)
+    const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
+    console.log('Using course ID:', finalCourseId, 'for', associationType + ':', contentId);
 
     // Create rubric in Canvas using the correct course-based endpoint
     const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubrics`;
@@ -184,15 +190,18 @@ serve(async (req) => {
 
     console.log('Successfully created Canvas rubric with ID:', canvasRubricId);
 
-    // Associate rubric with assignment
-    if (finalAssignmentId && canvasRubricId && finalCourseId) {
+    // Associate rubric with assignment or discussion
+    const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
+    const canvasAssociationType = associationType === 'assignment' ? 'Assignment' : 'DiscussionTopic';
+    
+    if (contentId && canvasRubricId && finalCourseId) {
       const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubric_associations`;
       
-      console.log('Associating rubric with assignment at URL:', associateUrl);
+      console.log(`Associating rubric with ${associationType} at URL:`, associateUrl);
       console.log('Association data:', {
         rubric_id: canvasRubricId,
-        association_type: 'Assignment',
-        association_id: finalAssignmentId,
+        association_type: canvasAssociationType,
+        association_id: contentId,
         use_for_grading: true,
         purpose: 'grading'
       });
@@ -206,8 +215,8 @@ serve(async (req) => {
         body: JSON.stringify({
           rubric_association: {
             rubric_id: canvasRubricId,
-            association_type: 'Assignment',
-            association_id: finalAssignmentId,
+            association_type: canvasAssociationType,
+            association_id: contentId,
             use_for_grading: true,
             purpose: 'grading'
           }
@@ -218,12 +227,12 @@ serve(async (req) => {
 
       if (!associateResponse.ok) {
         const associateError = await associateResponse.text();
-        console.error('Failed to associate rubric with assignment:', associateError);
+        console.error(`Failed to associate rubric with ${associationType}:`, associateError);
         // Don't throw here since the rubric was created successfully
-        console.warn('Rubric created but association failed. The rubric exists in Canvas but may not be attached to the assignment.');
+        console.warn(`Rubric created but association failed. The rubric exists in Canvas but may not be attached to the ${associationType}.`);
       } else {
         const associateData = await associateResponse.json();
-        console.log('Successfully associated rubric with assignment:', associateData);
+        console.log(`Successfully associated rubric with ${associationType}:`, associateData);
       }
     }
 

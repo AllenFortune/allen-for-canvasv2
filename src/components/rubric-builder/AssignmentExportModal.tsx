@@ -22,24 +22,38 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedAssignment, setSelectedAssignment] = useState<string>('');
+  const [selectedDiscussion, setSelectedDiscussion] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<'assignment' | 'discussion'>('assignment');
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const handleAssignmentImport = (assignment: {
     courseId?: string;
     assignmentId?: string;
+    discussionId?: string;
+    type?: 'assignment' | 'discussion';
   }) => {
-    if (assignment.courseId && assignment.assignmentId) {
+    if (assignment.courseId) {
       setSelectedCourse(assignment.courseId);
-      setSelectedAssignment(assignment.assignmentId);
+      if (assignment.type) {
+        setSelectedType(assignment.type);
+      }
+      if (assignment.assignmentId) {
+        setSelectedAssignment(assignment.assignmentId);
+        setSelectedDiscussion('');
+      }
+      if (assignment.discussionId) {
+        setSelectedDiscussion(assignment.discussionId);
+        setSelectedAssignment('');
+      }
     }
   };
 
   const handleExport = async () => {
-    if (!selectedCourse || !selectedAssignment) {
+    if (!selectedCourse || (!selectedAssignment && !selectedDiscussion)) {
       toast({
         title: "Error",
-        description: "Please select both a course and assignment.",
+        description: "Please select both a course and an assignment or discussion.",
         variant: "destructive"
       });
       return;
@@ -48,25 +62,38 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
     setIsExporting(true);
 
     try {
-      // First update the rubric with the new assignment and course IDs
+      // First update the rubric with the new assignment/discussion and course IDs
+      const updateData: any = {
+        course_id: parseInt(selectedCourse),
+        updated_at: new Date().toISOString()
+      };
+      
+      if (selectedType === 'assignment' && selectedAssignment) {
+        updateData.source_assignment_id = parseInt(selectedAssignment);
+      }
+      
       const { error: updateError } = await supabase
         .from('rubrics')
-        .update({
-          source_assignment_id: parseInt(selectedAssignment),
-          course_id: parseInt(selectedCourse),
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', rubricId);
 
       if (updateError) throw updateError;
 
-      // Then export to Canvas with assignment and course IDs
+      // Then export to Canvas with appropriate IDs and type
+      const exportBody: any = { 
+        rubricId,
+        courseId: parseInt(selectedCourse),
+        associationType: selectedType
+      };
+      
+      if (selectedType === 'assignment' && selectedAssignment) {
+        exportBody.assignmentId = parseInt(selectedAssignment);
+      } else if (selectedType === 'discussion' && selectedDiscussion) {
+        exportBody.discussionId = parseInt(selectedDiscussion);
+      }
+
       const { data, error } = await supabase.functions.invoke('export-rubric-to-canvas', {
-        body: { 
-          rubricId,
-          assignmentId: parseInt(selectedAssignment),
-          courseId: parseInt(selectedCourse)
-        }
+        body: exportBody
       });
 
       if (error) throw error;
@@ -95,6 +122,8 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
   const handleClose = () => {
     setSelectedCourse('');
     setSelectedAssignment('');
+    setSelectedDiscussion('');
+    setSelectedType('assignment');
     onClose();
   };
 
@@ -108,7 +137,7 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
         <div className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground mb-4">
-              Select the Canvas assignment where you want to export "<strong>{rubricTitle}</strong>".
+              Select the Canvas assignment or discussion where you want to export "<strong>{rubricTitle}</strong>".
             </p>
           </div>
 
@@ -123,7 +152,7 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
             </Button>
             <Button 
               onClick={handleExport}
-              disabled={!selectedCourse || !selectedAssignment || isExporting}
+              disabled={!selectedCourse || (!selectedAssignment && !selectedDiscussion) || isExporting}
             >
               {isExporting ? (
                 <>
@@ -133,7 +162,7 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
-                  Export to Assignment
+                  Export to {selectedType === 'assignment' ? 'Assignment' : 'Discussion'}
                 </>
               )}
             </Button>
