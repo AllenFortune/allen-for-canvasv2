@@ -96,6 +96,15 @@ const RubricPreviewStepRefactored: React.FC<RubricPreviewStepProps> = ({
     const isDiscussion = state.selectedAssignment.type === 'discussion';
     const associationType: 'discussion' | 'assignment' = isDiscussion ? 'discussion' : 'assignment';
 
+    console.log('Export Debug:', {
+      selectedAssignment: state.selectedAssignment,
+      isDiscussion,
+      associationType,
+      discussionId: state.selectedAssignment.discussionId,
+      assignmentId: state.selectedAssignment.assignmentId,
+      id: state.selectedAssignment.id
+    });
+
     // Save rubric first if not already saved
     if (!rubricId) {
       const rubricToSave = {
@@ -128,8 +137,8 @@ const RubricPreviewStepRefactored: React.FC<RubricPreviewStepProps> = ({
       courseId: state.selectedAssignment.course_id,
       associationType,
       ...(isDiscussion 
-        ? { discussionId: state.selectedAssignment.id }
-        : { assignmentId: state.selectedAssignment.id }
+        ? { discussionId: state.selectedAssignment.discussionId || state.selectedAssignment.id }
+        : { assignmentId: state.selectedAssignment.assignmentId || state.selectedAssignment.id }
       )
     };
 

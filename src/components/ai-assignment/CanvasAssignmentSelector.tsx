@@ -215,7 +215,8 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
             subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
             estimatedTime: discussion.due_at ? `Due: ${new Date(discussion.due_at).toLocaleDateString()}` : undefined,
             courseId: selectedCourse,
-            discussionId: selectedDiscussion,
+            discussionId: discussion.id, // Use the actual discussion ID from Canvas response
+            assignmentId: discussion.assignment_id, // Include the assignment ID if available
             type: 'discussion'
           });
 
