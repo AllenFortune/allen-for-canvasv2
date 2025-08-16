@@ -92,6 +92,10 @@ const RubricPreviewStepRefactored: React.FC<RubricPreviewStepProps> = ({
 
     let rubricId = state.generatedRubric.id;
 
+    // Determine if this is a discussion or assignment based on the type property
+    const isDiscussion = state.selectedAssignment.type === 'discussion';
+    const associationType: 'discussion' | 'assignment' = isDiscussion ? 'discussion' : 'assignment';
+
     // Save rubric first if not already saved
     if (!rubricId) {
       const rubricToSave = {
@@ -118,12 +122,18 @@ const RubricPreviewStepRefactored: React.FC<RubricPreviewStepProps> = ({
       });
     }
 
-    const success = await exportToCanvas({
+    // Build export request with correct parameters based on type
+    const exportRequest = {
       rubricId,
       courseId: state.selectedAssignment.course_id,
-      assignmentId: state.selectedAssignment.id,
-      associationType: 'assignment'
-    });
+      associationType,
+      ...(isDiscussion 
+        ? { discussionId: state.selectedAssignment.id }
+        : { assignmentId: state.selectedAssignment.id }
+      )
+    };
+
+    const success = await exportToCanvas(exportRequest);
 
     if (success) {
       updateState({
