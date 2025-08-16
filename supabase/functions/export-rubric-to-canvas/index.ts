@@ -35,34 +35,42 @@ interface RubricData {
 }
 
 function convertToCanvasFormat(rubric: RubricData) {
-  const canvasRubric = {
-    title: rubric.title,
-    points_possible: rubric.points_possible,
-    criteria: {} as Record<string, any>
-  };
+  // Convert to Canvas expected array format
+  return rubric.criteria.map((criterion) => ({
+    description: criterion.name,
+    long_description: criterion.description,
+    points: criterion.points,
+    criterion_use_range: false,
+    ratings: criterion.levels.map((level) => ({
+      description: level.name,
+      long_description: level.description,
+      points: level.points
+    }))
+  }));
+}
 
-  // Convert criteria to Canvas format
-  rubric.criteria.forEach((criterion, index) => {
-    const criterionId = `criterion_${index}`;
-    canvasRubric.criteria[criterionId] = {
-      description: criterion.name,
-      long_description: criterion.description,
-      points: criterion.points,
-      ratings: {} as Record<string, any>
-    };
-
-    // Convert levels to Canvas ratings
-    criterion.levels.forEach((level, levelIndex) => {
-      const ratingId = `rating_${levelIndex}`;
-      canvasRubric.criteria[criterionId].ratings[ratingId] = {
-        description: level.name,
-        long_description: level.description,
-        points: level.points
-      };
+function buildCanvasFormData(rubric: RubricData, rubricArray: any[]) {
+  const form = new URLSearchParams();
+  
+  // Add rubric metadata
+  form.append('rubric[title]', rubric.title);
+  form.append('rubric[points_possible]', rubric.points_possible.toString());
+  
+  // Add criteria in Canvas format
+  rubricArray.forEach((criterion, i) => {
+    form.append(`rubric[criteria][${i}][description]`, criterion.description);
+    form.append(`rubric[criteria][${i}][long_description]`, criterion.long_description);
+    form.append(`rubric[criteria][${i}][points]`, criterion.points.toString());
+    form.append(`rubric[criteria][${i}][criterion_use_range]`, 'false');
+    
+    criterion.ratings.forEach((rating: any, j: number) => {
+      form.append(`rubric[criteria][${i}][ratings][${j}][description]`, rating.description);
+      form.append(`rubric[criteria][${i}][ratings][${j}][long_description]`, rating.long_description);
+      form.append(`rubric[criteria][${i}][ratings][${j}][points]`, rating.points.toString());
     });
   });
-
-  return canvasRubric;
+  
+  return form;
 }
 
 serve(async (req) => {
@@ -175,7 +183,8 @@ serve(async (req) => {
 
     // Convert rubric to Canvas format
     console.log(`[${requestId}] Converting rubric to Canvas format`);
-    const canvasRubric = convertToCanvasFormat(rubric);
+    const canvasRubricArray = convertToCanvasFormat(rubric);
+    const formData = buildCanvasFormData(rubric, canvasRubricArray);
 
     // Determine the content ID based on association type
     const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
@@ -185,16 +194,17 @@ serve(async (req) => {
     const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubrics`;
     
     console.log(`[${requestId}] Creating rubric at URL: ${canvasUrl}`);
-    console.log(`[${requestId}] Sending rubric data:`, JSON.stringify(canvasRubric, null, 2));
+    console.log(`[${requestId}] Sending rubric array format:`, JSON.stringify(canvasRubricArray, null, 2));
+    console.log(`[${requestId}] Form data entries:`, Array.from(formData.entries()));
     
     const canvasRequestStart = Date.now();
     const canvasResponse = await fetch(canvasUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${profile.canvas_access_token}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({ rubric: canvasRubric }),
+      body: formData,
     });
     const canvasRequestTime = Date.now() - canvasRequestStart;
 
