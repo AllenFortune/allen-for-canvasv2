@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -674,28 +674,28 @@ export type Database = {
       get_admin_user_list: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          email: string
-          full_name: string
-          school_name: string
           canvas_connected: boolean
           created_at: string
-          last_usage_date: string
-          total_submissions: number
-          subscription_tier: string
-          subscription_status: string
           current_month_submissions: number
+          email: string
+          full_name: string
+          id: string
+          last_usage_date: string
           purchased_submissions: number
+          school_name: string
           subscription_limit: number
+          subscription_status: string
+          subscription_tier: string
+          total_submissions: number
         }[]
       }
       get_admin_user_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_users: number
           canvas_connected: number
           canvas_not_connected: number
           recent_signups: number
+          total_users: number
         }[]
       }
       get_current_month_usage: {
@@ -707,31 +707,31 @@ export type Database = {
         Returns: number
       }
       get_total_submission_limit: {
-        Args: { user_email: string; base_limit: number }
+        Args: { base_limit: number; user_email: string }
         Returns: number
       }
       get_user_billing_info: {
         Args: { user_email: string }
         Returns: {
           billing_cycle_start: string
-          next_reset_date: string
           days_remaining: number
+          next_reset_date: string
         }[]
       }
       get_user_referral_stats: {
         Args: { user_email_param: string }
         Returns: {
-          total_referrals: number
           completed_referrals: number
           pending_referrals: number
-          total_rewards_earned: number
           referral_code: string
+          total_referrals: number
+          total_rewards_earned: number
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -748,7 +748,7 @@ export type Database = {
         Returns: number
       }
       process_referral_rewards: {
-        Args: { referee_user_id_param: string; referee_email_param: string }
+        Args: { referee_email_param: string; referee_user_id_param: string }
         Returns: undefined
       }
       reset_user_submissions: {
