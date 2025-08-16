@@ -66,11 +66,22 @@ function convertToCanvasFormat(rubric: RubricData) {
 }
 
 serve(async (req) => {
+  // Generate request ID for debugging
+  const requestId = crypto.randomUUID().substring(0, 8);
+  const startTime = Date.now();
+  
+  // Handle CORS preflight requests with explicit 200 status
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log(`[${requestId}] Handling CORS preflight request`);
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
+    console.log(`[${requestId}] Starting rubric export request`);
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -82,6 +93,7 @@ serve(async (req) => {
     }
 
     // Verify the user
+    console.log(`[${requestId}] Verifying user authentication`);
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
@@ -90,9 +102,21 @@ serve(async (req) => {
       throw new Error('Invalid token');
     }
 
-    const { rubricId, assignmentId, discussionId, courseId, associationType = 'assignment' } = await req.json();
+    console.log(`[${requestId}] User authenticated: ${user.id}`);
+
+    const requestBody = await req.json();
+    const { rubricId, assignmentId, discussionId, courseId, associationType = 'assignment' } = requestBody;
+    
+    console.log(`[${requestId}] Request parameters:`, {
+      rubricId,
+      assignmentId,
+      discussionId,
+      courseId,
+      associationType
+    });
 
     // Get the rubric from database
+    console.log(`[${requestId}] Fetching rubric from database`);
     const { data: rubric, error: rubricError } = await supabase
       .from('rubrics')
       .select('*')
@@ -101,28 +125,41 @@ serve(async (req) => {
       .single();
 
     if (rubricError || !rubric) {
+      console.error(`[${requestId}] Rubric not found:`, rubricError);
       throw new Error('Rubric not found');
     }
+
+    console.log(`[${requestId}] Found rubric: ${rubric.title}`);
 
     // Use provided IDs or fall back to database values
     const finalAssignmentId = assignmentId || rubric.source_assignment_id;
     const finalDiscussionId = discussionId;
     const finalCourseId = courseId || rubric.course_id;
 
-    // Check if appropriate content ID and course ID are available
-    const hasAssignmentId = finalAssignmentId && associationType === 'assignment';
-    const hasDiscussionId = finalDiscussionId && associationType === 'discussion';
-    
-    if (!finalCourseId || (!hasAssignmentId && !hasDiscussionId)) {
-      const missingFields = [];
-      if (!finalCourseId) missingFields.push('course ID');
-      if (associationType === 'assignment' && !finalAssignmentId) missingFields.push('assignment ID');
-      if (associationType === 'discussion' && !finalDiscussionId) missingFields.push('discussion ID');
-      
-      throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both ${associationType} and course context.`);
+    console.log(`[${requestId}] Final IDs after resolution:`, {
+      finalAssignmentId,
+      finalDiscussionId,
+      finalCourseId,
+      associationType
+    });
+
+    // Improved validation logic with better error messages
+    if (!finalCourseId) {
+      throw new Error('Missing course ID. Please select a course for the rubric export.');
     }
 
+    if (associationType === 'assignment' && !finalAssignmentId) {
+      throw new Error('Missing assignment ID. Please select an assignment for the rubric export.');
+    }
+
+    if (associationType === 'discussion' && !finalDiscussionId) {
+      throw new Error('Missing discussion ID. Please select a discussion for the rubric export.');
+    }
+
+    console.log(`[${requestId}] Validation passed for ${associationType} export`);
+
     // Get user's Canvas credentials
+    console.log(`[${requestId}] Fetching Canvas credentials`);
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('canvas_instance_url, canvas_access_token')
@@ -130,22 +167,27 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
-      throw new Error('Canvas credentials not configured');
+      console.error(`[${requestId}] Canvas credentials not found:`, profileError);
+      throw new Error('Canvas credentials not configured. Please connect your Canvas account in Settings.');
     }
 
+    console.log(`[${requestId}] Canvas credentials found for instance: ${profile.canvas_instance_url}`);
+
     // Convert rubric to Canvas format
+    console.log(`[${requestId}] Converting rubric to Canvas format`);
     const canvasRubric = convertToCanvasFormat(rubric);
 
-    // Use the final course ID and content ID (from parameters or database)
+    // Determine the content ID based on association type
     const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
-    console.log('Using course ID:', finalCourseId, 'for', associationType + ':', contentId);
+    console.log(`[${requestId}] Using course ID: ${finalCourseId} for ${associationType}: ${contentId}`);
 
     // Create rubric in Canvas using the correct course-based endpoint
     const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubrics`;
     
-    console.log('Creating rubric at URL:', canvasUrl);
-    console.log('Sending rubric data:', JSON.stringify(canvasRubric, null, 2));
+    console.log(`[${requestId}] Creating rubric at URL: ${canvasUrl}`);
+    console.log(`[${requestId}] Sending rubric data:`, JSON.stringify(canvasRubric, null, 2));
     
+    const canvasRequestStart = Date.now();
     const canvasResponse = await fetch(canvasUrl, {
       method: 'POST',
       headers: {
@@ -154,33 +196,34 @@ serve(async (req) => {
       },
       body: JSON.stringify({ rubric: canvasRubric }),
     });
+    const canvasRequestTime = Date.now() - canvasRequestStart;
 
-    console.log('Canvas API Response Status:', canvasResponse.status);
-    console.log('Canvas API Response Headers:', Object.fromEntries(canvasResponse.headers.entries()));
+    console.log(`[${requestId}] Canvas API Response Status: ${canvasResponse.status} (took ${canvasRequestTime}ms)`);
+    console.log(`[${requestId}] Canvas API Response Headers:`, Object.fromEntries(canvasResponse.headers.entries()));
 
     if (!canvasResponse.ok) {
       const errorText = await canvasResponse.text();
-      console.error('Canvas API error response:', errorText);
+      console.error(`[${requestId}] Canvas API error response:`, errorText);
       throw new Error(`Canvas API error: ${canvasResponse.status} - ${errorText}`);
     }
 
     const canvasRubricData = await canvasResponse.json();
-    console.log('Full Canvas API Response:', JSON.stringify(canvasRubricData, null, 2));
+    console.log(`[${requestId}] Full Canvas API Response:`, JSON.stringify(canvasRubricData, null, 2));
 
     // Extract rubric ID with multiple fallback strategies
     let canvasRubricId: number | null = null;
     
     if (canvasRubricData?.id) {
       canvasRubricId = canvasRubricData.id;
-      console.log('Found rubric ID directly:', canvasRubricId);
+      console.log(`[${requestId}] Found rubric ID directly: ${canvasRubricId}`);
     } else if (canvasRubricData?.rubric?.id) {
       canvasRubricId = canvasRubricData.rubric.id;
-      console.log('Found rubric ID in nested rubric object:', canvasRubricId);
+      console.log(`[${requestId}] Found rubric ID in nested rubric object: ${canvasRubricId}`);
     } else if (Array.isArray(canvasRubricData) && canvasRubricData[0]?.id) {
       canvasRubricId = canvasRubricData[0].id;
-      console.log('Found rubric ID in array response:', canvasRubricId);
+      console.log(`[${requestId}] Found rubric ID in array response: ${canvasRubricId}`);
     } else {
-      console.error('Could not extract rubric ID from Canvas response. Full response:', canvasRubricData);
+      console.error(`[${requestId}] Could not extract rubric ID from Canvas response. Full response:`, canvasRubricData);
       throw new Error('Canvas API did not return a valid rubric ID. Please check the Canvas response structure.');
     }
 
@@ -188,7 +231,7 @@ serve(async (req) => {
       throw new Error('Failed to extract rubric ID from Canvas response');
     }
 
-    console.log('Successfully created Canvas rubric with ID:', canvasRubricId);
+    console.log(`[${requestId}] Successfully created Canvas rubric with ID: ${canvasRubricId}`);
 
     // Associate rubric with assignment or discussion
     const canvasAssociationType = associationType === 'assignment' ? 'Assignment' : 'DiscussionTopic';
@@ -196,8 +239,8 @@ serve(async (req) => {
     if (contentId && canvasRubricId && finalCourseId) {
       const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubric_associations`;
       
-      console.log(`Associating rubric with ${associationType} at URL:`, associateUrl);
-      console.log('Association data:', {
+      console.log(`[${requestId}] Associating rubric with ${associationType} at URL: ${associateUrl}`);
+      console.log(`[${requestId}] Association data:`, {
         rubric_id: canvasRubricId,
         association_type: canvasAssociationType,
         association_id: contentId,
@@ -205,6 +248,7 @@ serve(async (req) => {
         purpose: 'grading'
       });
       
+      const associateRequestStart = Date.now();
       const associateResponse = await fetch(associateUrl, {
         method: 'POST',
         headers: {
@@ -221,21 +265,23 @@ serve(async (req) => {
           }
         }),
       });
+      const associateRequestTime = Date.now() - associateRequestStart;
 
-      console.log('Association Response Status:', associateResponse.status);
+      console.log(`[${requestId}] Association Response Status: ${associateResponse.status} (took ${associateRequestTime}ms)`);
 
       if (!associateResponse.ok) {
         const associateError = await associateResponse.text();
-        console.error(`Failed to associate rubric with ${associationType}:`, associateError);
+        console.error(`[${requestId}] Failed to associate rubric with ${associationType}:`, associateError);
         // Don't throw here since the rubric was created successfully
-        console.warn(`Rubric created but association failed. The rubric exists in Canvas but may not be attached to the ${associationType}.`);
+        console.warn(`[${requestId}] Rubric created but association failed. The rubric exists in Canvas but may not be attached to the ${associationType}.`);
       } else {
         const associateData = await associateResponse.json();
-        console.log(`Successfully associated rubric with ${associationType}:`, associateData);
+        console.log(`[${requestId}] Successfully associated rubric with ${associationType}:`, associateData);
       }
     }
 
     // Update the rubric in our database and increment usage count
+    console.log(`[${requestId}] Updating rubric in database`);
     const { error: updateError } = await supabase
       .from('rubrics')
       .update({
@@ -247,15 +293,19 @@ serve(async (req) => {
           exported_at: new Date().toISOString(),
           canvas_response: canvasRubricData,
           success: true,
-          rubric_id: canvasRubricId
+          rubric_id: canvasRubricId,
+          request_id: requestId
         },
         updated_at: new Date().toISOString()
       })
       .eq('id', rubricId);
 
     if (updateError) {
-      console.error('Failed to update rubric export status:', updateError);
+      console.error(`[${requestId}] Failed to update rubric export status:`, updateError);
     }
+
+    const totalTime = Date.now() - startTime;
+    console.log(`[${requestId}] Export completed successfully in ${totalTime}ms`);
 
     return new Response(
       JSON.stringify({
@@ -264,7 +314,9 @@ serve(async (req) => {
         message: 'Rubric successfully exported to Canvas',
         debugInfo: {
           canvasResponse: canvasRubricData,
-          extractedRubricId: canvasRubricId
+          extractedRubricId: canvasRubricId,
+          requestId,
+          totalTime: `${totalTime}ms`
         }
       }),
       {
@@ -273,14 +325,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in export-rubric-to-canvas function:', error);
+    const totalTime = Date.now() - startTime;
+    console.error(`[${requestId}] Error in export-rubric-to-canvas function (after ${totalTime}ms):`, error);
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
         debugInfo: {
           timestamp: new Date().toISOString(),
-          errorType: error.constructor.name
+          errorType: error.constructor.name,
+          requestId,
+          totalTime: `${totalTime}ms`
         }
       }),
       {
