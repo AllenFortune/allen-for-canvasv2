@@ -35,40 +35,52 @@ interface RubricData {
 }
 
 function convertToCanvasFormat(rubric: RubricData) {
-  // Convert to Canvas expected array format
-  return rubric.criteria.map((criterion) => ({
-    description: criterion.name,
-    long_description: criterion.description,
-    points: criterion.points,
-    criterion_use_range: false,
-    ratings: criterion.levels.map((level) => ({
+  // Convert to Canvas expected array format with validation
+  return rubric.criteria.map((criterion) => {
+    const ratings = criterion.levels.map((level) => ({
       description: level.name,
       long_description: level.description,
       points: level.points
-    }))
-  }));
+    }));
+    
+    // Validate that one rating has full points for this criterion
+    const hasFullPoints = ratings.some(rating => rating.points === criterion.points);
+    if (!hasFullPoints) {
+      console.log(`[WARNING] Criterion "${criterion.name}" missing full points rating`);
+    }
+    
+    return {
+      description: criterion.name,
+      long_description: criterion.description,
+      points: criterion.points,
+      criterion_use_range: false,
+      ratings: ratings
+    };
+  });
 }
 
-function buildCanvasFormData(rubric: RubricData, rubricArray: any[]) {
+function buildCanvasFormData(rubric: RubricData, rubricArray: any[], finalAssignmentId?: number, finalDiscussionId?: number, associationType?: string) {
   const form = new URLSearchParams();
   
-  // Add rubric metadata
+  // Basic rubric information
   form.append('rubric[title]', rubric.title);
   form.append('rubric[points_possible]', rubric.points_possible.toString());
   
-  // Add criteria in Canvas format
-  rubricArray.forEach((criterion, i) => {
-    form.append(`rubric[criteria][${i}][description]`, criterion.description);
-    form.append(`rubric[criteria][${i}][long_description]`, criterion.long_description);
-    form.append(`rubric[criteria][${i}][points]`, criterion.points.toString());
-    form.append(`rubric[criteria][${i}][criterion_use_range]`, 'false');
-    
-    criterion.ratings.forEach((rating: any, j: number) => {
-      form.append(`rubric[criteria][${i}][ratings][${j}][description]`, rating.description);
-      form.append(`rubric[criteria][${i}][ratings][${j}][long_description]`, rating.long_description);
-      form.append(`rubric[criteria][${i}][ratings][${j}][points]`, rating.points.toString());
-    });
-  });
+  // Required: Add full rubric as JSON string (Canvas fallback)
+  form.append('rubric[rubric]', JSON.stringify(rubricArray));
+  
+  // Optional: Attach rubric directly to assignment/discussion if available
+  if (finalAssignmentId && associationType === 'assignment') {
+    form.append('rubric[association_id]', finalAssignmentId.toString());
+    form.append('rubric[association_type]', 'Assignment');
+    form.append('rubric[use_for_grading]', 'true');
+    form.append('rubric[purpose]', 'grading');
+  } else if (finalDiscussionId && associationType === 'discussion') {
+    form.append('rubric[association_id]', finalDiscussionId.toString());
+    form.append('rubric[association_type]', 'DiscussionTopic');
+    form.append('rubric[use_for_grading]', 'true');
+    form.append('rubric[purpose]', 'grading');
+  }
   
   return form;
 }
@@ -184,7 +196,7 @@ serve(async (req) => {
     // Convert rubric to Canvas format
     console.log(`[${requestId}] Converting rubric to Canvas format`);
     const canvasRubricArray = convertToCanvasFormat(rubric);
-    const formData = buildCanvasFormData(rubric, canvasRubricArray);
+    const formData = buildCanvasFormData(rubric, canvasRubricArray, finalAssignmentId, finalDiscussionId, associationType);
 
     // Determine the content ID based on association type
     const contentId = associationType === 'assignment' ? finalAssignmentId : finalDiscussionId;
@@ -195,7 +207,12 @@ serve(async (req) => {
     
     console.log(`[${requestId}] Creating rubric at URL: ${canvasUrl}`);
     console.log(`[${requestId}] Sending rubric array format:`, JSON.stringify(canvasRubricArray, null, 2));
-    console.log(`[${requestId}] Form data entries:`, Array.from(formData.entries()));
+    
+    // Debug: Log form payload preview
+    console.log(`[${requestId}] Final form payload preview:`);
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
     
     const canvasRequestStart = Date.now();
     const canvasResponse = await fetch(canvasUrl, {
@@ -243,10 +260,11 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Successfully created Canvas rubric with ID: ${canvasRubricId}`);
 
-    // Associate rubric with assignment or discussion
-    const canvasAssociationType = associationType === 'assignment' ? 'Assignment' : 'DiscussionTopic';
+    // Skip association step if we included it in the rubric creation
+    const needsSeparateAssociation = !formData.has('rubric[association_id]');
     
-    if (contentId && canvasRubricId && finalCourseId) {
+    if (needsSeparateAssociation && contentId && canvasRubricId && finalCourseId) {
+      const canvasAssociationType = associationType === 'assignment' ? 'Assignment' : 'DiscussionTopic';
       const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${finalCourseId}/rubric_associations`;
       
       console.log(`[${requestId}] Associating rubric with ${associationType} at URL: ${associateUrl}`);
@@ -288,6 +306,8 @@ serve(async (req) => {
         const associateData = await associateResponse.json();
         console.log(`[${requestId}] Successfully associated rubric with ${associationType}:`, associateData);
       }
+    } else if (!needsSeparateAssociation) {
+      console.log(`[${requestId}] Rubric was associated during creation - skipping separate association step`);
     }
 
     // Update the rubric in our database and increment usage count
