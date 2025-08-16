@@ -180,12 +180,7 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
       }
 
       const { data, error } = await supabase.functions.invoke('export-rubric-to-canvas', {
-        body: { 
-          rubricId,
-          courseId: state.selectedAssignment?.course_id,
-          assignmentId: state.selectedAssignment?.id,
-          associationType: 'assignment'
-        }
+        body: { rubricId }
       });
 
       if (error) throw error;

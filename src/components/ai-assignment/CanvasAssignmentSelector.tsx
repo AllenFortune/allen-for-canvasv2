@@ -51,12 +51,11 @@ interface CanvasAssignmentSelectorProps {
     courseId?: string;
     assignmentId?: string;
     discussionId?: string;
-    type?: 'assignment' | 'discussion';
   }) => void;
   loading: boolean;
   // New props for export mode
   exportMode?: boolean;
-  onAssignmentSelected?: (courseId: string, assignmentId: string, type: 'assignment' | 'discussion') => void;
+  onAssignmentSelected?: (courseId: string, assignmentId: string) => void;
 }
 
 const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
@@ -187,8 +186,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
             subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
             estimatedTime: assignment.due_at ? `Due: ${new Date(assignment.due_at).toLocaleDateString()}` : undefined,
             courseId: selectedCourse,
-            assignmentId: selectedAssignment,
-            type: 'assignment'
+            assignmentId: selectedAssignment
           });
           
           toast({
@@ -215,9 +213,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
             subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
             estimatedTime: discussion.due_at ? `Due: ${new Date(discussion.due_at).toLocaleDateString()}` : undefined,
             courseId: selectedCourse,
-            discussionId: discussion.id, // Use the actual discussion ID from Canvas response
-            assignmentId: discussion.assignment_id, // Include the assignment ID if available
-            type: 'discussion'
+            discussionId: selectedDiscussion
           });
 
           toast({
@@ -258,41 +254,25 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
     
     // In export mode, immediately notify parent of selection
     if (exportMode && onAssignmentSelected && selectedCourse) {
-      onAssignmentSelected(selectedCourse, assignmentId, 'assignment');
+      onAssignmentSelected(selectedCourse, assignmentId);
     }
   };
 
   const handleDiscussionChange = (discussionId: string) => {
     setSelectedDiscussion(discussionId);
-    
-    // In export mode, immediately notify parent of selection
-    if (exportMode && onAssignmentSelected && selectedCourse) {
-      onAssignmentSelected(selectedCourse, discussionId, 'discussion');
-    }
   };
 
   // In export mode, call onAssignmentImported with the selection info
   React.useEffect(() => {
-    if (exportMode && selectedCourse && onAssignmentImported) {
-      if (mode === 'assignments' && selectedAssignment) {
-        onAssignmentImported({
-          title: '',
-          content: '',
-          courseId: selectedCourse,
-          assignmentId: selectedAssignment,
-          type: 'assignment'
-        });
-      } else if (mode === 'discussions' && selectedDiscussion) {
-        onAssignmentImported({
-          title: '',
-          content: '',
-          courseId: selectedCourse,
-          discussionId: selectedDiscussion,
-          type: 'discussion'
-        });
-      }
+    if (exportMode && selectedCourse && selectedAssignment && onAssignmentImported) {
+      onAssignmentImported({
+        title: '',
+        content: '',
+        courseId: selectedCourse,
+        assignmentId: selectedAssignment
+      });
     }
-  }, [selectedCourse, selectedAssignment, selectedDiscussion, mode, exportMode, onAssignmentImported]);
+  }, [selectedCourse, selectedAssignment, exportMode, onAssignmentImported]);
 
   React.useEffect(() => {
     if (selectedCourse) {
@@ -309,7 +289,7 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center">
           <BookOpen className="w-6 h-6 mr-2" />
-          {exportMode ? 'Select Canvas Assignment or Discussion' : 'Import from Canvas'}
+          {exportMode ? 'Select Canvas Assignment' : 'Import from Canvas'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import ContentInputStep from './steps/ContentInputStep';
 import RubricOptionsStep from './steps/RubricOptionsStep';
-import RubricPreviewStepRefactored from './steps/RubricPreviewStepRefactored';
+import RubricPreviewStep from './steps/RubricPreviewStep';
 import RubricLibraryStep from './steps/RubricLibraryStep';
 import { RubricData, RubricBuilderState } from '@/types/rubric';
-import { useRubricBuilder } from '@/hooks/useRubricBuilder';
 
 const STEPS = [
   { id: 'input', title: 'Content Input', description: 'Provide assignment content' },
@@ -19,11 +18,50 @@ const STEPS = [
 
 const RubricBuilderWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const { 
-    state, 
-    updateState, 
-    resolveSubjectArea 
-  } = useRubricBuilder();
+  const [state, setState] = useState<RubricBuilderState>({
+    inputMethod: 'canvas',
+    assignmentContent: '',
+    selectedAssignment: null,
+    rubricType: 'analytic',
+    pointsPossible: 100,
+    includeDiverAlignment: false,
+    subjectArea: '',
+    gradeLevel: '',
+    customSubject: '',
+    isCustomSubject: false,
+    generatedRubric: null,
+    isGenerating: false,
+    error: null,
+    rubricTitle: 'Assignment Rubric'
+  });
+
+  const updateState = (updates: Partial<RubricBuilderState>) => {
+    setState(prev => {
+      const newState = { ...prev, ...updates };
+      
+      // Auto-generate rubric title when assignment changes
+      if (updates.selectedAssignment || updates.inputMethod) {
+        if (newState.selectedAssignment?.title) {
+          newState.rubricTitle = `${newState.selectedAssignment.title} Rubric`;
+        } else {
+          newState.rubricTitle = 'Assignment Rubric';
+        }
+      }
+      
+      // Auto-populate points from Canvas assignment
+      if (updates.selectedAssignment) {
+        const pointsPossible = newState.selectedAssignment?.points_possible;
+        if (pointsPossible && pointsPossible > 0) {
+          newState.pointsPossible = pointsPossible;
+        } else if (!newState.selectedAssignment) {
+          // Reset to default when no assignment is selected
+          newState.pointsPossible = 100;
+        }
+      }
+      
+      return newState;
+    });
+  };
 
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
@@ -60,12 +98,11 @@ const RubricBuilderWizard = () => {
         );
       case 2:
         return (
-          <RubricPreviewStepRefactored 
+          <RubricPreviewStep 
             state={state} 
             updateState={updateState} 
             onNext={nextStep}
             onPrevious={prevStep}
-            resolveSubjectArea={resolveSubjectArea}
           />
         );
       case 3:
