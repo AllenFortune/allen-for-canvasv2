@@ -168,11 +168,11 @@ serve(async (req) => {
       throw new Error('Missing course ID. Please select a course for the rubric export.');
     }
 
-    if (associationType === 'assignment' && !finalAssignmentId) {
+    if (associationType === 'assignment' && (finalAssignmentId === null || finalAssignmentId === undefined)) {
       throw new Error('Missing assignment ID. Please select an assignment for the rubric export.');
     }
 
-    if (associationType === 'discussion' && !finalDiscussionId) {
+    if (associationType === 'discussion' && (finalDiscussionId === null || finalDiscussionId === undefined)) {
       throw new Error('Missing discussion ID. Please select a discussion for the rubric export.');
     }
 
