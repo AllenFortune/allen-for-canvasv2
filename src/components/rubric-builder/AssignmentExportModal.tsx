@@ -60,9 +60,13 @@ const AssignmentExportModal: React.FC<AssignmentExportModalProps> = ({
 
       if (updateError) throw updateError;
 
-      // Then export to Canvas
+      // Then export to Canvas with assignment and course IDs
       const { data, error } = await supabase.functions.invoke('export-rubric-to-canvas', {
-        body: { rubricId }
+        body: { 
+          rubricId,
+          assignmentId: parseInt(selectedAssignment),
+          courseId: parseInt(selectedCourse)
+        }
       });
 
       if (error) throw error;
