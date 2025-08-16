@@ -109,7 +109,7 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
           source_content: state.assignmentContent,
           source_type: state.selectedAssignment ? 'canvas_assignment' : 'manual',
             source_assignment_id: state.selectedAssignment?.id || parseInt(state.assignmentId || '0') || null,
-            course_id: state.selectedAssignment?.course_id || null,
+            course_id: state.selectedAssignment?.course_id || parseInt(state.courseId || '0') || null,
           diver_alignment: state.includeDiverAlignment ? state.generatedRubric.diverAlignment as any : null,
           ai_literacy_components: state.generatedRubric.aiLiteracyComponents as any,
           status: 'published'
@@ -158,7 +158,7 @@ const RubricPreviewStep: React.FC<RubricPreviewStepProps> = ({
             source_content: state.assignmentContent,
             source_type: state.selectedAssignment ? 'canvas_assignment' : 'manual',
             source_assignment_id: state.selectedAssignment?.id || parseInt(state.assignmentId || '0') || null,
-            course_id: state.selectedAssignment?.course_id || null,
+            course_id: state.selectedAssignment?.course_id || parseInt(state.courseId || '0') || null,
             diver_alignment: state.includeDiverAlignment ? state.generatedRubric.diverAlignment as any : null,
             ai_literacy_components: state.generatedRubric.aiLiteracyComponents as any,
             status: 'published'

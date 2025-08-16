@@ -207,13 +207,15 @@ const CanvasAssignmentSelector: React.FC<CanvasAssignmentSelectorProps> = ({
 
         if (data?.discussion) {
           const discussion = data.discussion;
+          console.log('Discussion data received:', discussion);
           onAssignmentImported({
             title: discussion.title,
             content: discussion.message || '',
             subject: courses.find(c => c.id.toString() === selectedCourse)?.name,
             estimatedTime: discussion.due_at ? `Due: ${new Date(discussion.due_at).toLocaleDateString()}` : undefined,
             courseId: selectedCourse,
-            discussionId: selectedDiscussion
+            discussionId: selectedDiscussion,
+            assignmentId: discussion.assignment_id?.toString() || null
           });
 
           toast({

@@ -61,6 +61,7 @@ export interface RubricBuilderState {
   context?: string;
   includeAILiteracy?: boolean;
   assignmentId?: string;
+  courseId?: string;
 }
 
 export interface RubricTemplate {
