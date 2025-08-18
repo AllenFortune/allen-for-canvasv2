@@ -9,11 +9,13 @@ import DashboardCardsGrid from "@/components/dashboard/DashboardCardsGrid";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
+import { forceSubscriptionRefresh } from "@/utils/debugSubscription";
 
 interface UserProfile {
   canvas_instance_url?: string;
   canvas_access_token?: string;
   school_name?: string;
+  email?: string;
 }
 
 interface CanvasUser {
@@ -42,12 +44,18 @@ const Dashboard = () => {
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('canvas_instance_url, canvas_access_token, school_name')
+          .select('canvas_instance_url, canvas_access_token, school_name, email')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
         setProfile(data);
+
+        // Force subscription refresh for debugging
+        if (data.email === 'allenfortune@whccd.edu') {
+          console.log('Forcing subscription refresh for Allen...');
+          setTimeout(() => forceSubscriptionRefresh(data.email), 2000);
+        }
 
         // If we have Canvas credentials, test the connection to get user info
         if (data.canvas_instance_url && data.canvas_access_token) {

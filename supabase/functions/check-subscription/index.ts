@@ -131,25 +131,35 @@ serve(async (req) => {
       const priceIdToTierMap: { [key: string]: string } = {
         'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan', // Known Lite Plan price ID
         'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan', // Another Lite Plan price ID
+        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Lite Plan', // Lite Plan from logs
+        'price_1RXUq9GG0TRs3C9HyLzQcO5X': 'Core Plan', // Core Plan price ID
+        'price_1RfZ7nGG0TRs3C9Hcore123': 'Core Plan', // Another Core Plan price ID
       };
       
       if (priceIdToTierMap[priceId]) {
         subscriptionTier = priceIdToTierMap[priceId];
         logStep("Tier determined by price ID mapping", { priceId, subscriptionTier });
       } else {
-        // Fallback to amount-based mapping
-        if (amount >= 9999) { // $99.99
+        // Fallback to amount-based mapping with enhanced logging
+        if (amount >= 9999) { // $99.99+
           subscriptionTier = "Super Plan";
-        } else if (amount >= 6999) { // $69.99
+        } else if (amount >= 6999) { // $69.99+
           subscriptionTier = "Full-Time Plan";
-        } else if (amount >= 1999) { // $19.99
+        } else if (amount >= 4999) { // $49.99+ (Core Plan)
           subscriptionTier = "Core Plan";
-        } else if (amount >= 900) { // $9.00 and above
+        } else if (amount >= 1900) { // $19.00+ (Lite Plan)
+          subscriptionTier = "Lite Plan";
+        } else if (amount >= 900) { // $9.00+
           subscriptionTier = "Lite Plan";
         } else {
           subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
         }
         logStep("Tier determined by amount mapping", { priceId, amount, subscriptionTier });
+        
+        // Log unknown price IDs for future mapping
+        if (!priceIdToTierMap[priceId]) {
+          logStep("Unknown price ID encountered - add to mapping", { priceId, amount, detectedTier: subscriptionTier });
+        }
       }
     } else {
       logStep("No active subscription found");

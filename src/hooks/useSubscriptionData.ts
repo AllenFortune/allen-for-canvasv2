@@ -180,6 +180,12 @@ export const useSubscriptionData = () => {
       
       console.log('Usage data calculated:', newUsageData);
       setUsage(newUsageData);
+      
+      // Force subscription refresh if tier shows mismatched usage
+      if (subscriptionToUse?.subscription_tier === 'Lite Plan' && submissions_used >= 250) {
+        console.log('Detected potential tier mismatch - forcing subscription refresh');
+        setTimeout(() => checkSubscription(false), 1000);
+      }
     } catch (error) {
       console.error('Error getting usage:', error);
     }
