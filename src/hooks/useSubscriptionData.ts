@@ -28,6 +28,17 @@ export const useSubscriptionData = () => {
 
       if (error) {
         console.error('Error checking subscription:', error);
+        
+        // Check if this is a session expiration error
+        if (error.message?.includes('SESSION_EXPIRED') || 
+            data?.error === 'SESSION_EXPIRED') {
+          console.log('Session expired, redirecting to login');
+          // Sign out the user and redirect to auth
+          await supabase.auth.signOut();
+          window.location.href = '/auth';
+          return;
+        }
+        
         throw error;
       }
 
