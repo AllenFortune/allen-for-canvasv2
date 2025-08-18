@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CreditCard, ExternalLink, RefreshCw, Calendar } from 'lucide-react';
+import { CreditCard, ExternalLink, RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -12,6 +12,7 @@ const SubscriptionCard: React.FC = () => {
     subscription, 
     usage, 
     loading, 
+    subscriptionError,
     checkSubscription, 
     openCustomerPortal 
   } = useSubscription();
@@ -68,6 +69,21 @@ const SubscriptionCard: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Error Alert */}
+          {subscriptionError && (
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-orange-900">Subscription Status Unavailable</p>
+                  <p className="text-xs text-orange-700 mt-1">
+                    Unable to retrieve subscription information. Some data may be incomplete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Current Plan */}
           <div>
             <label className="text-sm font-medium text-gray-700">Current Plan</label>
@@ -79,10 +95,20 @@ const SubscriptionCard: React.FC = () => {
                     Renews on {formatDate(subscription.subscription_end)}
                   </p>
                 )}
+                {subscriptionError && (
+                  <p className="text-sm text-orange-600">
+                    Status information unavailable
+                  </p>
+                )}
               </div>
-              {isSubscribed && (
+              {isSubscribed && !subscriptionError && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   Active
+                </span>
+              )}
+              {subscriptionError && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  Unknown
                 </span>
               )}
             </div>

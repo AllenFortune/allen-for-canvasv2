@@ -11,12 +11,32 @@ export const useSubscriptionData = () => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
 
-  const checkSubscription = async () => {
+  const refreshSession = async () => {
+    try {
+      console.log('Attempting to refresh session...');
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Session refresh failed:', error);
+        return false;
+      }
+      console.log('Session refreshed successfully');
+      return true;
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      return false;
+    }
+  };
+
+  const checkSubscription = async (shouldRetry = true) => {
     if (!user || !session?.access_token) {
       setLoading(false);
       return;
     }
+
+    setSubscriptionError(null);
 
     try {
       console.log('Checking subscription status...');
@@ -32,8 +52,22 @@ export const useSubscriptionData = () => {
         // Check if this is a session expiration error
         if (error.message?.includes('SESSION_EXPIRED') || 
             data?.error === 'SESSION_EXPIRED') {
-          console.log('Session expired, redirecting to login');
-          // Sign out the user and redirect to auth
+          console.log('Session expired, attempting to refresh...');
+          
+          // Try to refresh session before giving up
+          if (shouldRetry && retryCount < 2) {
+            const refreshed = await refreshSession();
+            if (refreshed) {
+              console.log('Session refreshed, retrying subscription check...');
+              setRetryCount(prev => prev + 1);
+              // Wait a moment for the session to propagate
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return checkSubscription(false);
+            }
+          }
+          
+          // If refresh failed or we've already retried, sign out
+          console.log('Session refresh failed, redirecting to login');
           await supabase.auth.signOut();
           window.location.href = '/auth';
           return;
@@ -42,6 +76,8 @@ export const useSubscriptionData = () => {
         throw error;
       }
 
+      // Reset retry count on success
+      setRetryCount(0);
       console.log('Subscription data received:', data);
       
       let subscriptionData = data;
@@ -69,11 +105,19 @@ export const useSubscriptionData = () => {
       await getCurrentUsage(subscriptionData);
     } catch (error) {
       console.error('Error checking subscription:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setSubscriptionError(errorMessage);
+      
+      // For other errors, show toast but don't redirect
       toast({
-        title: "Error",
-        description: "Failed to check subscription status",
+        title: "Subscription Status Unavailable",
+        description: "Unable to load subscription data. Click refresh to try again.",
         variant: "destructive",
       });
+      
+      // Still try to get usage data even if subscription check fails
+      await getCurrentUsage();
     } finally {
       setLoading(false);
     }
@@ -145,6 +189,7 @@ export const useSubscriptionData = () => {
     subscription,
     usage,
     loading,
+    subscriptionError,
     setSubscription,
     setUsage,
     checkSubscription,

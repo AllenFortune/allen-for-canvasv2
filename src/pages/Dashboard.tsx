@@ -33,6 +33,13 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
+        // Validate session health before making other API calls
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.log('No valid session found, refreshing...');
+          await supabase.auth.refreshSession();
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('canvas_instance_url, canvas_access_token, school_name')

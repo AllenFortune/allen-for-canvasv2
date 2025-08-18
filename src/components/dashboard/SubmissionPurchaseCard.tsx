@@ -14,6 +14,7 @@ const SubmissionPurchaseCard: React.FC = () => {
     usage,
     subscription,
     loading,
+    subscriptionError,
     purchaseAdditionalSubmissions,
     checkSubscription
   } = useSubscription();
@@ -73,6 +74,40 @@ const SubmissionPurchaseCard: React.FC = () => {
       </Card>;
   }
 
+  // Show fallback if subscription failed but we still have usage data
+  if (subscriptionError && !usage) {
+    return (
+      <Card className="border-orange-200 bg-orange-50">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Billing Period Usage
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleManualRefresh}
+              className="text-xs"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-2 text-orange-600 text-sm bg-orange-50 p-3 rounded-lg">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Subscription Status Unavailable</p>
+              <p>Unable to load subscription information. Your usage data may be incomplete. Click "Retry" to try again.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!usage) {
     return null;
   }
@@ -113,8 +148,17 @@ const SubmissionPurchaseCard: React.FC = () => {
         <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
           {/* Left Section: Billing Cycle Info and Usage */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Billing Cycle Info */}
-            {subscription?.next_reset_date && (
+            {/* Billing Cycle Info or Error Alert */}
+            {subscriptionError ? (
+              <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                <div className="flex items-center">
+                  <AlertTriangle className="w-4 h-4 text-orange-600 mr-2" />
+                  <span className="text-sm font-medium text-orange-900">
+                    Subscription info unavailable - usage data may be incomplete
+                  </span>
+                </div>
+              </div>
+            ) : subscription?.next_reset_date ? (
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -130,7 +174,7 @@ const SubmissionPurchaseCard: React.FC = () => {
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Usage Progress */}
             <div>
