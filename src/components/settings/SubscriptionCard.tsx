@@ -143,23 +143,40 @@ const SubscriptionCard: React.FC = () => {
                 <label className="text-sm font-medium text-gray-700">
                   Current Period Usage
                 </label>
-                <span className="text-sm text-gray-600">
-                  {usage.submissions_used} / {usage.total_limit} submissions
-                </span>
+                 <span className="text-sm text-gray-600">
+                   {usage.total_limit === -1 
+                     ? `${usage.submissions_used} / Unlimited`
+                     : `${usage.submissions_used} / ${usage.total_limit}`
+                   } submissions
+                 </span>
               </div>
-              <Progress 
-                value={usagePercentage} 
-                className={`w-full h-2 ${isNearLimit ? 'bg-red-100' : 'bg-gray-100'}`}
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Plan: {usage.limit}</span>
-                {usage.purchased_submissions > 0 && <span>Purchased: +{usage.purchased_submissions}</span>}
-              </div>
-              {isNearLimit && (
-                <p className="text-sm text-red-600 mt-1">
-                  ⚠️ You're approaching your billing period limit
-                </p>
-              )}
+               {usage.total_limit !== -1 && (
+                 <Progress 
+                   value={usagePercentage} 
+                   className={`w-full h-2 ${isNearLimit ? 'bg-red-100' : 'bg-gray-100'}`}
+                 />
+               )}
+               {usage.total_limit === -1 && (
+                 <div className="w-full h-2 bg-green-100 rounded-full">
+                   <div className="h-2 bg-green-500 rounded-full w-full"></div>
+                 </div>
+               )}
+               <div className="flex justify-between text-xs text-gray-500 mt-1">
+                 <span>Plan: {usage.limit === -1 ? 'Unlimited' : usage.limit}</span>
+                 {usage.purchased_submissions > 0 && usage.total_limit !== -1 && (
+                   <span>Purchased: +{usage.purchased_submissions}</span>
+                 )}
+               </div>
+               {isNearLimit && usage.total_limit !== -1 && (
+                 <p className="text-sm text-red-600 mt-1">
+                   ⚠️ You're approaching your billing period limit
+                 </p>
+               )}
+               {usage.total_limit === -1 && (
+                 <p className="text-sm text-green-600 mt-1">
+                   ✅ Unlimited submissions available
+                 </p>
+               )}
             </div>
           )}
 

@@ -32,6 +32,10 @@ export const useSubscriptionData = () => {
 
   const checkSubscription = async (shouldRetry = true) => {
     if (!user || !session?.access_token) {
+      // Try to get cached subscription data from database
+      if (user?.email) {
+        await getFallbackSubscriptionData();
+      }
       setLoading(false);
       return;
     }
@@ -66,13 +70,15 @@ export const useSubscriptionData = () => {
             }
           }
           
-          // If refresh failed or we've already retried, sign out
-          console.log('Session refresh failed, redirecting to login');
-          await supabase.auth.signOut();
-          window.location.href = '/auth';
+          // If refresh failed, try fallback data instead of signing out
+          console.log('Session refresh failed, using fallback subscription data');
+          await getFallbackSubscriptionData();
+          setSubscriptionError('Session expired - showing cached data');
           return;
         }
         
+        // For other errors, try fallback data
+        await getFallbackSubscriptionData();
         throw error;
       }
 
@@ -120,6 +126,47 @@ export const useSubscriptionData = () => {
       await getCurrentUsage();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getFallbackSubscriptionData = async () => {
+    if (!user?.email) return;
+
+    try {
+      console.log('Getting fallback subscription data from database...');
+      
+      // Get stored subscription data from database
+      const { data: subscriberData, error } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+
+      if (error) {
+        console.error('Error getting fallback subscription data:', error);
+        return;
+      }
+
+      if (subscriberData) {
+        console.log('Found cached subscription data:', subscriberData);
+        
+        const fallbackData = {
+          subscribed: subscriberData.subscribed,
+          subscription_tier: subscriberData.subscription_tier || 'Free Trial',
+          subscription_end: subscriberData.subscription_end,
+          billing_cycle_start: subscriberData.billing_cycle_start,
+          next_reset_date: subscriberData.next_reset_date,
+          days_remaining: subscriberData.next_reset_date ? 
+            Math.max(0, Math.ceil((new Date(subscriberData.next_reset_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
+        };
+        
+        setSubscription(fallbackData);
+        
+        // Get usage data using the fallback subscription data
+        await getCurrentUsage(fallbackData);
+      }
+    } catch (error) {
+      console.error('Error in getFallbackSubscriptionData:', error);
     }
   };
 

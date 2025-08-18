@@ -129,11 +129,22 @@ serve(async (req) => {
       
       // First try explicit price ID mapping for known price IDs
       const priceIdToTierMap: { [key: string]: string } = {
-        'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan', // Known Lite Plan price ID
-        'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan', // Another Lite Plan price ID
-        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Lite Plan', // Lite Plan from logs
-        'price_1RXUq9GG0TRs3C9HyLzQcO5X': 'Core Plan', // Core Plan price ID
-        'price_1RfZ7nGG0TRs3C9Hcore123': 'Core Plan', // Another Core Plan price ID
+        // Lite Plan price IDs
+        'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan',
+        'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan',
+        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Lite Plan',
+        
+        // Core Plan price IDs (updated based on upgrade logic)
+        'price_1RXUq9GG0TRs3C9HyLzQcO5X': 'Core Plan',
+        'price_1Swk9KGG0TRs3C9Hcore2024': 'Core Plan', // Dynamic Core Plan price
+        'price_core_plan_monthly': 'Core Plan', // Generic Core Plan monthly
+        'price_core_plan_yearly': 'Core Plan', // Generic Core Plan yearly
+        
+        // Full-Time Plan price IDs
+        'price_1RXUrFGG0TRs3C9HfullTime': 'Full-Time Plan',
+        
+        // Super Plan price IDs
+        'price_1RXUsGGG0TRs3C9Hsuper2024': 'Super Plan',
       };
       
       if (priceIdToTierMap[priceId]) {
