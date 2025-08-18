@@ -53,8 +53,33 @@ serve(async (req) => {
       customerEmail: session.customer_email 
     });
 
-    // Verify this session belongs to the authenticated user
-    if (session.customer_email !== user.email) {
+    // Get customer from session to verify ownership
+    let verified = false;
+    
+    if (session.customer_email === user.email) {
+      verified = true;
+    } else if (session.customer) {
+      // Also verify by stripe_customer_id if email doesn't match
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("email")
+        .eq("id", user.id)
+        .single();
+        
+      if (profile) {
+        const { data: subscriber } = await supabaseClient
+          .from("subscribers")
+          .select("stripe_customer_id")
+          .eq("email", profile.email)
+          .single();
+          
+        if (subscriber?.stripe_customer_id === session.customer) {
+          verified = true;
+        }
+      }
+    }
+
+    if (!verified) {
       throw new Error("Session does not belong to authenticated user");
     }
 
@@ -111,6 +136,11 @@ serve(async (req) => {
     if (purchasedError) {
       logStep("Error getting purchased submissions", { error: purchasedError });
     }
+
+    logStep("Fetched purchased submissions", { 
+      email: user.email, 
+      total: purchasedData ?? 0
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 

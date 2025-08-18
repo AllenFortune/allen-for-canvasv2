@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { CreditCard, ExternalLink, RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscriptionReconciliation } from '@/hooks/useSubscriptionReconciliation';
 
 const SubscriptionCard: React.FC = () => {
   const { 
@@ -17,8 +18,14 @@ const SubscriptionCard: React.FC = () => {
     openCustomerPortal 
   } = useSubscription();
 
+  const { reconcileSubscription } = useSubscriptionReconciliation();
+
   const handleRefresh = () => {
     checkSubscription();
+  };
+
+  const handleReconcile = () => {
+    reconcileSubscription();
   };
 
   if (loading) {
@@ -74,11 +81,20 @@ const SubscriptionCard: React.FC = () => {
             <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-orange-900">Subscription Status Unavailable</p>
                   <p className="text-xs text-orange-700 mt-1">
                     Unable to retrieve subscription information. Some data may be incomplete.
                   </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReconcile}
+                    className="mt-2"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Force Refresh
+                  </Button>
                 </div>
               </div>
             </div>
