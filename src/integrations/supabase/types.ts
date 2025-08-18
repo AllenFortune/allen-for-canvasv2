@@ -755,6 +755,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
+      validate_subscription_tier: {
+        Args: { tier: string }
+        Returns: boolean
+      }
       validate_user_access: {
         Args: { target_user_id: string }
         Returns: boolean
