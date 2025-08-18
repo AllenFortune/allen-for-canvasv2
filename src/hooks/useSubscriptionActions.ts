@@ -12,7 +12,8 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
     planName: string, 
     monthlyPrice: number, 
     yearlyPrice: number, 
-    isYearly: boolean = false
+    isYearly: boolean = false,
+    isUpgrade: boolean = false
   ) => {
     if (!session?.access_token) {
       toast({
@@ -26,17 +27,20 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
     try {
       // Log subscription attempt
       await logAction({
-        action: 'SUBSCRIPTION_CHECKOUT_INITIATED',
+        action: isUpgrade ? 'SUBSCRIPTION_UPGRADE_INITIATED' : 'SUBSCRIPTION_CHECKOUT_INITIATED',
         table_name: 'subscribers',
         new_values: {
           plan_name: planName,
           is_yearly: isYearly,
           monthly_price: monthlyPrice,
-          yearly_price: yearlyPrice
+          yearly_price: yearlyPrice,
+          is_upgrade: isUpgrade
         }
       });
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      // Use upgrade function if this is an upgrade
+      const functionName = isUpgrade ? 'upgrade-subscription' : 'create-checkout';
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           planName, 
           monthlyPrice, 
@@ -48,15 +52,35 @@ export const useSubscriptionActions = (usage: UsageData | null) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle existing subscription error
+        if (error.error === 'EXISTING_SUBSCRIPTION') {
+          toast({
+            title: "Existing Subscription Found",
+            description: "You already have an active subscription. Upgrading instead...",
+            variant: "default",
+          });
+          // Retry with upgrade
+          return createCheckout(planName, monthlyPrice, yearlyPrice, isYearly, true);
+        }
+        throw error;
+      }
 
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
+      if (isUpgrade) {
+        toast({
+          title: "Subscription Updated",
+          description: `Successfully upgraded to ${planName}`,
+          variant: "default",
+        });
+      } else {
+        // Open Stripe checkout in a new tab for new subscriptions
+        window.open(data.url, '_blank');
+      }
     } catch (error) {
       console.error('Error creating checkout:', error);
       toast({
         title: "Error",
-        description: "Failed to create checkout session",
+        description: isUpgrade ? "Failed to upgrade subscription" : "Failed to create checkout session",
         variant: "destructive",
       });
     }

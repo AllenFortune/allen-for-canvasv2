@@ -47,12 +47,38 @@ serve(async (req) => {
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Found existing customer", { customerId });
+
+      // Check for existing active subscriptions
+      const existingSubscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      });
+
+      if (existingSubscriptions.data.length > 0) {
+        const currentSub = existingSubscriptions.data[0];
+        logStep("Found existing active subscription", { 
+          subscriptionId: currentSub.id,
+          currentPriceId: currentSub.items.data[0].price.id
+        });
+
+        // Return error asking user to use upgrade instead
+        return new Response(JSON.stringify({ 
+          error: "EXISTING_SUBSCRIPTION",
+          message: "You already have an active subscription. Please use the upgrade option instead.",
+          current_subscription_id: currentSub.id,
+          suggest_upgrade: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
     }
 
     const price = isYearly ? yearlyPrice : monthlyPrice;
     const interval = isYearly ? "year" : "month";
     
-    logStep("Creating checkout session", { planName, price, interval });
+    logStep("Creating checkout session for new subscription", { planName, price, interval });
 
     const sessionData: any = {
       customer: customerId,
