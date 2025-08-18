@@ -51,11 +51,11 @@ const Dashboard = () => {
         if (error) throw error;
         setProfile(data);
 
-        // Force subscription refresh for debugging
-        if (data.email === 'allenfortune@whccd.edu') {
-          console.log('Forcing subscription refresh for Allen...');
-          setTimeout(() => forceSubscriptionRefresh(data.email), 2000);
-        }
+    // Force subscription refresh for debugging
+    if (data.email === 'allenfortune@whccd.edu') {
+      console.log('Forcing subscription refresh for Allen...');
+      setTimeout(() => forceSubscriptionRefresh(data.email), 100); // Immediate refresh
+    }
 
         // If we have Canvas credentials, test the connection to get user info
         if (data.canvas_instance_url && data.canvas_access_token) {

@@ -132,9 +132,9 @@ serve(async (req) => {
         // Lite Plan price IDs
         'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan',
         'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan',
-        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Lite Plan',
         
         // Core Plan price IDs (updated based on upgrade logic)
+        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Core Plan', // Fixed: $19.00 Core Plan
         'price_1RXUq9GG0TRs3C9HyLzQcO5X': 'Core Plan',
         'price_1Swk9KGG0TRs3C9Hcore2024': 'Core Plan', // Dynamic Core Plan price
         'price_core_plan_monthly': 'Core Plan', // Generic Core Plan monthly
