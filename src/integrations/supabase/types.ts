@@ -694,6 +694,10 @@ export type Database = {
         Args: { token: string }
         Returns: string
       }
+      encrypt_canvas_token_secure: {
+        Args: { token: string }
+        Returns: string
+      }
       generate_referral_code: {
         Args: { user_email: string } | { user_id_param: string }
         Returns: string
