@@ -1,21 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
+
 const Hero = () => {
   const navigate = useNavigate();
-  return <section className="relative py-20 overflow-hidden">
+
+  return (
+    <section className="relative py-20 overflow-hidden">
       {/* YouTube Video Background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden" style={{ contain: 'layout style paint' }}>
         <iframe
           src="https://www.youtube.com/embed/02PnCIOtmFI?autoplay=1&mute=1&loop=1&playlist=02PnCIOtmFI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
           className="absolute inset-0 w-full h-full object-cover opacity-20"
           style={{
             width: '100vw',
             height: '100vh',
-            transform: 'scale(1.2)',
+            transform: 'translate3d(-10%, -10%, 0) scale3d(1.2, 1.2, 1)',
+            willChange: 'transform',
             pointerEvents: 'none'
           }}
           allow="autoplay; encrypted-media"
+          loading="lazy"
           title="Background Video"
         />
         {/* Video Overlay */}
@@ -34,8 +39,8 @@ const Hero = () => {
       {/* Data Flow Lines */}
       <div className="absolute top-1/4 left-1/4 w-px h-20 bg-gradient-to-b from-primary/30 to-transparent hero-data-flow"></div>
       <div className="absolute top-1/3 right-1/3 w-px h-16 bg-gradient-to-b from-blue-500/30 to-transparent hero-data-flow" style={{
-      animationDelay: '1s'
-    }}></div>
+        animationDelay: '1s'
+      }}></div>
       
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
@@ -78,10 +83,10 @@ const Hero = () => {
           </div>
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
             <div style={{
-            position: 'relative',
-            paddingBottom: '49.583333333333336%',
-            height: 0
-          }}>
+              position: 'relative',
+              paddingBottom: '49.583333333333336%',
+              height: 0
+            }}>
               <iframe 
                 src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" 
                 frameBorder="0" 
@@ -100,6 +105,8 @@ const Hero = () => {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default Hero;
