@@ -82,13 +82,20 @@ const Hero = () => {
             paddingBottom: '49.583333333333336%',
             height: 0
           }}>
-              <iframe src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" frameBorder="0" allowFullScreen style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%'
-            }} title="A.L.L.E.N. Demo Walkthrough" />
+              <iframe 
+                src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" 
+                frameBorder="0" 
+                allowFullScreen 
+                loading="lazy"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%'
+                }} 
+                title="A.L.L.E.N. Demo Walkthrough" 
+              />
             </div>
           </div>
         </div>
