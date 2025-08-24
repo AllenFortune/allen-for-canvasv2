@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import heroBackground from "@/assets/hero-background.jpg";
@@ -49,7 +50,7 @@ const Hero = () => {
           Less time Grading.<br />
           <span className="text-indigo-600">More time Guiding.</span>
         </h1>
-        <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed" style={{ fontDisplay: 'swap' }}>
+        <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
           In the age of AI and internet, students need teachers less as information providers—and more to guide them in discovering information. Meet ALLEN to handle grading and feedback tasks so you can focus on what only teachers can do: nurture critical thinking, scaffold understanding, and model AI collaboration.
         </p>
         
@@ -113,3 +114,4 @@ const Hero = () => {
 };
 
 export default Hero;
+
