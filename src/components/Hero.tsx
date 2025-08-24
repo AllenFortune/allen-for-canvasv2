@@ -1,17 +1,40 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import heroBackground from "@/assets/hero-background.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [showVideo, setShowVideo] = useState(false);
+  const [showLoomVideo, setShowLoomVideo] = useState(false);
+  const loomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Defer video loading to improve FID
     const timer = setTimeout(() => setShowVideo(true), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Use Intersection Observer to load Loom video only when it's about to be visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShowLoomVideo(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (loomRef.current) {
+      observer.observe(loomRef.current);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -92,27 +115,40 @@ const Hero = () => {
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">See A.L.L.E.N. in Action</h3>
             <p className="text-gray-600">Watch a quick walkthrough of A.L.L.E.N.'s AI Assisted Grading</p>
           </div>
-          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-            <div style={{
-              position: 'relative',
-              paddingBottom: '49.583333333333336%',
-              height: 0
-            }}>
-              <iframe 
-                src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" 
-                frameBorder="0" 
-                allowFullScreen 
-                loading="lazy"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%'
-                }} 
-                title="A.L.L.E.N. Demo Walkthrough" 
-              />
-            </div>
+          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden" ref={loomRef}>
+            {showLoomVideo ? (
+              <div style={{
+                position: 'relative',
+                paddingBottom: '49.583333333333336%',
+                height: 0
+              }}>
+                <iframe 
+                  src="https://www.loom.com/embed/b58e714b7b45424285f5f46948474261?sid=4ff56994-fedf-4f81-8452-9674547f92aa" 
+                  frameBorder="0" 
+                  allowFullScreen 
+                  loading="lazy"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%'
+                  }} 
+                  title="A.L.L.E.N. Demo Walkthrough" 
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">Click to load demo video</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
