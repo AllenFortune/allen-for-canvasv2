@@ -1,30 +1,39 @@
 
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import heroBackground from "@/assets/hero-background.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const [showVideo, setShowVideo] = useState(false);
+
+  useEffect(() => {
+    // Defer video loading to improve FID
+    const timer = setTimeout(() => setShowVideo(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="relative py-20 overflow-hidden">
       {/* YouTube Video Background */}
       <div className="absolute inset-0 overflow-hidden" style={{ contain: 'layout style paint' }}>
-        <iframe
-          src="https://www.youtube.com/embed/02PnCIOtmFI?autoplay=1&mute=1&loop=1&playlist=02PnCIOtmFI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
-          className="absolute inset-0 w-full h-full object-cover opacity-20"
-          style={{
-            width: '100vw',
-            height: '100vh',
-            transform: 'translate3d(-10%, -10%, 0) scale3d(1.2, 1.2, 1)',
-            willChange: 'transform',
-            pointerEvents: 'none'
-          }}
-          allow="autoplay; encrypted-media"
-          loading="lazy"
-          title="Background Video"
-        />
+        {showVideo && (
+          <iframe
+            src="https://www.youtube.com/embed/02PnCIOtmFI?autoplay=1&mute=1&loop=1&playlist=02PnCIOtmFI&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
+            className="absolute inset-0 w-full h-full object-cover opacity-20"
+            style={{
+              width: '100vw',
+              height: '100vh',
+              transform: 'translate3d(-10%, -10%, 0) scale3d(1.2, 1.2, 1)',
+              willChange: 'transform',
+              pointerEvents: 'none'
+            }}
+            allow="autoplay; encrypted-media"
+            loading="lazy"
+            title="Background Video"
+          />
+        )}
         {/* Video Overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-indigo-600/20"></div>
       </div>
@@ -32,17 +41,15 @@ const Hero = () => {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 hero-gradient-bg opacity-5"></div>
       
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-16 h-16 bg-primary/20 rounded-full hero-float hero-pulse"></div>
-      <div className="absolute top-32 right-20 w-12 h-12 bg-blue-500/20 rounded-lg hero-float-delayed"></div>
-      <div className="absolute bottom-32 left-20 w-8 h-8 bg-purple-500/30 rounded-full hero-float"></div>
-      <div className="absolute bottom-20 right-10 w-6 h-6 bg-indigo-400/25 rounded-lg hero-float-delayed hero-pulse"></div>
+      {/* Floating Elements - Defer for better FID */}
+      <div className="absolute top-20 left-10 w-16 h-16 bg-primary/20 rounded-full hero-float hero-pulse" style={{ animationDelay: '0.2s' }}></div>
+      <div className="absolute top-32 right-20 w-12 h-12 bg-blue-500/20 rounded-lg hero-float-delayed" style={{ animationDelay: '0.3s' }}></div>
+      <div className="absolute bottom-32 left-20 w-8 h-8 bg-purple-500/30 rounded-full hero-float" style={{ animationDelay: '0.4s' }}></div>
+      <div className="absolute bottom-20 right-10 w-6 h-6 bg-indigo-400/25 rounded-lg hero-float-delayed hero-pulse" style={{ animationDelay: '0.5s' }}></div>
       
       {/* Data Flow Lines */}
-      <div className="absolute top-1/4 left-1/4 w-px h-20 bg-gradient-to-b from-primary/30 to-transparent hero-data-flow"></div>
-      <div className="absolute top-1/3 right-1/3 w-px h-16 bg-gradient-to-b from-blue-500/30 to-transparent hero-data-flow" style={{
-        animationDelay: '1s'
-      }}></div>
+      <div className="absolute top-1/4 left-1/4 w-px h-20 bg-gradient-to-b from-primary/30 to-transparent hero-data-flow" style={{ animationDelay: '0.6s' }}></div>
+      <div className="absolute top-1/3 right-1/3 w-px h-16 bg-gradient-to-b from-blue-500/30 to-transparent hero-data-flow" style={{ animationDelay: '1s' }}></div>
       
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
@@ -114,4 +121,3 @@ const Hero = () => {
 };
 
 export default Hero;
-
