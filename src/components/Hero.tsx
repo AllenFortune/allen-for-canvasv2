@@ -151,6 +151,23 @@ const Hero = () => {
             )}
           </div>
         </div>
+
+        {/* A.L.L.E.N. Logo Section */}
+        <div className="mt-16 text-center">
+          <div className="relative inline-block">
+            <div className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
+              <img 
+                src="/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png" 
+                alt="A.L.L.E.N. Logo" 
+                className="w-14 h-14 object-contain"
+                width="56"
+                height="56"
+                loading="lazy"
+              />
+              <span className="text-indigo-600">A.L.L.E.N.</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
