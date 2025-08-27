@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Mail, RefreshCw } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Mail, RefreshCw, Pause, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -21,17 +24,22 @@ interface AdminUser {
   current_month_submissions: number;
   purchased_submissions: number;
   subscription_limit: number;
+  account_status?: string;
 }
 
 interface AdminUserTableProps {
   users: AdminUser[];
   onSendCanvasSetupEmail: (userEmail: string, userName: string) => void;
+  onPauseAccount: (userEmail: string, reason?: string) => void;
+  onResumeAccount: (userEmail: string, reason?: string) => void;
   onRefreshData?: () => void;
 }
 
-const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminUserTableProps) => {
+const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onRefreshData }: AdminUserTableProps) => {
   const { session } = useAuth();
   const [syncingUsers, setSyncingUsers] = useState<Set<string>>(new Set());
+  const [pauseReason, setPauseReason] = useState('');
+  const [resumeReason, setResumeReason] = useState('');
 
   const syncUserSubscription = async (userEmail: string) => {
     if (!session?.access_token) {
@@ -99,6 +107,25 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminU
     }
   };
 
+  const getAccountStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'paused': return <Badge variant="destructive">Paused</Badge>;
+      case 'suspended': return <Badge variant="destructive">Suspended</Badge>;
+      case 'active':
+      default: return <Badge variant="default">Active</Badge>;
+    }
+  };
+
+  const handlePauseAccount = async (userEmail: string) => {
+    await onPauseAccount(userEmail, pauseReason);
+    setPauseReason('');
+  };
+
+  const handleResumeAccount = async (userEmail: string) => {
+    await onResumeAccount(userEmail, resumeReason);
+    setResumeReason('');
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -106,6 +133,7 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminU
           <TableHead>User</TableHead>
           <TableHead>School</TableHead>
           <TableHead>Plan</TableHead>
+          <TableHead>Account Status</TableHead>
           <TableHead>Canvas Status</TableHead>
           <TableHead>Usage</TableHead>
           <TableHead>Joined</TableHead>
@@ -133,6 +161,9 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminU
                   </Badge>
                 </div>
               </div>
+            </TableCell>
+            <TableCell>
+              {getAccountStatusBadge(user.account_status)}
             </TableCell>
             <TableCell>
               <Badge variant={user.canvas_connected ? 'default' : 'destructive'}>
@@ -167,6 +198,77 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onRefreshData }: AdminU
                     Send Setup Email
                   </Button>
                 )}
+                
+                {user.account_status !== 'paused' ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Pause Account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will pause the account for {user.email} and stop their Stripe billing.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="pause-reason">Reason (optional)</Label>
+                          <Input
+                            id="pause-reason"
+                            value={pauseReason}
+                            onChange={(e) => setPauseReason(e.target.value)}
+                            placeholder="Enter reason for pausing account..."
+                          />
+                        </div>
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handlePauseAccount(user.email)}>
+                          Pause Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Play className="h-4 w-4 mr-2" />
+                        Resume
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Resume Account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will resume the account for {user.email} and restart their Stripe billing.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="resume-reason">Reason (optional)</Label>
+                          <Input
+                            id="resume-reason"
+                            value={resumeReason}
+                            onChange={(e) => setResumeReason(e.target.value)}
+                            placeholder="Enter reason for resuming account..."
+                          />
+                        </div>
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleResumeAccount(user.email)}>
+                          Resume Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+
                 <Button
                   size="sm"
                   variant="outline"

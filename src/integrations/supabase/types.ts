@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_email: string
+          admin_user_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          reason: string | null
+          target_user_email: string
+        }
+        Insert: {
+          action_type: string
+          admin_email: string
+          admin_user_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          reason?: string | null
+          target_user_email: string
+        }
+        Update: {
+          action_type?: string
+          admin_email?: string
+          admin_user_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          reason?: string | null
+          target_user_email?: string
+        }
+        Relationships: []
+      }
       admin_email_campaigns: {
         Row: {
           campaign_name: string
@@ -518,11 +551,15 @@ export type Database = {
       }
       subscribers: {
         Row: {
+          account_status: string | null
           billing_cycle_start: string
           created_at: string
           email: string
           id: string
           next_reset_date: string | null
+          pause_reason: string | null
+          paused_at: string | null
+          paused_by: string | null
           stripe_customer_id: string | null
           subscribed: boolean
           subscription_end: string | null
@@ -531,11 +568,15 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          account_status?: string | null
           billing_cycle_start: string
           created_at?: string
           email: string
           id?: string
           next_reset_date?: string | null
+          pause_reason?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null
@@ -544,11 +585,15 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          account_status?: string | null
           billing_cycle_start?: string
           created_at?: string
           email?: string
           id?: string
           next_reset_date?: string | null
+          pause_reason?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null

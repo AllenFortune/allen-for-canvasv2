@@ -129,6 +129,56 @@ export const useAdminData = () => {
     }
   };
 
+  const pauseAccount = async (userEmail: string, reason?: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('admin-pause-account', {
+        body: { userEmail, reason }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Account Paused",
+        description: `Account for ${userEmail} has been paused`,
+      });
+
+      // Refresh user list to show updated status
+      await fetchUserList();
+    } catch (error) {
+      console.error('Error pausing account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to pause account",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resumeAccount = async (userEmail: string, reason?: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('admin-resume-account', {
+        body: { userEmail, reason }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Account Resumed",
+        description: `Account for ${userEmail} has been resumed`,
+      });
+
+      // Refresh user list to show updated status
+      await fetchUserList();
+    } catch (error) {
+      console.error('Error resuming account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resume account",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     checkAdminStatus();
   }, [user]);
@@ -147,6 +197,8 @@ export const useAdminData = () => {
     users,
     fetchAdminStats,
     fetchUserList,
-    sendCanvasSetupEmail
+    sendCanvasSetupEmail,
+    pauseAccount,
+    resumeAccount
   };
 };
