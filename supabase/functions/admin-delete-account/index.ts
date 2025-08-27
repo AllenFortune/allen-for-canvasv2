@@ -121,94 +121,144 @@ serve(async (req) => {
     // Delete from dependent tables first
     logStep("Starting database cleanup for user", { userId, userEmail });
 
+    const deletionResults = {
+      usage_tracking: 0,
+      submission_purchases: 0,
+      referral_rewards: 0,
+      referrals: 0,
+      rubrics: 0,
+      custom_gpt_files: 0,
+      custom_gpts: 0,
+      feature_notifications: 0,
+      subscribers: 0,
+      user_roles: 0,
+      audit_logs: 0,
+      profiles: 0
+    };
+
+    let errors = [];
+
+    // Helper function for safe deletion with detailed logging
+    const safeDelete = async (tableName: string, operation: () => Promise<any>, description: string) => {
+      try {
+        logStep(`Starting deletion: ${description}`);
+        const result = await operation();
+        const deletedCount = result.count || (result.data ? result.data.length : 0);
+        deletionResults[tableName] = deletedCount;
+        logStep(`Successfully deleted ${description}`, { deletedCount });
+        return result;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logStep(`Failed to delete ${description}`, { error: errorMsg });
+        errors.push({ table: tableName, operation: description, error: errorMsg });
+        return null;
+      }
+    };
+
     // Delete usage tracking
-    await supabaseClient
-      .from('usage_tracking')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted usage tracking data");
+    await safeDelete('usage_tracking', 
+      () => supabaseClient.from('usage_tracking').delete().eq('user_id', userId),
+      'usage tracking data'
+    );
 
     // Delete submission purchases
-    await supabaseClient
-      .from('submission_purchases')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted submission purchases");
+    await safeDelete('submission_purchases',
+      () => supabaseClient.from('submission_purchases').delete().eq('user_id', userId),
+      'submission purchases'
+    );
 
     // Delete referral rewards
-    await supabaseClient
-      .from('referral_rewards')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted referral rewards");
+    await safeDelete('referral_rewards',
+      () => supabaseClient.from('referral_rewards').delete().eq('user_id', userId),
+      'referral rewards'
+    );
 
     // Delete referrals (as referrer or referee)
-    await supabaseClient
-      .from('referrals')
-      .delete()
-      .or(`referrer_user_id.eq.${userId},referee_user_id.eq.${userId}`);
-    logStep("Deleted referrals");
+    await safeDelete('referrals',
+      () => supabaseClient.from('referrals').delete().or(`referrer_user_id.eq.${userId},referee_user_id.eq.${userId}`),
+      'referrals'
+    );
 
     // Delete rubrics
-    await supabaseClient
-      .from('rubrics')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted rubrics");
+    await safeDelete('rubrics',
+      () => supabaseClient.from('rubrics').delete().eq('user_id', userId),
+      'rubrics'
+    );
 
-    // Delete custom GPTs and related files
-    await supabaseClient
-      .from('custom_gpt_files')
-      .delete()
-      .in('custom_gpt_id', 
-        supabaseClient
-          .from('custom_gpts')
-          .select('id')
-          .eq('user_id', userId)
+    // Delete custom GPTs and related files (FIXED: Execute subquery first)
+    try {
+      logStep("Starting custom GPT cleanup");
+      
+      // First, get the list of custom GPT IDs for this user
+      const { data: customGptIds, error: gptQueryError } = await supabaseClient
+        .from('custom_gpts')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (gptQueryError) {
+        throw new Error(`Failed to fetch custom GPT IDs: ${gptQueryError.message}`);
+      }
+
+      logStep("Found custom GPTs", { count: customGptIds?.length || 0, gptIds: customGptIds });
+
+      // Delete custom GPT files first (if any GPTs exist)
+      if (customGptIds && customGptIds.length > 0) {
+        const gptIdArray = customGptIds.map(gpt => gpt.id);
+        await safeDelete('custom_gpt_files',
+          () => supabaseClient.from('custom_gpt_files').delete().in('custom_gpt_id', gptIdArray),
+          'custom GPT files'
+        );
+      } else {
+        logStep("No custom GPTs found, skipping file deletion");
+        deletionResults.custom_gpt_files = 0;
+      }
+
+      // Then delete the custom GPTs themselves
+      await safeDelete('custom_gpts',
+        () => supabaseClient.from('custom_gpts').delete().eq('user_id', userId),
+        'custom GPTs'
       );
-    
-    await supabaseClient
-      .from('custom_gpts')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted custom GPTs and files");
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logStep("Failed to delete custom GPTs and files", { error: errorMsg });
+      errors.push({ table: 'custom_gpts', operation: 'custom GPT cleanup', error: errorMsg });
+    }
 
     // Delete feature notifications
-    await supabaseClient
-      .from('feature_notifications')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted feature notifications");
+    await safeDelete('feature_notifications',
+      () => supabaseClient.from('feature_notifications').delete().eq('user_id', userId),
+      'feature notifications'
+    );
 
     // Delete subscribers record
-    await supabaseClient
-      .from('subscribers')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted subscriber record");
+    await safeDelete('subscribers',
+      () => supabaseClient.from('subscribers').delete().eq('user_id', userId),
+      'subscriber record'
+    );
 
     // Delete user roles
-    await supabaseClient
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted user roles");
+    await safeDelete('user_roles',
+      () => supabaseClient.from('user_roles').delete().eq('user_id', userId),
+      'user roles'
+    );
 
     // Delete audit logs
-    await supabaseClient
-      .from('audit_logs')
-      .delete()
-      .eq('user_id', userId);
-    logStep("Deleted audit logs");
+    await safeDelete('audit_logs',
+      () => supabaseClient.from('audit_logs').delete().eq('user_id', userId),
+      'audit logs'
+    );
 
     // Finally, delete the profile (this will also delete the auth user due to cascade)
-    await supabaseClient
-      .from('profiles')
-      .delete()
-      .eq('id', userId);
-    logStep("Deleted user profile");
+    await safeDelete('profiles',
+      () => supabaseClient.from('profiles').delete().eq('id', userId),
+      'user profile'
+    );
 
-    // Log the admin action
+    // Log deletion summary
+    logStep("Deletion summary", { deletionResults, errors, errorCount: errors.length });
+
+    // Log the admin action with detailed results
     await supabaseClient.from('admin_actions').insert({
       admin_user_id: user.id,
       admin_email: user.email,
@@ -218,18 +268,32 @@ serve(async (req) => {
       details: {
         target_user_name: targetUserData.full_name,
         had_stripe_customer: !!subscriptionData?.stripe_customer_id,
-        subscription_tier: subscriptionData?.subscription_tier || 'Free Trial'
+        subscription_tier: subscriptionData?.subscription_tier || 'Free Trial',
+        deletion_results: deletionResults,
+        errors: errors,
+        total_errors: errors.length
       }
     });
 
     logStep("Admin action logged successfully");
 
+    // Determine if deletion was completely successful
+    const hasErrors = errors.length > 0;
+    const successMessage = hasErrors 
+      ? `Account for ${userEmail} has been deleted with ${errors.length} errors. Check logs for details.`
+      : `Account for ${userEmail} has been permanently deleted successfully.`;
+
     return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Account for ${userEmail} has been permanently deleted` 
+      success: !hasErrors, 
+      message: successMessage,
+      deletion_summary: {
+        records_deleted: deletionResults,
+        errors: errors,
+        total_errors: errors.length
+      }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      status: hasErrors ? 207 : 200, // 207 = Multi-Status (partial success)
     });
 
   } catch (error) {
