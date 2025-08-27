@@ -750,6 +750,7 @@ export type Database = {
       get_admin_user_list: {
         Args: Record<PropertyKey, never>
         Returns: {
+          account_status: string
           canvas_connected: boolean
           created_at: string
           current_month_submissions: number
