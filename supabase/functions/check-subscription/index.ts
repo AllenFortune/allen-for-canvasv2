@@ -99,13 +99,37 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Check for multiple subscription statuses to handle coupons, trials, etc.
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      limit: 10, // Check more subscriptions to find valid ones
     });
+
+    // Filter for valid subscription statuses
+    const validSubscriptions = subscriptions.data.filter(sub => {
+      const validStatuses = ['active', 'trialing', 'past_due'];
+      const isValidStatus = validStatuses.includes(sub.status);
+      
+      // Also check for recently canceled subscriptions that are still within their period
+      const isValidCanceled = sub.status === 'canceled' && 
+        sub.current_period_end && 
+        (sub.current_period_end * 1000) > Date.now();
+      
+      logStep("Subscription status check", { 
+        subscriptionId: sub.id, 
+        status: sub.status, 
+        isValidStatus, 
+        isValidCanceled,
+        currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null
+      });
+      
+      return isValidStatus || isValidCanceled;
+    });
+
+    // Sort by creation date to get the most recent valid subscription
+    validSubscriptions.sort((a, b) => b.created - a.created);
     
-    const hasActiveSub = subscriptions.data.length > 0;
+    const hasActiveSub = validSubscriptions.length > 0;
     let subscriptionTier = "Free Trial";
     let subscriptionEnd = null;
     let billingCycleStart = new Date().toISOString();
@@ -113,7 +137,7 @@ serve(async (req) => {
     nextResetDate.setMonth(nextResetDate.getMonth() + 1);
 
     if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
+      const subscription = validSubscriptions[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       billingCycleStart = new Date(subscription.current_period_start * 1000).toISOString();
       nextResetDate = new Date(subscription.current_period_end * 1000);
@@ -151,7 +175,7 @@ serve(async (req) => {
         subscriptionTier = priceIdToTierMap[priceId];
         logStep("Tier determined by price ID mapping", { priceId, subscriptionTier });
       } else {
-        // Fallback to amount-based mapping with enhanced logging
+        // Enhanced amount-based mapping with coupon handling
         if (amount >= 9999) { // $99.99+
           subscriptionTier = "Super Plan";
         } else if (amount >= 6999) { // $69.99+
@@ -162,6 +186,31 @@ serve(async (req) => {
           subscriptionTier = "Lite Plan";
         } else if (amount >= 900) { // $9.00+
           subscriptionTier = "Lite Plan";
+        } else if (amount === 0) {
+          // For $0 subscriptions (coupons), check the product/price metadata
+          logStep("Zero amount subscription detected - likely coupon", { priceId, subscriptionId: subscription.id });
+          
+          try {
+            const product = await stripe.products.retrieve(price.product as string);
+            logStep("Product metadata for zero amount sub", { productMetadata: product.metadata });
+            
+            // Check if there's a tier indicated in metadata
+            if (product.metadata?.tier) {
+              subscriptionTier = product.metadata.tier;
+            } else if (product.name?.toLowerCase().includes('lite')) {
+              subscriptionTier = "Lite Plan";
+            } else if (product.name?.toLowerCase().includes('core')) {
+              subscriptionTier = "Core Plan";
+            } else if (product.name?.toLowerCase().includes('full')) {
+              subscriptionTier = "Full-Time Plan";
+            } else {
+              // Default for coupon subscriptions - assume Lite Plan
+              subscriptionTier = "Lite Plan";
+            }
+          } catch (productError) {
+            logStep("Error retrieving product for zero amount sub", { error: productError });
+            subscriptionTier = "Lite Plan"; // Safe default for coupons
+          }
         } else {
           subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
         }
