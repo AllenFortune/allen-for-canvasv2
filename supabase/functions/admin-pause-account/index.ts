@@ -74,12 +74,14 @@ serve(async (req) => {
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Get active subscriptions for this customer
+    // Get active subscriptions for this customer (only if they have a Stripe customer ID)
     if (subscriber.stripe_customer_id) {
       const subscriptions = await stripe.subscriptions.list({
         customer: subscriber.stripe_customer_id,
         status: "active",
       });
+
+      logStep("Found active subscriptions", { count: subscriptions.data.length });
 
       // Pause all active subscriptions
       for (const subscription of subscriptions.data) {
@@ -90,6 +92,8 @@ serve(async (req) => {
         });
         logStep("Paused Stripe subscription", { subscriptionId: subscription.id });
       }
+    } else {
+      logStep("No Stripe customer ID found - free account, skipping Stripe operations");
     }
 
     // Update database to mark account as paused

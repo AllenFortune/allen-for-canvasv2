@@ -21,13 +21,14 @@ interface AdminUser {
 
 interface AdminUserManagementProps {
   users: AdminUser[];
-  onSendCanvasSetupEmail: (userEmail: string, userName: string) => void;
-  onPauseAccount: (userEmail: string, reason?: string) => void;
-  onResumeAccount: (userEmail: string, reason?: string) => void;
+  onSendCanvasSetupEmail: (userEmail: string, userName: string) => Promise<void>;
+  onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onRefreshData }: AdminUserManagementProps) => {
+const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
   const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime'>('all');
@@ -97,6 +98,7 @@ const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, on
           onSendCanvasSetupEmail={onSendCanvasSetupEmail}
           onPauseAccount={onPauseAccount}
           onResumeAccount={onResumeAccount}
+          onDeleteAccount={onDeleteAccount}
           onRefreshData={onRefreshData}
         />
       </CardContent>

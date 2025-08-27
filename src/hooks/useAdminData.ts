@@ -28,7 +28,7 @@ interface AdminUser {
 }
 
 export const useAdminData = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminUserStats | null>(null);
@@ -130,19 +130,32 @@ export const useAdminData = () => {
   };
 
   const pauseAccount = async (userEmail: string, reason?: string) => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to perform admin actions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.functions.invoke('admin-pause-account', {
-        body: { userEmail, reason }
+        body: { userEmail, reason },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
 
       toast({
         title: "Account Paused",
-        description: `Account for ${userEmail} has been paused`,
+        description: `Account for ${userEmail} has been paused successfully`,
+        variant: "default",
       });
 
-      // Refresh user list to show updated status
+      // Refresh the user list
       await fetchUserList();
     } catch (error) {
       console.error('Error pausing account:', error);
@@ -155,25 +168,76 @@ export const useAdminData = () => {
   };
 
   const resumeAccount = async (userEmail: string, reason?: string) => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to perform admin actions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.functions.invoke('admin-resume-account', {
-        body: { userEmail, reason }
+        body: { userEmail, reason },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
 
       toast({
         title: "Account Resumed",
-        description: `Account for ${userEmail} has been resumed`,
+        description: `Account for ${userEmail} has been resumed successfully`,
+        variant: "default",
       });
 
-      // Refresh user list to show updated status
+      // Refresh the user list
       await fetchUserList();
     } catch (error) {
       console.error('Error resuming account:', error);
       toast({
         title: "Error",
         description: "Failed to resume account",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAccount = async (userEmail: string, reason?: string) => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to perform admin actions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('admin-delete-account', {
+        body: { userEmail, reason },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Account Deleted",
+        description: `Account for ${userEmail} has been permanently deleted`,
+        variant: "default",
+      });
+
+      // Refresh the user list
+      await fetchUserList();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account",
         variant: "destructive",
       });
     }
@@ -199,6 +263,7 @@ export const useAdminData = () => {
     fetchUserList,
     sendCanvasSetupEmail,
     pauseAccount,
-    resumeAccount
+    resumeAccount,
+    deleteAccount
   };
 };

@@ -29,17 +29,19 @@ interface AdminUser {
 
 interface AdminUserTableProps {
   users: AdminUser[];
-  onSendCanvasSetupEmail: (userEmail: string, userName: string) => void;
-  onPauseAccount: (userEmail: string, reason?: string) => void;
-  onResumeAccount: (userEmail: string, reason?: string) => void;
+  onSendCanvasSetupEmail: (userEmail: string, userName: string) => Promise<void>;
+  onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onRefreshData }: AdminUserTableProps) => {
+const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserTableProps) => {
   const { session } = useAuth();
   const [syncingUsers, setSyncingUsers] = useState<Set<string>>(new Set());
   const [pauseReason, setPauseReason] = useState('');
   const [resumeReason, setResumeReason] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
 
   const syncUserSubscription = async (userEmail: string) => {
     if (!session?.access_token) {
@@ -116,6 +118,14 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResum
     }
   };
 
+  const isPaidAccount = (user: AdminUser) => {
+    return user.subscription_tier !== 'Free Trial' && user.subscription_tier !== null;
+  };
+
+  const isFreeAccount = (user: AdminUser) => {
+    return user.subscription_tier === 'Free Trial' || user.subscription_tier === null;
+  };
+
   const handlePauseAccount = async (userEmail: string) => {
     await onPauseAccount(userEmail, pauseReason);
     setPauseReason('');
@@ -188,85 +198,127 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResum
             <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
             <TableCell>
               <div className="flex gap-2">
-                {!user.canvas_connected && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onSendCanvasSetupEmail(user.email, user.full_name || user.email)}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Setup Email
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onSendCanvasSetupEmail(user.email, user.full_name || user.email)}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Setup Email
+                </Button>
                 
-                {user.account_status !== 'paused' ? (
+                {isFreeAccount(user) ? (
+                  // Show Delete button for free accounts
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pause
+                      <Button size="sm" variant="destructive">
+                        Delete Account
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Pause Account</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Account - PERMANENT</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will pause the account for {user.email} and stop their Stripe billing.
+                          ⚠️ This will PERMANENTLY delete the account for {user.email} and all associated data. This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                          <Label htmlFor="pause-reason">Reason (optional)</Label>
+                          <Label htmlFor="delete-reason">Reason (required for deletion)</Label>
                           <Input
-                            id="pause-reason"
-                            value={pauseReason}
-                            onChange={(e) => setPauseReason(e.target.value)}
-                            placeholder="Enter reason for pausing account..."
+                            id="delete-reason"
+                            value={deleteReason}
+                            onChange={(e) => setDeleteReason(e.target.value)}
+                            placeholder="Enter reason for deletion..."
                           />
                         </div>
                       </div>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handlePauseAccount(user.email)}>
-                          Pause Account
+                        <AlertDialogCancel onClick={() => setDeleteReason('')}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            onDeleteAccount(user.email, deleteReason);
+                            setDeleteReason('');
+                          }}
+                          disabled={!deleteReason.trim()}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Permanently Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 ) : (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Play className="h-4 w-4 mr-2" />
-                        Resume
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Resume Account</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will resume the account for {user.email} and restart their Stripe billing.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="resume-reason">Reason (optional)</Label>
-                          <Input
-                            id="resume-reason"
-                            value={resumeReason}
-                            onChange={(e) => setResumeReason(e.target.value)}
-                            placeholder="Enter reason for resuming account..."
-                          />
+                  // Show Pause/Resume buttons for paid accounts
+                  user.account_status === 'paused' ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Play className="h-4 w-4 mr-2" />
+                          Resume
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Resume Account</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will resume the account for {user.email} and restart their Stripe billing.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="resume-reason">Reason (optional)</Label>
+                            <Input
+                              id="resume-reason"
+                              value={resumeReason}
+                              onChange={(e) => setResumeReason(e.target.value)}
+                              placeholder="Enter reason for resuming account..."
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleResumeAccount(user.email)}>
-                          Resume Account
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setResumeReason('')}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleResumeAccount(user.email)}>
+                            Resume Account
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Pause Account</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will pause the account for {user.email} and stop their Stripe billing.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="pause-reason">Reason (optional)</Label>
+                            <Input
+                              id="pause-reason"
+                              value={pauseReason}
+                              onChange={(e) => setPauseReason(e.target.value)}
+                              placeholder="Enter reason for pausing account..."
+                            />
+                          </div>
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setPauseReason('')}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handlePauseAccount(user.email)}>
+                            Pause Account
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )
                 )}
 
                 <Button

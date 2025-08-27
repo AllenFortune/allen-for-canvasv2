@@ -6,7 +6,7 @@ import AdminPlanDistribution from './AdminPlanDistribution';
 import AdminUserManagement from './AdminUserManagement';
 
 const AdminDashboard = () => {
-  const { stats, users, sendCanvasSetupEmail, pauseAccount, resumeAccount, fetchAdminStats, fetchUserList } = useAdminData();
+  const { stats, users, sendCanvasSetupEmail, pauseAccount, resumeAccount, deleteAccount, fetchAdminStats, fetchUserList } = useAdminData();
 
   const totalSubmissions = users.reduce((sum, user) => sum + user.total_submissions, 0);
 
@@ -24,6 +24,7 @@ const AdminDashboard = () => {
         onSendCanvasSetupEmail={sendCanvasSetupEmail}
         onPauseAccount={pauseAccount}
         onResumeAccount={resumeAccount}
+        onDeleteAccount={deleteAccount}
         onRefreshData={handleRefreshData}
       />
     </div>
