@@ -141,14 +141,14 @@ serve(async (req) => {
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
       
-      // Enhanced price to tier mapping with coupon handling
-      if (amount >= 9999) { // $99.99
+      // Enhanced price to tier mapping with coupon handling - CORRECTED PRICING
+      if (amount >= 9999) { // $99.99+ = Super Plan
         subscriptionTier = "Super Plan";
-      } else if (amount >= 6999) { // $69.99
+      } else if (amount >= 5900) { // $59.00+ = Full-Time Plan (FIXED: was 6999)
         subscriptionTier = "Full-Time Plan";
-      } else if (amount >= 1999) { // $19.99
+      } else if (amount >= 1900) { // $19.00+ = Core Plan (FIXED: was 1999)
         subscriptionTier = "Core Plan";
-      } else if (amount >= 999) { // $9.99
+      } else if (amount >= 900) { // $9.00+ = Lite Plan (FIXED: was 999)
         subscriptionTier = "Lite Plan";
       } else if (amount === 0) {
         // For $0 subscriptions (coupons), check the product/price metadata or use fallback

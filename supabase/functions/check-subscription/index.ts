@@ -175,16 +175,14 @@ serve(async (req) => {
         subscriptionTier = priceIdToTierMap[priceId];
         logStep("Tier determined by price ID mapping", { priceId, subscriptionTier });
       } else {
-        // Enhanced amount-based mapping with coupon handling
-        if (amount >= 9999) { // $99.99+
+        // Enhanced amount-based mapping with coupon handling - CORRECTED PRICING
+        if (amount >= 9999) { // $99.99+ = Super Plan
           subscriptionTier = "Super Plan";
-        } else if (amount >= 6999) { // $69.99+
+        } else if (amount >= 5900) { // $59.00+ = Full-Time Plan (FIXED: was 6999)
           subscriptionTier = "Full-Time Plan";
-        } else if (amount >= 4999) { // $49.99+ (Core Plan)
+        } else if (amount >= 1900) { // $19.00+ = Core Plan (FIXED: was 4999)
           subscriptionTier = "Core Plan";
-        } else if (amount >= 1900) { // $19.00+ (Lite Plan)
-          subscriptionTier = "Lite Plan";
-        } else if (amount >= 900) { // $9.00+
+        } else if (amount >= 900) { // $9.00+ = Lite Plan
           subscriptionTier = "Lite Plan";
         } else if (amount === 0) {
           // For $0 subscriptions (coupons), check the product/price metadata

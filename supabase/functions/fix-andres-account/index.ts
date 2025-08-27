@@ -20,11 +20,11 @@ serve(async (req) => {
   try {
     console.log("Starting fix for Andres account");
 
-    // Fix Andres's account specifically
+    // Fix Andres's account specifically - CORRECTED TO FULL-TIME PLAN
     const { data: updateResult, error: updateError } = await supabaseClient
       .from("subscribers")
       .update({
-        subscription_tier: "Lite Plan",
+        subscription_tier: "Full-Time Plan", // CORRECTED: He paid $59.00 for Full-Time Plan
         subscribed: true,
         updated_at: new Date().toISOString(),
       })
@@ -37,11 +37,11 @@ serve(async (req) => {
 
     console.log("Successfully updated Andres account:", updateResult);
 
-    // Also reset his usage to allow him to continue using the service
+    // Reset his usage since Full-Time Plan has unlimited submissions (-1)
     const { data: usageResult, error: usageError } = await supabaseClient
       .from("usage_tracking")
       .update({
-        submissions_used: 200, // Give him some buffer below the 250 limit
+        submissions_used: 0, // Reset to 0 since he has unlimited submissions now
         updated_at: new Date().toISOString(),
       })
       .eq("email", "andresquintero2@whccd.edu")
