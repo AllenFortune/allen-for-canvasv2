@@ -112,8 +112,9 @@ const SubmissionPurchaseCard: React.FC = () => {
     return null;
   }
 
-  const isNearLimit = usage.percentage >= 80;
-  const isAtLimit = usage.submissions_used >= usage.total_limit;
+  const isUnlimited = usage.total_limit === -1;
+  const isNearLimit = !isUnlimited && usage.percentage >= 80;
+  const isAtLimit = !isUnlimited && usage.submissions_used >= usage.total_limit;
   
   // Format next reset date
   const formatResetDate = (dateString: string | null) => {
@@ -183,10 +184,10 @@ const SubmissionPurchaseCard: React.FC = () => {
                   Submissions Used
                 </span>
                 <span className="text-sm text-gray-600">
-                  {usage.submissions_used} / {usage.total_limit}
+                  {usage.submissions_used} / {isUnlimited ? 'Unlimited' : usage.total_limit}
                 </span>
               </div>
-              <Progress value={usage.percentage} className={`w-full h-3 ${isNearLimit ? 'bg-orange-100' : 'bg-gray-100'}`} />
+              {!isUnlimited && <Progress value={usage.percentage} className={`w-full h-3 ${isNearLimit ? 'bg-orange-100' : 'bg-gray-100'}`} />}
               <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>Plan: {usage.limit}</span>
                 {usage.purchased_submissions > 0 && <span>Purchased: +{usage.purchased_submissions}</span>}
@@ -194,7 +195,10 @@ const SubmissionPurchaseCard: React.FC = () => {
             </div>
 
             {/* Warning or Status */}
-            {isAtLimit ? <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+            {isUnlimited ? <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+                <p className="font-medium text-green-800">Unlimited Plan</p>
+                <p>You have unlimited submissions with your Full-Time Plan.</p>
+              </div> : isAtLimit ? <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Limit Reached</p>
@@ -213,20 +217,22 @@ const SubmissionPurchaseCard: React.FC = () => {
           </div>
 
           {/* Right Section: Purchase Button */}
-          <div className="lg:col-span-1">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 h-full flex flex-col justify-center">
-              <div className="text-center mb-3">
-                <h4 className="font-semibold text-blue-900">Need More Submissions?</h4>
-                <p className="text-sm text-blue-700 mb-2">Get 100 additional submissions for this billing period</p>
-                <div className="text-2xl font-bold text-blue-900">$5</div>
-                <div className="text-xs text-blue-600">$0.05 per submission</div>
+          {!isUnlimited && (
+            <div className="lg:col-span-1">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 h-full flex flex-col justify-center">
+                <div className="text-center mb-3">
+                  <h4 className="font-semibold text-blue-900">Need More Submissions?</h4>
+                  <p className="text-sm text-blue-700 mb-2">Get 100 additional submissions for this billing period</p>
+                  <div className="text-2xl font-bold text-blue-900">$5</div>
+                  <div className="text-xs text-blue-600">$0.05 per submission</div>
+                </div>
+                <Button onClick={purchaseAdditionalSubmissions} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Buy 100 More Submissions
+                </Button>
               </div>
-              <Button onClick={purchaseAdditionalSubmissions} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Buy 100 More Submissions
-              </Button>
             </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>;
