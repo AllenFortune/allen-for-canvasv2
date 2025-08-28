@@ -17,7 +17,7 @@ const GradeInput: React.FC<GradeInputProps> = ({
   maxPoints,
   currentScore
 }) => {
-  const percentage = gradeInput ? ((parseFloat(gradeInput) / maxPoints) * 100).toFixed(0) : '';
+  const percentage = gradeInput ? Math.round((parseFloat(gradeInput) / maxPoints) * 100).toString() : '';
 
   const getGradeColor = (grade: string) => {
     const score = parseFloat(grade);
@@ -36,10 +36,10 @@ const GradeInput: React.FC<GradeInputProps> = ({
         </label>
         <div className="flex items-center gap-2">
           {currentScore !== null && currentScore !== undefined && (
-            <Badge variant="outline">Previously: {currentScore}/{maxPoints}</Badge>
+            <Badge variant="outline">Previously: {Math.round(currentScore)}/{Math.round(maxPoints)}</Badge>
           )}
           <span className="text-sm text-gray-500">
-            out of {maxPoints} points
+            out of {Math.round(maxPoints)} points
           </span>
         </div>
       </div>
@@ -71,10 +71,10 @@ const GradeInput: React.FC<GradeInputProps> = ({
             key={grade}
             variant="outline"
             size="sm"
-            onClick={() => setGradeInput(grade.toString())}
+            onClick={() => setGradeInput(Math.round(grade).toString())}
             className="text-xs"
           >
-            {grade} ({((grade / maxPoints) * 100).toFixed(0)}%)
+            {Math.round(grade)} ({Math.round((grade / maxPoints) * 100)}%)
           </Button>
         ))}
       </div>
