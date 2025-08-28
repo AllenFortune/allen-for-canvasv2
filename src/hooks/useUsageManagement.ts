@@ -20,7 +20,10 @@ export const useUsageManagement = (
       // Check current usage first - pass undefined to use existing subscription data
       await getCurrentUsage();
       
-      if (usage && usage.submissions_used >= usage.total_limit) {
+      // Check if user has unlimited plan
+      const isUnlimited = usage && usage.total_limit === -1;
+      
+      if (usage && !isUnlimited && usage.submissions_used >= usage.total_limit) {
         toast({
           title: "Usage Limit Reached",
           description: `You've reached your limit of ${usage.total_limit} submissions for this billing period. Consider purchasing additional submissions or upgrading your plan.`,
