@@ -51,7 +51,7 @@ const FallPromotionBanner = () => {
               <div>
                 <h3 className="text-lg font-bold">Welcome Back for Fall 2025!</h3>
                 <p className="text-sm text-orange-100">
-                  Get 1 month of Lite Plan FREE with code <span className="font-semibold bg-white/20 px-2 py-1 rounded">FALL2025</span>
+                  Get 1 month of Lite Plan FREE with code <span className="font-semibold bg-white/20 px-2 py-1 rounded">ALLEN2025</span>
                 </p>
               </div>
               <Button
