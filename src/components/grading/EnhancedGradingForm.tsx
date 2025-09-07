@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award } from 'lucide-react';
 import { Assignment, Submission } from '@/types/grading';
@@ -45,6 +45,11 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
   const [aiGradeReview, setAiGradeReview] = useState('');
   const maxPoints = assignment?.points_possible || 100;
+
+  // Reset AI grade review when current submission changes
+  useEffect(() => {
+    setAiGradeReview('');
+  }, [currentSubmission?.id]);
 
   const handleAIAssistedGrading = async () => {
     if (!currentSubmission || !assignment) return;

@@ -80,6 +80,7 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
   useEffect(() => {
     setIsGradedLocally(false);
     setScore(submissionAnswer?.points?.toString() || '');
+    setAiGradeReview('');
   }, [question.id, submission.id, submissionAnswer?.points]);
 
   const handleSubmit = async (e: React.FormEvent) => {
