@@ -13,8 +13,11 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
   useEffect(() => {
     if (currentSubmission) {
       setGradeInput(currentSubmission.score?.toString() || '');
-      // Initialize with empty comment for teacher feedback
-      setCommentInput('');
+      // Show the most recent teacher comment if it exists, otherwise empty
+      const mostRecentComment = currentSubmission.submission_comments && currentSubmission.submission_comments.length > 0
+        ? currentSubmission.submission_comments[currentSubmission.submission_comments.length - 1]?.comment || ''
+        : '';
+      setCommentInput(mostRecentComment);
     }
   }, [currentSubmission]);
 
@@ -23,8 +26,11 @@ export const useGradingForm = (submissions: Submission[], currentSubmissionIndex
     if (submissions.length > 0) {
       const firstSubmission = submissions[0];
       setGradeInput(firstSubmission.score?.toString() || '');
-      // Initialize with empty comment for teacher feedback
-      setCommentInput('');
+      // Show the most recent teacher comment if it exists, otherwise empty
+      const mostRecentComment = firstSubmission.submission_comments && firstSubmission.submission_comments.length > 0
+        ? firstSubmission.submission_comments[firstSubmission.submission_comments.length - 1]?.comment || ''
+        : '';
+      setCommentInput(mostRecentComment);
     }
   }, [submissions]);
 

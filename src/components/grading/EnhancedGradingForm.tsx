@@ -12,6 +12,7 @@ import AIGradingSection from './AIGradingSection';
 import ActionButtons from './ActionButtons';
 import AIGradeReview from './AIGradeReview';
 import VoiceControls from '@/components/VoiceControls';
+import PreviousCommentsSection from './PreviousCommentsSection';
 
 interface EnhancedGradingFormProps {
   assignment: Assignment | null;
@@ -115,6 +116,10 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           maxPoints={maxPoints}
           currentScore={currentScore}
         />
+
+        {currentSubmission?.submission_comments && currentSubmission.submission_comments.length > 0 && (
+          <PreviousCommentsSection comments={currentSubmission.submission_comments} />
+        )}
 
         <FeedbackInput
           commentInput={commentInput}
