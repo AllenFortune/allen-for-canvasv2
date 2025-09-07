@@ -678,6 +678,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_grading_preferences: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          prompt_text: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          prompt_text: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          prompt_text?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

@@ -15,6 +15,7 @@ interface AIGradingSectionProps {
   customPrompt: string;
   setCustomPrompt: (value: string) => void;
   assignment: Assignment | null;
+  category?: string;
 }
 
 const AIGradingSection: React.FC<AIGradingSectionProps> = ({
@@ -26,7 +27,8 @@ const AIGradingSection: React.FC<AIGradingSectionProps> = ({
   setUseCustomPrompt,
   customPrompt,
   setCustomPrompt,
-  assignment
+  assignment,
+  category = 'general'
 }) => {
   const hasRubric = assignment?.rubric && Object.keys(assignment.rubric).length > 0;
 
@@ -48,6 +50,7 @@ const AIGradingSection: React.FC<AIGradingSectionProps> = ({
         setUseCustomPrompt={setUseCustomPrompt}
         customPrompt={customPrompt}
         setCustomPrompt={setCustomPrompt}
+        category={category}
       />
     </div>
   );

@@ -284,6 +284,7 @@ const QuizGradingFormWithLocalState: React.FC<QuizGradingFormWithLocalStateProps
               setUseCustomPrompt={setUseCustomPrompt}
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
+              category="quiz"
             />
           </div>
         )}

@@ -133,6 +133,7 @@ const EnhancedGradingForm: React.FC<EnhancedGradingFormProps> = ({
           customPrompt={customPrompt}
           setCustomPrompt={setCustomPrompt}
           assignment={assignment}
+          category="assignment"
         />
 
         <ActionButtons
