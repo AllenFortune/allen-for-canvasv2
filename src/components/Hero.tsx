@@ -101,16 +101,16 @@ const Hero = () => {
         {/* Premium Submission Counter Badge */}
         {publicStats?.totalSubmissions && (
           <div className="mb-8">
-            <div className="relative inline-flex items-center gap-3 bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm border border-primary/20 rounded-full px-6 py-3 shadow-lg">
+            <div className="relative inline-flex items-center gap-3 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 backdrop-blur-sm border border-orange-400/20 rounded-full px-6 py-3 shadow-lg">
               <div className="relative">
-                <Trophy className="w-5 h-5 text-primary" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                <Trophy className="w-5 h-5 text-white" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full animate-pulse"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-primary font-semibold text-lg leading-tight">
+                <span className="text-white font-semibold text-lg leading-tight">
                   {publicStats.totalSubmissions}
                 </span>
-                <span className="text-muted-foreground text-xs font-medium">
+                <span className="text-white/80 text-xs font-medium">
                   assignments graded with A.L.L.E.N.
                 </span>
               </div>
