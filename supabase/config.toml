@@ -202,3 +202,7 @@ verify_jwt = true
 [[edge-runtime.functions]]
 name = "export-rubric-to-canvas"
 verify_jwt = true
+
+[[edge-runtime.functions]]
+name = "get-public-stats"
+verify_jwt = false

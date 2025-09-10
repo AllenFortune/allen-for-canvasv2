@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import heroBackground from "@/assets/hero-background.jpg";
+import { usePublicStats } from "@/hooks/usePublicStats";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [showVideo, setShowVideo] = useState(false);
   const [showLoomVideo, setShowLoomVideo] = useState(false);
   const loomRef = useRef<HTMLDivElement>(null);
+  const { data: publicStats } = usePublicStats();
 
   useEffect(() => {
     // Defer video loading to improve FID
@@ -94,6 +96,18 @@ const Hero = () => {
         <p className="text-gray-500 text-sm mb-4">
           No credit card required • Canvas integration in minutes
         </p>
+        
+        {/* Submission Counter */}
+        {publicStats?.totalSubmissions && (
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-green-700 font-medium text-sm">
+                {publicStats.totalSubmissions} assignments graded with A.L.L.E.N.
+              </span>
+            </div>
+          </div>
+        )}
         
         <div className="flex justify-center items-center space-x-8 text-sm text-gray-600 mb-12">
           <div className="flex items-center">
