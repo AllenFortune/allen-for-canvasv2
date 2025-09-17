@@ -22,6 +22,10 @@ const AdminDashboard = () => {
     fetchWeeklyStats
   } = useAdminData();
 
+  // Debug logging to see what data we have
+  console.log('AdminDashboard - revenueStats:', revenueStats);
+  console.log('AdminDashboard - weeklyStats:', weeklyStats);
+
   const totalSubmissions = users.reduce((sum, user) => sum + user.total_submissions, 0);
 
   const handleRefreshData = () => {

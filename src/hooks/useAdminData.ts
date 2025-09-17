@@ -115,11 +115,14 @@ export const useAdminData = () => {
     if (!isAdmin) return;
 
     try {
+      console.log('Fetching revenue stats...');
       const { data, error } = await supabase.rpc('get_monthly_revenue_stats');
       if (error) throw error;
       
+      console.log('Revenue stats fetched:', data);
       if (data && data.length > 0) {
         setRevenueStats(data[0]);
+        console.log('Revenue stats set:', data[0]);
       }
     } catch (error) {
       console.error('Error fetching revenue stats:', error);
@@ -135,11 +138,14 @@ export const useAdminData = () => {
     if (!isAdmin) return;
 
     try {
+      console.log('Fetching weekly stats...');
       const { data, error } = await supabase.rpc('get_weekly_revenue_trend');
       if (error) throw error;
       
+      console.log('Weekly stats fetched:', data);
       if (data && data.length > 0) {
         setWeeklyStats(data[0]);
+        console.log('Weekly stats set:', data[0]);
       }
     } catch (error) {
       console.error('Error fetching weekly stats:', error);

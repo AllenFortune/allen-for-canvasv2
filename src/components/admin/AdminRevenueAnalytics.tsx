@@ -24,6 +24,10 @@ interface AdminRevenueAnalyticsProps {
 }
 
 const AdminRevenueAnalytics = ({ revenueStats, weeklyStats }: AdminRevenueAnalyticsProps) => {
+  // Debug logging to see what data we're receiving
+  console.log('AdminRevenueAnalytics - revenueStats:', revenueStats);
+  console.log('AdminRevenueAnalytics - weeklyStats:', weeklyStats);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
