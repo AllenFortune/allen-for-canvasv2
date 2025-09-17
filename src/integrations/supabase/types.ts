@@ -812,6 +812,16 @@ export type Database = {
         Args: { user_email: string }
         Returns: number
       }
+      get_monthly_revenue_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          current_month_mrr: number
+          current_month_name: string
+          growth_percentage: number
+          previous_month_mrr: number
+          previous_month_name: string
+        }[]
+      }
       get_purchased_submissions: {
         Args: { user_email: string }
         Returns: number
@@ -836,6 +846,16 @@ export type Database = {
           referral_code: string
           total_referrals: number
           total_rewards_earned: number
+        }[]
+      }
+      get_weekly_revenue_trend: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          churned_this_week: number
+          current_week_new_mrr: number
+          new_subscribers_this_week: number
+          previous_week_new_mrr: number
+          week_growth_percentage: number
         }[]
       }
       has_role: {

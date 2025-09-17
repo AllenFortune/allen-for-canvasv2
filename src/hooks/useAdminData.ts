@@ -26,12 +26,30 @@ interface AdminUser {
   subscription_limit: number;
 }
 
+interface RevenueStats {
+  current_month_mrr: number;
+  previous_month_mrr: number;
+  growth_percentage: number;
+  current_month_name: string;
+  previous_month_name: string;
+}
+
+interface WeeklyStats {
+  current_week_new_mrr: number;
+  previous_week_new_mrr: number;
+  week_growth_percentage: number;
+  new_subscribers_this_week: number;
+  churned_this_week: number;
+}
+
 export const useAdminData = () => {
   const { user, session } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminUserStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
 
   const checkAdminStatus = async () => {
     if (!user?.id) {
@@ -88,6 +106,46 @@ export const useAdminData = () => {
       toast({
         title: "Error",
         description: "Failed to fetch user list",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchRevenueStats = async () => {
+    if (!isAdmin) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_monthly_revenue_stats');
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setRevenueStats(data[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching revenue stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch revenue statistics",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchWeeklyStats = async () => {
+    if (!isAdmin) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_weekly_revenue_trend');
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setWeeklyStats(data[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching weekly stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch weekly statistics",
         variant: "destructive",
       });
     }
@@ -250,6 +308,8 @@ export const useAdminData = () => {
     if (isAdmin) {
       fetchAdminStats();
       fetchUserList();
+      fetchRevenueStats();
+      fetchWeeklyStats();
     }
   }, [isAdmin]);
 
@@ -258,8 +318,12 @@ export const useAdminData = () => {
     loading,
     stats,
     users,
+    revenueStats,
+    weeklyStats,
     fetchAdminStats,
     fetchUserList,
+    fetchRevenueStats,
+    fetchWeeklyStats,
     sendCanvasSetupEmail,
     pauseAccount,
     resumeAccount,
