@@ -7,7 +7,6 @@ import EnhancedAssignmentHeader from '@/components/grading/EnhancedAssignmentHea
 import GradeAssignmentContent from '@/components/grading/GradeAssignmentContent';
 import ErrorDisplay from '@/components/grading/ErrorDisplay';
 import LoadingDisplay from '@/components/grading/LoadingDisplay';
-import FloatingVoiceControls from '@/components/FloatingVoiceControls';
 import { useGradeAssignment } from '@/hooks/useGradeAssignment';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,6 +32,19 @@ const GradeAssignment = () => {
     return <LoadingDisplay />;
   }
 
+  // Create voice context for assignment grading
+  const voiceContext = {
+    assignment,
+    submissions,
+    saveGrade,
+    setSubmissions,
+    // Add navigation functions that will be available in the grading form
+    students: submissions.map(s => ({
+      id: s.user_id,
+      name: s.user.name || `User ${s.user_id}`
+    }))
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50">
@@ -42,6 +54,7 @@ const GradeAssignment = () => {
             courseId={courseId!} 
             assignment={assignment}
             submissions={submissions}
+            voiceContext={voiceContext}
           />
 
           {error && (
@@ -57,9 +70,6 @@ const GradeAssignment = () => {
             setSubmissions={setSubmissions}
           />
         </div>
-        
-        {/* Floating voice controls for mobile */}
-        <FloatingVoiceControls />
       </div>
     </ProtectedRoute>
   );
