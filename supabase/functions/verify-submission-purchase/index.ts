@@ -56,32 +56,56 @@ serve(async (req) => {
     // Get customer from session to verify ownership
     let verified = false;
     
+    logStep("Starting verification", { 
+      sessionCustomerEmail: session.customer_email, 
+      sessionCustomer: session.customer,
+      userEmail: user.email 
+    });
+    
+    // First check: direct email match
     if (session.customer_email === user.email) {
       verified = true;
+      logStep("Verified by email match");
     } else if (session.customer) {
-      // Also verify by stripe_customer_id if email doesn't match
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("email")
-        .eq("id", user.id)
+      // Second check: verify by stripe_customer_id
+      logStep("Checking stripe customer ID verification");
+      
+      const { data: subscriber, error: subError } = await supabaseClient
+        .from("subscribers")
+        .select("stripe_customer_id, email")
+        .eq("email", user.email)
         .single();
         
-      if (profile) {
-        const { data: subscriber } = await supabaseClient
-          .from("subscribers")
-          .select("stripe_customer_id")
-          .eq("email", profile.email)
-          .single();
-          
-        if (subscriber?.stripe_customer_id === session.customer) {
-          verified = true;
-        }
+      logStep("Subscriber lookup result", { 
+        subscriber, 
+        error: subError,
+        lookupEmail: user.email 
+      });
+        
+      if (subscriber?.stripe_customer_id === session.customer) {
+        verified = true;
+        logStep("Verified by stripe customer ID match");
+      } else {
+        logStep("Stripe customer ID mismatch", {
+          subscriberCustomerId: subscriber?.stripe_customer_id,
+          sessionCustomerId: session.customer
+        });
       }
+    } else {
+      logStep("No customer information in session");
     }
 
     if (!verified) {
+      logStep("Verification failed", {
+        sessionCustomerEmail: session.customer_email,
+        sessionCustomer: session.customer,
+        userEmail: user.email,
+        allChecksPerformed: true
+      });
       throw new Error("Session does not belong to authenticated user");
     }
+    
+    logStep("User verification successful");
 
     // Check if payment was successful
     if (session.payment_status !== "paid") {
