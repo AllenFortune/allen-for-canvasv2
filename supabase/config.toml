@@ -206,3 +206,7 @@ verify_jwt = true
 [[edge-runtime.functions]]
 name = "get-public-stats"
 verify_jwt = false
+
+[[edge-runtime.functions]]
+name = "send-auth-email"
+verify_jwt = false
