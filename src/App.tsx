@@ -11,6 +11,7 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
+import UpdatePassword from "./pages/UpdatePassword";
 import Dashboard from "./pages/Dashboard";
 import CanvasSetup from "./pages/CanvasSetup";
 import Courses from "./pages/Courses";
@@ -49,6 +50,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/canvas-setup" element={<CanvasSetup />} />
               <Route path="/courses" element={<Courses />} />

@@ -10,13 +10,14 @@ import { Link } from 'react-router-dom';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,7 +33,15 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        await resetPassword(email);
+        toast({
+          title: 'Check Your Email',
+          description: 'We\'ve sent you a password reset link. Please check your email (and spam folder).',
+        });
+        setIsForgotPassword(false);
+        setIsLogin(true);
+      } else if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
@@ -103,23 +112,40 @@ const Auth = () => {
           </Link>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          {isLogin ? 'Sign in to your account' : 'Create your account'}
+          {isForgotPassword ? 'Reset your password' : (isLogin ? 'Sign in to your account' : 'Create your account')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          {isLogin ? "Don't have an account? " : 'Already have an account? '}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            {isLogin ? 'Sign up' : 'Sign in'}
-          </button>
+          {isForgotPassword ? (
+            <>
+              Remember your password?{' '}
+              <button
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setIsLogin(true);
+                }}
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Sign in
+              </button>
+            </>
+          ) : (
+            <>
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                {isLogin ? 'Sign up' : 'Sign in'}
+              </button>
+            </>
+          )}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {!isLogin && (
+            {!isLogin && !isForgotPassword && (
               <>
                 <div>
                   <Label htmlFor="fullName">Full Name</Label>
@@ -161,8 +187,10 @@ const Auth = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="password">Password</Label>
+            {!isForgotPassword && (
+              <>
+                <div>
+                  <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -173,19 +201,36 @@ const Auth = () => {
                 placeholder="Enter your password"
                 minLength={6}
               />
-              {!isLogin && (
-                <p className="mt-1 text-sm text-gray-500">
-                  Password must be at least 6 characters long
-                </p>
-              )}
-            </div>
+                  {!isLogin && (
+                    <p className="mt-1 text-sm text-gray-500">
+                      Password must be at least 6 characters long
+                    </p>
+                  )}
+                </div>
+
+                {isLogin && (
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true);
+                        setIsLogin(false);
+                      }}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
 
             <Button
               type="submit"
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign in' : 'Sign up')}
+              {loading ? 'Please wait...' : (isForgotPassword ? 'Send reset link' : (isLogin ? 'Sign in' : 'Sign up'))}
             </Button>
           </form>
         </div>
