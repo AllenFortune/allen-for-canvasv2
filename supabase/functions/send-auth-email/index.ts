@@ -285,15 +285,22 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Auth email webhook received:', {
       email: payload.user.email,
-      type: payload.email_data.email_action_type
+      type: payload.email_data.email_action_type,
+      redirect_to: payload.email_data.redirect_to
     });
 
     const { user, email_data } = payload;
-    const { token_hash, redirect_to, email_action_type } = email_data;
+    const { token, redirect_to, email_action_type } = email_data;
 
     // Construct the appropriate link based on the email type
     const baseUrl = Deno.env.get("SUPABASE_URL") || "https://fnxbysvezshnikqboplh.supabase.co";
-    const authLink = `${baseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
+    const authLink = `${baseUrl}/auth/v1/verify?token=${token}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
+    
+    console.log('Auth link constructed:', {
+      type: email_action_type,
+      hasToken: !!token,
+      redirectTo: redirect_to
+    });
 
     let emailHtml: string;
     let emailSubject: string;
