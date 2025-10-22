@@ -42,6 +42,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setUser(session?.user ?? null);
       setSession(session);
       
+      // Redirect to /update-password on PASSWORD_RECOVERY event
+      if (event === 'PASSWORD_RECOVERY' && session && !window.location.pathname.includes('/update-password')) {
+        console.log('Password recovery detected, redirecting to /update-password');
+        window.location.href = '/update-password';
+      }
+      
       // Only set loading to false after we've processed the auth change
       if (!loading) {
         setLoading(false);

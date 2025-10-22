@@ -290,7 +290,27 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const { user, email_data } = payload;
-    const { token, redirect_to, email_action_type } = email_data;
+    let { token, redirect_to, email_action_type } = email_data;
+
+    // Ensure password recovery redirects to /update-password
+    if (email_action_type === 'recovery') {
+      try {
+        const redirectUrl = new URL(redirect_to);
+        // If the redirect_to is just the origin (no path or just "/"), append /update-password
+        if (!redirectUrl.pathname || redirectUrl.pathname === '/') {
+          redirect_to = `${redirectUrl.origin}/update-password`;
+          console.log('Enhanced redirect_to for password recovery:', redirect_to);
+        }
+      } catch (error) {
+        // If URL parsing fails, assume it's a relative path and ensure it has /update-password
+        if (!redirect_to.includes('/update-password')) {
+          redirect_to = redirect_to.endsWith('/') 
+            ? `${redirect_to}update-password` 
+            : `${redirect_to}/update-password`;
+          console.log('Fixed relative redirect_to:', redirect_to);
+        }
+      }
+    }
 
     // Construct the appropriate link based on the email type
     const baseUrl = Deno.env.get("SUPABASE_URL") || "https://fnxbysvezshnikqboplh.supabase.co";
@@ -299,7 +319,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Auth link constructed:', {
       type: email_action_type,
       hasToken: !!token,
-      redirectTo: redirect_to
+      redirectTo: redirect_to,
+      token: token ? `${token.substring(0, 8)}...` : 'none'
     });
 
     let emailHtml: string;
