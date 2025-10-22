@@ -274,6 +274,64 @@ const getMagicLinkEmailHtml = (magicLink: string, email: string) => `
 </html>
 `;
 
+// Verify webhook signature
+async function verifyWebhookSignature(
+  req: Request,
+  body: string,
+  secret: string
+): Promise<boolean> {
+  const signature = req.headers.get("webhook-signature");
+  
+  if (!signature) {
+    console.error("Missing webhook-signature header");
+    return false;
+  }
+
+  try {
+    // Extract the signature (format: "v1,whsec_...")
+    const parts = signature.split(",");
+    if (parts.length !== 2 || parts[0] !== "v1") {
+      console.error("Invalid signature format");
+      return false;
+    }
+
+    const receivedSignature = parts[1];
+    
+    // Compute HMAC-SHA256 hash
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(body);
+    
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, messageData);
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const computedSignature = "whsec_" + signatureArray
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const isValid = computedSignature === receivedSignature;
+    
+    if (!isValid) {
+      console.error("Signature mismatch:", {
+        received: receivedSignature.substring(0, 20) + "...",
+        computed: computedSignature.substring(0, 20) + "..."
+      });
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error("Error verifying signature:", error);
+    return false;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -281,7 +339,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const payload: AuthEmailPayload = await req.json();
+    // Read body as text for signature verification
+    const body = await req.text();
+    
+    // Verify webhook signature
+    const webhookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
+    if (webhookSecret) {
+      const isValid = await verifyWebhookSignature(req, body, webhookSecret);
+      if (!isValid) {
+        console.error("Webhook signature verification failed");
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+      console.log("Webhook signature verified successfully");
+    } else {
+      console.warn("SEND_EMAIL_HOOK_SECRET not set - skipping signature verification");
+    }
+
+    // Parse the payload
+    const payload: AuthEmailPayload = JSON.parse(body);
     
     console.log('Auth email webhook received:', {
       email: payload.user.email,
@@ -361,8 +442,14 @@ const handler = async (req: Request): Promise<Response> => {
       messageId: emailResponse.id
     });
 
+    // Return response in format expected by Supabase
     return new Response(
-      JSON.stringify({ success: true, messageId: emailResponse.id }),
+      JSON.stringify({
+        user: {
+          email: user.email,
+          confirmation_sent_at: new Date().toISOString()
+        }
+      }),
       {
         status: 200,
         headers: {
