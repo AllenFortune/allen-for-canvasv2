@@ -342,7 +342,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Read body as text for signature verification
     const body = await req.text();
 
-    const webhookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
+    let webhookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
     if (!webhookSecret) {
       console.warn("SEND_EMAIL_HOOK_SECRET not set - skipping signature verification");
     }
@@ -350,6 +350,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify and parse the payload using Standard Webhooks (matches Supabase docs)
     let payload: AuthEmailPayload;
     if (webhookSecret) {
+      // Strip the v1,whsec_ prefix to get just the secret part
+      // Supabase sends format "v1,whsec_XXXXX" but standardwebhooks needs just "whsec_XXXXX"
+      if (webhookSecret.startsWith("v1,")) {
+        webhookSecret = webhookSecret.substring(3); // Remove "v1," prefix
+        console.log("Stripped v1, prefix from webhook secret");
+      }
+      
       const { Webhook } = await import('https://esm.sh/standardwebhooks@1.0.0');
       const headersObj = Object.fromEntries(req.headers);
       const wh = new Webhook(webhookSecret);
@@ -446,14 +453,9 @@ const handler = async (req: Request): Promise<Response> => {
       messageId: emailResponse.id
     });
 
-    // Return response in format expected by Supabase
+    // Return response in format expected by Supabase (empty JSON object)
     return new Response(
-      JSON.stringify({
-        user: {
-          email: user.email,
-          confirmation_sent_at: new Date().toISOString()
-        }
-      }),
+      JSON.stringify({}),
       {
         status: 200,
         headers: {
