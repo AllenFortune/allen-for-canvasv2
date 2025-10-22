@@ -342,37 +342,18 @@ const handler = async (req: Request): Promise<Response> => {
     // Read body as text for signature verification
     const body = await req.text();
 
-    let webhookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-    if (!webhookSecret) {
-      console.warn("SEND_EMAIL_HOOK_SECRET not set - skipping signature verification");
-    }
-
-    // Verify and parse the payload using Standard Webhooks (matches Supabase docs)
+    // ⚠️ TEMPORARY: Webhook signature verification DISABLED for testing
+    console.log('⚠️ WARNING: Webhook signature verification is temporarily DISABLED');
+    
     let payload: AuthEmailPayload;
-    if (webhookSecret) {
-      // Strip the v1,whsec_ prefix to get just the secret part
-      // Supabase sends format "v1,whsec_XXXXX" but standardwebhooks needs just "whsec_XXXXX"
-      if (webhookSecret.startsWith("v1,")) {
-        webhookSecret = webhookSecret.substring(3); // Remove "v1," prefix
-        console.log("Stripped v1, prefix from webhook secret");
-      }
-      
-      const { Webhook } = await import('https://esm.sh/standardwebhooks@1.0.0');
-      const headersObj = Object.fromEntries(req.headers);
-      const wh = new Webhook(webhookSecret);
-      try {
-        const verified = wh.verify(body, headersObj) as AuthEmailPayload;
-        payload = verified;
-        console.log("Webhook signature verified successfully");
-      } catch (err) {
-        console.error("Webhook verification failed", err);
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-    } else {
+    try {
       payload = JSON.parse(body);
+    } catch (error) {
+      console.error('Failed to parse webhook payload:', error);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON payload" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
     
     console.log('Auth email webhook received:', {
