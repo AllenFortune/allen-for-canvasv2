@@ -21,6 +21,22 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST to catch PASSWORD_RECOVERY events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      setUser(session?.user ?? null);
+      setSession(session);
+      
+      // Redirect to /update-password on PASSWORD_RECOVERY event
+      if (event === 'PASSWORD_RECOVERY' && session && !window.location.pathname.includes('/update-password')) {
+        console.log('Password recovery detected, redirecting to /update-password');
+        window.location.href = '/update-password';
+      }
+      
+      setLoading(false);
+    });
+
+    // THEN check for existing session
     const getSession = async () => {
       try {
         setLoading(true);
@@ -36,23 +52,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     };
 
     getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-      console.log('Auth state change:', event, session?.user?.email);
-      setUser(session?.user ?? null);
-      setSession(session);
-      
-      // Redirect to /update-password on PASSWORD_RECOVERY event
-      if (event === 'PASSWORD_RECOVERY' && session && !window.location.pathname.includes('/update-password')) {
-        console.log('Password recovery detected, redirecting to /update-password');
-        window.location.href = '/update-password';
-      }
-      
-      // Only set loading to false after we've processed the auth change
-      if (!loading) {
-        setLoading(false);
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, []);

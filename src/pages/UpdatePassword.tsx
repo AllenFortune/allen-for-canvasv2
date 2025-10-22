@@ -15,17 +15,21 @@ const UpdatePassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user has a valid session from the reset link
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        toast({
-          title: 'Invalid or Expired Link',
-          description: 'Please request a new password reset link.',
-          variant: 'destructive',
-        });
-        navigate('/auth');
-      }
-    });
+    // Wait a moment for the recovery session to be established
+    const checkSession = setTimeout(() => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          toast({
+            title: 'Invalid or Expired Link',
+            description: 'Please request a new password reset link.',
+            variant: 'destructive',
+          });
+          navigate('/auth');
+        }
+      });
+    }, 1000);
+
+    return () => clearTimeout(checkSession);
   }, [navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
