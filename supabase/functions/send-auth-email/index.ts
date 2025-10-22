@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -274,63 +275,6 @@ const getMagicLinkEmailHtml = (magicLink: string, email: string) => `
 </html>
 `;
 
-// Verify webhook signature
-async function verifyWebhookSignature(
-  req: Request,
-  body: string,
-  secret: string
-): Promise<boolean> {
-  const signature = req.headers.get("webhook-signature");
-  
-  if (!signature) {
-    console.error("Missing webhook-signature header");
-    return false;
-  }
-
-  try {
-    // Extract the signature (format: "v1,whsec_...")
-    const parts = signature.split(",");
-    if (parts.length !== 2 || parts[0] !== "v1") {
-      console.error("Invalid signature format");
-      return false;
-    }
-
-    const receivedSignature = parts[1];
-    
-    // Compute HMAC-SHA256 hash
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const messageData = encoder.encode(body);
-    
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    const signatureBuffer = await crypto.subtle.sign("HMAC", key, messageData);
-    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-    const computedSignature = "whsec_" + signatureArray
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    const isValid = computedSignature === receivedSignature;
-    
-    if (!isValid) {
-      console.error("Signature mismatch:", {
-        received: receivedSignature.substring(0, 20) + "...",
-        computed: computedSignature.substring(0, 20) + "..."
-      });
-    }
-    
-    return isValid;
-  } catch (error) {
-    console.error("Error verifying signature:", error);
-    return false;
-  }
-}
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -339,30 +283,22 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Read body as text for signature verification
-    const body = await req.text();
-
-    // ⚠️ TEMPORARY: Webhook signature verification DISABLED for testing
-    console.log('⚠️ WARNING: Webhook signature verification is temporarily DISABLED');
+    // Read body and headers for webhook verification
+    const payload = await req.text();
+    const headers = Object.fromEntries(req.headers);
     
-    let payload: AuthEmailPayload;
-    try {
-      payload = JSON.parse(body);
-    } catch (error) {
-      console.error('Failed to parse webhook payload:', error);
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON payload" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // Get the hook secret and strip the "v1,whsec_" prefix as per Supabase docs
+    const hookSecret = (Deno.env.get("SEND_EMAIL_HOOK_SECRET") as string).replace("v1,whsec_", "");
     
-    console.log('Auth email webhook received:', {
-      email: payload.user.email,
-      type: payload.email_data.email_action_type,
-      redirect_to: payload.email_data.redirect_to
+    // Verify webhook signature using Standard Webhooks
+    const wh = new Webhook(hookSecret);
+    const { user, email_data } = wh.verify(payload, headers) as AuthEmailPayload;
+    
+    console.log('Auth email webhook received and verified:', {
+      email: user.email,
+      type: email_data.email_action_type,
+      redirect_to: email_data.redirect_to
     });
-
-    const { user, email_data } = payload;
     let { token, redirect_to, email_action_type } = email_data;
 
     // Ensure password recovery redirects to /update-password
