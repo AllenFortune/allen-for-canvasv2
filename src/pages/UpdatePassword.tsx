@@ -15,21 +15,34 @@ const UpdatePassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Wait a moment for the recovery session to be established
-    const checkSession = setTimeout(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) {
-          toast({
-            title: 'Invalid or Expired Link',
-            description: 'Please request a new password reset link.',
-            variant: 'destructive',
-          });
-          navigate('/auth');
-        }
-      });
-    }, 1000);
+    // Check session immediately on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        toast({
+          title: 'Invalid or Expired Link',
+          description: 'Please request a new password reset link.',
+          variant: 'destructive',
+        });
+        navigate('/auth');
+      }
+    });
 
-    return () => clearTimeout(checkSession);
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Session is valid for password recovery
+      } else if (!session && event !== 'INITIAL_SESSION') {
+        // Session lost or expired
+        toast({
+          title: 'Session Expired',
+          description: 'Please request a new password reset link.',
+          variant: 'destructive',
+        });
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
