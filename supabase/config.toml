@@ -209,4 +209,4 @@ verify_jwt = false
 
 [[edge-runtime.functions]]
 name = "send-auth-email"
-verify_jwt = true
+verify_jwt = false
