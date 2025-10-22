@@ -341,28 +341,32 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     // Read body as text for signature verification
     const body = await req.text();
-    
-    // Verify webhook signature
+
     const webhookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-    if (webhookSecret) {
-      const isValid = await verifyWebhookSignature(req, body, webhookSecret);
-      if (!isValid) {
-        console.error("Webhook signature verification failed");
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          {
-            status: 401,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      }
-      console.log("Webhook signature verified successfully");
-    } else {
+    if (!webhookSecret) {
       console.warn("SEND_EMAIL_HOOK_SECRET not set - skipping signature verification");
     }
 
-    // Parse the payload
-    const payload: AuthEmailPayload = JSON.parse(body);
+    // Verify and parse the payload using Standard Webhooks (matches Supabase docs)
+    let payload: AuthEmailPayload;
+    if (webhookSecret) {
+      const { Webhook } = await import('https://esm.sh/standardwebhooks@1.0.0');
+      const headersObj = Object.fromEntries(req.headers);
+      const wh = new Webhook(webhookSecret);
+      try {
+        const verified = wh.verify(body, headersObj) as AuthEmailPayload;
+        payload = verified;
+        console.log("Webhook signature verified successfully");
+      } catch (err) {
+        console.error("Webhook verification failed", err);
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    } else {
+      payload = JSON.parse(body);
+    }
     
     console.log('Auth email webhook received:', {
       email: payload.user.email,
