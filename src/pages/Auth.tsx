@@ -29,6 +29,7 @@ const Auth = () => {
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    debugger;
     e.preventDefault();
     setLoading(true);
 
