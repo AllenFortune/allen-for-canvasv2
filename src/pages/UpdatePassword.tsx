@@ -11,25 +11,56 @@ const UpdatePassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Wait a moment for the recovery session to be established
-    const checkSession = setTimeout(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) {
-          toast({
-            title: 'Invalid or Expired Link',
-            description: 'Please request a new password reset link.',
-            variant: 'destructive',
-          });
-          navigate('/auth');
-        }
+    // Check if there's a recovery token in the URL
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hasRecoveryToken = hashParams.has('access_token') || hashParams.has('type');
+    
+    if (!hasRecoveryToken) {
+      // No recovery token in URL at all - link is invalid
+      toast({
+        title: 'Invalid or Expired Link',
+        description: 'Please request a new password reset link.',
+        variant: 'destructive',
       });
-    }, 1000);
+      navigate('/auth');
+      return;
+    }
 
-    return () => clearTimeout(checkSession);
+    // Recovery token exists, wait for session to be established
+    let sessionCheckTimeout: NodeJS.Timeout;
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setChecking(false);
+      } else if (session) {
+        setChecking(false);
+      }
+    });
+
+    // Fallback check after 3 seconds if auth state change doesn't fire
+    sessionCheckTimeout = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Session Expired',
+          description: 'Your password reset link has expired. Please request a new one.',
+          variant: 'destructive',
+        });
+        navigate('/auth');
+      } else {
+        setChecking(false);
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(sessionCheckTimeout);
+    };
   }, [navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,6 +117,19 @@ const UpdatePassword = () => {
       setLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-sm">AI</span>
+          </div>
+          <p className="text-gray-600">Verifying password reset link...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
