@@ -1,14 +1,30 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
-export async function authenticateUser(req: Request) {
+export interface CanvasCredentials {
+  canvas_instance_url: string;
+  canvas_access_token: string;
+}
+
+export async function authenticateUser(req: Request): Promise<{
+  supabase: SupabaseClient;
+  user: { id: string; email?: string };
+}> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration');
+  }
   
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const authHeader = req.headers.get('Authorization');
-  const token = authHeader?.replace('Bearer ', '');
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token!);
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
     throw new Error('Invalid authentication');
@@ -17,7 +33,10 @@ export async function authenticateUser(req: Request) {
   return { supabase, user };
 }
 
-export async function getCanvasCredentials(supabase: SupabaseClient, userId: string) {
+export async function getCanvasCredentials(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<CanvasCredentials> {
   // Use the secure RPC function to get decrypted credentials
   const { data, error } = await supabase.rpc('get_canvas_credentials', {
     user_id_param: userId
