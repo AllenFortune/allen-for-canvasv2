@@ -196,11 +196,23 @@ export const useSubscriptionData = () => {
       const submissions_used = usageData || 0;
       const purchased_submissions = purchasedData || 0;
       
+      // Check for unlimited override flag in subscribers table
+      const { data: subscriberData } = await supabase
+        .from('subscribers')
+        .select('unlimited_override')
+        .eq('email', user.email)
+        .single();
+
+      const hasUnlimitedOverride = subscriberData?.unlimited_override === true;
+      
       // Calculate base limit using the subscription data
       const subscriptionTier = subscriptionToUse?.subscription_tier || 'Free Trial';
-      console.log('Calculating limit for subscription tier:', subscriptionTier);
+      console.log('Calculating limit for subscription tier:', subscriptionTier, 'unlimited_override:', hasUnlimitedOverride);
       
-      const base_limit = PLAN_LIMITS[subscriptionTier as keyof typeof PLAN_LIMITS] || 10;
+      // If unlimited override is set, grant unlimited access regardless of tier
+      const base_limit = hasUnlimitedOverride 
+        ? -1 
+        : (PLAN_LIMITS[subscriptionTier as keyof typeof PLAN_LIMITS] || 10);
       console.log('Base limit determined:', base_limit, 'for tier:', subscriptionTier);
       
       // Handle unlimited plans (Full-Time Plan has -1 limit)
