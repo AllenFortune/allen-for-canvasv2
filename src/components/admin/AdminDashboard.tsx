@@ -15,7 +15,8 @@ const AdminDashboard = () => {
     sendCanvasSetupEmail, 
     pauseAccount, 
     resumeAccount, 
-    deleteAccount, 
+    deleteAccount,
+    toggleUnlimitedOverride,
     fetchAdminStats, 
     fetchUserList,
     fetchRevenueStats,
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
         onPauseAccount={pauseAccount}
         onResumeAccount={resumeAccount}
         onDeleteAccount={deleteAccount}
+        onToggleUnlimitedOverride={toggleUnlimitedOverride}
         onRefreshData={handleRefreshData}
       />
     </div>
