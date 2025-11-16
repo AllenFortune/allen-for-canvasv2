@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+import { authenticateUser, getCanvasCredentials } from '../_shared/canvas-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,24 +71,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    // Verify the user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      throw new Error('Invalid token');
-    }
+    // Authenticate user
+    const { supabase, user } = await authenticateUser(req);
 
     const { rubricId } = await req.json();
 
@@ -114,15 +98,8 @@ serve(async (req) => {
     }
 
     // Get user's Canvas credentials
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
-      throw new Error('Canvas credentials not configured');
-    }
+    const credentials = await getCanvasCredentials(supabase, user.id);
+    const { canvas_instance_url, canvas_access_token } = credentials;
 
     // Convert rubric to Canvas format
     const canvasRubric = convertToCanvasFormat(rubric);
@@ -132,7 +109,7 @@ serve(async (req) => {
     console.log('Using course ID:', courseId, 'for assignment:', rubric.source_assignment_id);
 
     // Create rubric in Canvas using the correct course-based endpoint
-    const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
+    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
     
     console.log('Creating rubric at URL:', canvasUrl);
     console.log('Sending rubric data:', JSON.stringify(canvasRubric, null, 2));
@@ -140,7 +117,7 @@ serve(async (req) => {
     const canvasResponse = await fetch(canvasUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ rubric: canvasRubric }),
@@ -183,7 +160,7 @@ serve(async (req) => {
 
     // Associate rubric with assignment
     if (rubric.source_assignment_id && canvasRubricId && courseId) {
-      const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
+      const associateUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
       
       console.log('Associating rubric with assignment at URL:', associateUrl);
       console.log('Association data:', {
@@ -194,10 +171,10 @@ serve(async (req) => {
         purpose: 'grading'
       });
       
-      const associateResponse = await fetch(associateUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
+    const associateResponse = await fetch(associateUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${canvas_access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
