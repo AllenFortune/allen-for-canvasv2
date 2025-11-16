@@ -790,6 +790,7 @@ export type Database = {
           subscription_status: string
           subscription_tier: string
           total_submissions: number
+          unlimited_override: boolean
         }[]
       }
       get_admin_user_stats: {

@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, RefreshCw, Pause, Play } from 'lucide-react';
+import { Mail, RefreshCw, Pause, Play, Infinity } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -25,6 +26,7 @@ interface AdminUser {
   purchased_submissions: number;
   subscription_limit: number;
   account_status?: string;
+  unlimited_override?: boolean;
 }
 
 interface AdminUserTableProps {
@@ -33,10 +35,11 @@ interface AdminUserTableProps {
   onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
   onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
   onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onToggleUnlimitedOverride: (userEmail: string, enabled: boolean) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserTableProps) => {
+const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onToggleUnlimitedOverride, onRefreshData }: AdminUserTableProps) => {
   const { session } = useAuth();
   const [syncingUsers, setSyncingUsers] = useState<Set<string>>(new Set());
   const [pauseReason, setPauseReason] = useState('');
@@ -146,6 +149,7 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResum
           <TableHead>Account Status</TableHead>
           <TableHead>Canvas Status</TableHead>
           <TableHead>Usage</TableHead>
+          <TableHead>Unlimited</TableHead>
           <TableHead>Joined</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
@@ -193,6 +197,21 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResum
                 <div className="text-muted-foreground">
                   Last: {user.last_usage_date ? new Date(user.last_usage_date).toLocaleDateString() : 'Never'}
                 </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={user.unlimited_override || false}
+                  onCheckedChange={(checked) => onToggleUnlimitedOverride(user.email, checked)}
+                  disabled={syncingUsers.has(user.email)}
+                />
+                {user.unlimited_override && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Infinity className="h-3 w-3" />
+                    Unlimited
+                  </Badge>
+                )}
               </div>
             </TableCell>
             <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
