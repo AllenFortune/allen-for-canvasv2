@@ -768,8 +768,11 @@ export type Database = {
     }
     Functions: {
       archive_user_usage: { Args: { user_email: string }; Returns: undefined }
+      decrypt_canvas_token: {
+        Args: { encrypted_token: string }
+        Returns: string
+      }
       encrypt_canvas_token: { Args: { token: string }; Returns: string }
-      encrypt_canvas_token_secure: { Args: { token: string }; Returns: string }
       generate_referral_code:
         | { Args: { user_id_param: string }; Returns: string }
         | { Args: { user_email: string }; Returns: string }
@@ -800,6 +803,13 @@ export type Database = {
           canvas_not_connected: number
           recent_signups: number
           total_users: number
+        }[]
+      }
+      get_canvas_credentials: {
+        Args: { user_id_param: string }
+        Returns: {
+          canvas_access_token: string
+          canvas_instance_url: string
         }[]
       }
       get_current_month_usage: { Args: { user_email: string }; Returns: number }
