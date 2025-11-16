@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { authenticateUser, getCanvasCredentials } from '../_shared/canvas-auth.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 // CORS headers for browser access
 const corsHeaders = {
@@ -83,16 +83,32 @@ serve(async (req) => {
     }
 
     // Get user's Canvas credentials
-    const credentials = await getCanvasCredentials(supabase, user.id);
-    const { canvas_instance_url: profile_canvas_instance_url, canvas_access_token: profile_canvas_access_token } = credentials;
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('canvas_instance_url, canvas_access_token')
+      .eq('id', user.id)
+      .single();
 
-    console.log('✅ Canvas credentials found for instance:', profile_canvas_instance_url);
+    if (profileError || !profile?.canvas_access_token) {
+      console.error('❌ Canvas credentials error:', profileError);
+      return new Response(JSON.stringify({
+        error: 'Canvas credentials not found'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 401
+      });
+    }
+
+    console.log('✅ Canvas credentials found for instance:', profile.canvas_instance_url);
     console.log('📡 Fetching Canvas file:', fileUrl);
 
     // Fetch the file from Canvas with proper authorization
     const fileResponse = await fetch(fileUrl, {
       headers: {
-        'Authorization': `Bearer ${profile_canvas_access_token}`,
+        'Authorization': `Bearer ${profile.canvas_access_token}`,
         'User-Agent': 'Allen-AI-Grading-Assistant'
       }
     });

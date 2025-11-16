@@ -17,7 +17,6 @@ interface AdminUser {
   current_month_submissions: number;
   purchased_submissions: number;
   subscription_limit: number;
-  unlimited_override?: boolean;
 }
 
 interface AdminUserManagementProps {
@@ -26,11 +25,10 @@ interface AdminUserManagementProps {
   onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
   onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
   onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
-  onToggleUnlimitedOverride: (userEmail: string, enabled: boolean) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onToggleUnlimitedOverride, onRefreshData }: AdminUserManagementProps) => {
+const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
   const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime'>('all');
@@ -101,7 +99,6 @@ const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, on
           onPauseAccount={onPauseAccount}
           onResumeAccount={onResumeAccount}
           onDeleteAccount={onDeleteAccount}
-          onToggleUnlimitedOverride={onToggleUnlimitedOverride}
           onRefreshData={onRefreshData}
         />
       </CardContent>

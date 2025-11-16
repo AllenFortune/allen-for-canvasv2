@@ -85,7 +85,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown
+          ip_address: unknown | null
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
@@ -97,7 +97,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -109,7 +109,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -564,7 +564,6 @@ export type Database = {
           subscribed: boolean
           subscription_end: string | null
           subscription_tier: string | null
-          unlimited_override: boolean | null
           updated_at: string
           user_id: string | null
         }
@@ -582,7 +581,6 @@ export type Database = {
           subscribed?: boolean
           subscription_end?: string | null
           subscription_tier?: string | null
-          unlimited_override?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -600,7 +598,6 @@ export type Database = {
           subscribed?: boolean
           subscription_end?: string | null
           subscription_tier?: string | null
-          unlimited_override?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -767,17 +764,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      archive_user_usage: { Args: { user_email: string }; Returns: undefined }
-      decrypt_canvas_token: {
-        Args: { encrypted_token: string }
+      archive_user_usage: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
+      encrypt_canvas_token: {
+        Args: { token: string }
         Returns: string
       }
-      encrypt_canvas_token: { Args: { token: string }; Returns: string }
-      generate_referral_code:
-        | { Args: { user_id_param: string }; Returns: string }
-        | { Args: { user_email: string }; Returns: string }
+      encrypt_canvas_token_secure: {
+        Args: { token: string }
+        Returns: string
+      }
+      generate_referral_code: {
+        Args: { user_email: string } | { user_id_param: string }
+        Returns: string
+      }
       get_admin_user_list: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           account_status: string
           canvas_connected: boolean
@@ -793,11 +797,10 @@ export type Database = {
           subscription_status: string
           subscription_tier: string
           total_submissions: number
-          unlimited_override: boolean
         }[]
       }
       get_admin_user_stats: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           canvas_connected: number
           canvas_not_connected: number
@@ -805,16 +808,12 @@ export type Database = {
           total_users: number
         }[]
       }
-      get_canvas_credentials: {
-        Args: { user_id_param: string }
-        Returns: {
-          canvas_access_token: string
-          canvas_instance_url: string
-        }[]
+      get_current_month_usage: {
+        Args: { user_email: string }
+        Returns: number
       }
-      get_current_month_usage: { Args: { user_email: string }; Returns: number }
       get_monthly_revenue_stats: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           current_month_mrr: number
           current_month_name: string
@@ -850,7 +849,7 @@ export type Database = {
         }[]
       }
       get_weekly_revenue_trend: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           churned_this_week: number
           current_week_new_mrr: number
@@ -886,7 +885,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
-      validate_subscription_tier: { Args: { tier: string }; Returns: boolean }
+      validate_subscription_tier: {
+        Args: { tier: string }
+        Returns: boolean
+      }
       validate_user_access: {
         Args: { target_user_id: string }
         Returns: boolean

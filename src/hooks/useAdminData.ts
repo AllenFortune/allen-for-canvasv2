@@ -24,7 +24,6 @@ interface AdminUser {
   current_month_submissions: number;
   purchased_submissions: number;
   subscription_limit: number;
-  unlimited_override?: boolean;
 }
 
 interface RevenueStats {
@@ -307,43 +306,6 @@ export const useAdminData = () => {
     }
   };
 
-  const toggleUnlimitedOverride = async (userEmail: string, enabled: boolean) => {
-    if (!session?.access_token) {
-      toast({
-        title: "Error",
-        description: "Not authenticated",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('admin-toggle-unlimited-override', {
-        body: { userEmail, enabled },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Unlimited override ${enabled ? 'enabled' : 'disabled'} for ${userEmail}`,
-      });
-
-      // Refresh user list
-      await fetchUserList();
-    } catch (error) {
-      console.error('Error toggling unlimited override:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update unlimited override",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
     checkAdminStatus();
   }, [user]);
@@ -371,7 +333,6 @@ export const useAdminData = () => {
     sendCanvasSetupEmail,
     pauseAccount,
     resumeAccount,
-    deleteAccount,
-    toggleUnlimitedOverride
+    deleteAccount
   };
 };

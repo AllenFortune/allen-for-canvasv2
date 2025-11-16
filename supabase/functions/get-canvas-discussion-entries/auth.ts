@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 export async function authenticateUser(req: Request) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -17,29 +18,19 @@ export async function authenticateUser(req: Request) {
   return { supabase, user };
 }
 
-export async function getCanvasCredentials(supabase: SupabaseClient, userId: string) {
-  // Use the secure RPC function to get decrypted credentials
-  const { data, error } = await supabase.rpc('get_canvas_credentials', {
-    user_id_param: userId
-  });
+export async function getCanvasCredentials(supabase: any, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('canvas_instance_url, canvas_access_token')
+    .eq('id', userId)
+    .single();
 
-  if (error) {
-    console.error('Error fetching Canvas credentials:', error);
-    throw new Error(`Failed to fetch Canvas credentials: ${error.message}`);
-  }
-
-  if (!data || data.length === 0) {
-    throw new Error('Canvas credentials not configured');
-  }
-
-  const credentials = data[0];
-  
-  if (!credentials.canvas_instance_url || !credentials.canvas_access_token) {
+  if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
     throw new Error('Canvas credentials not configured');
   }
 
   return {
-    canvas_instance_url: credentials.canvas_instance_url,
-    canvas_access_token: credentials.canvas_access_token
+    canvas_instance_url: profile.canvas_instance_url,
+    canvas_access_token: profile.canvas_access_token
   };
 }
