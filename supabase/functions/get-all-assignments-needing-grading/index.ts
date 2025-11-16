@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { authenticateUser, getCanvasCredentials } from '../_shared/canvas-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,59 +15,10 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get the user from the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Get user's Canvas credentials from profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
-      return new Response(
-        JSON.stringify({ error: 'Canvas credentials not configured' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const { canvas_instance_url, canvas_access_token } = profile;
+    // Authenticate user and get Canvas credentials
+    const { supabase, user } = await authenticateUser(req);
+    const credentials = await getCanvasCredentials(supabase, user.id);
+    const { canvas_instance_url, canvas_access_token } = credentials;
     
     console.log(`Fetching all courses and assignments from Canvas: ${canvas_instance_url}`);
 
