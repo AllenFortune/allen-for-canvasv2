@@ -25,10 +25,11 @@ interface AdminUserManagementProps {
   onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
   onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
   onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onResetUsage: (userEmail: string, reason?: string) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserManagementProps) => {
+const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onResetUsage, onRefreshData }: AdminUserManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterConnected, setFilterConnected] = useState<'all' | 'connected' | 'not_connected'>('all');
   const [filterPlan, setFilterPlan] = useState<'all' | 'trial' | 'lite' | 'core' | 'fulltime'>('all');
@@ -99,6 +100,7 @@ const AdminUserManagement = ({ users, onSendCanvasSetupEmail, onPauseAccount, on
           onPauseAccount={onPauseAccount}
           onResumeAccount={onResumeAccount}
           onDeleteAccount={onDeleteAccount}
+          onResetUsage={onResetUsage}
           onRefreshData={onRefreshData}
         />
       </CardContent>

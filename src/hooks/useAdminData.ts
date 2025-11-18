@@ -306,6 +306,44 @@ export const useAdminData = () => {
     }
   };
 
+  const resetUserUsage = async (userEmail: string, reason?: string) => {
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to perform admin actions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('admin-reset-usage', {
+        body: { userEmail, reason },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Usage Reset",
+        description: `Usage reset for ${userEmail}`,
+        variant: "default",
+      });
+
+      // Refresh the user list
+      await fetchUserList();
+    } catch (error) {
+      console.error('Error resetting usage:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset usage",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     checkAdminStatus();
   }, [user]);
@@ -333,6 +371,7 @@ export const useAdminData = () => {
     sendCanvasSetupEmail,
     pauseAccount,
     resumeAccount,
-    deleteAccount
+    deleteAccount,
+    resetUserUsage
   };
 };

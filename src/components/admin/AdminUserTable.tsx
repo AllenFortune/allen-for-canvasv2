@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, RefreshCw, Pause, Play } from 'lucide-react';
+import { Mail, RefreshCw, Pause, Play, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -33,15 +33,18 @@ interface AdminUserTableProps {
   onPauseAccount: (userEmail: string, reason?: string) => Promise<void>;
   onResumeAccount: (userEmail: string, reason?: string) => Promise<void>;
   onDeleteAccount: (userEmail: string, reason?: string) => Promise<void>;
+  onResetUsage: (userEmail: string, reason?: string) => Promise<void>;
   onRefreshData?: () => void;
 }
 
-const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onRefreshData }: AdminUserTableProps) => {
+const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResumeAccount, onDeleteAccount, onResetUsage, onRefreshData }: AdminUserTableProps) => {
   const { session } = useAuth();
   const [syncingUsers, setSyncingUsers] = useState<Set<string>>(new Set());
   const [pauseReason, setPauseReason] = useState('');
   const [resumeReason, setResumeReason] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
+  const [resetReason, setResetReason] = useState('');
+  const [resettingUsers, setResettingUsers] = useState<Set<string>>(new Set());
 
   const syncUserSubscription = async (userEmail: string) => {
     if (!session?.access_token) {
@@ -330,6 +333,61 @@ const AdminUserTable = ({ users, onSendCanvasSetupEmail, onPauseAccount, onResum
                   <RefreshCw className={`h-4 w-4 mr-2 ${syncingUsers.has(user.email) ? 'animate-spin' : ''}`} />
                   Sync
                 </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resettingUsers.has(user.email)}
+                      className="border-orange-500/50 hover:bg-orange-500/10 hover:border-orange-500"
+                    >
+                      {resettingUsers.has(user.email) ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RotateCcw className="h-4 w-4 mr-2 text-orange-500" />
+                      )}
+                      Reset
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset Usage for {user.email}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will reset their submission count to 0. Their old usage will be archived to the usage history table for record keeping.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="reset-reason">Reason (optional)</Label>
+                        <Input
+                          id="reset-reason"
+                          value={resetReason}
+                          onChange={(e) => setResetReason(e.target.value)}
+                          placeholder="e.g., Subscription renewal fix, billing issue resolved"
+                        />
+                      </div>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setResetReason('')}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          setResettingUsers(prev => new Set(prev).add(user.email));
+                          await onResetUsage(user.email, resetReason);
+                          setResettingUsers(prev => {
+                            const next = new Set(prev);
+                            next.delete(user.email);
+                            return next;
+                          });
+                          setResetReason('');
+                        }}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        Reset Usage
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </TableCell>
           </TableRow>
