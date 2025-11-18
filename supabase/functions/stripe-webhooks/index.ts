@@ -182,6 +182,13 @@ async function updateSubscriptionFromStripe(customerId: string, supabase: any, s
       return;
     }
 
+    // Get current subscriber record to detect renewals
+    const { data: currentSubscriber } = await supabase
+      .from("subscribers")
+      .select("billing_cycle_start, email")
+      .eq("email", customer.email)
+      .single();
+
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
@@ -226,6 +233,27 @@ async function updateSubscriptionFromStripe(customerId: string, supabase: any, s
         billingCycleStart,
         nextResetDate 
       });
+
+      // Detect subscription renewal - if billing cycle has changed, reset usage
+      if (currentSubscriber && currentSubscriber.billing_cycle_start) {
+        const oldCycleStart = new Date(currentSubscriber.billing_cycle_start).getTime();
+        const newCycleStart = new Date(billingCycleStart).getTime();
+        
+        if (oldCycleStart !== newCycleStart) {
+          logStep("Subscription renewal detected, resetting usage", {
+            email: customer.email,
+            oldCycleStart: currentSubscriber.billing_cycle_start,
+            newCycleStart: billingCycleStart
+          });
+          
+          // Reset usage before updating subscriber record
+          await supabase.rpc('reset_user_submissions', {
+            user_email: customer.email
+          });
+          
+          logStep("Usage reset completed for renewal", { email: customer.email });
+        }
+      }
     }
 
     // Update subscriber record
