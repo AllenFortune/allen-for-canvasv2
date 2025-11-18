@@ -15,7 +15,8 @@ const AdminDashboard = () => {
     sendCanvasSetupEmail, 
     pauseAccount, 
     resumeAccount, 
-    deleteAccount, 
+    deleteAccount,
+    resetUserUsage,
     fetchAdminStats, 
     fetchUserList,
     fetchRevenueStats,
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
         onPauseAccount={pauseAccount}
         onResumeAccount={resumeAccount}
         onDeleteAccount={deleteAccount}
+        onResetUsage={resetUserUsage}
         onRefreshData={handleRefreshData}
       />
     </div>
