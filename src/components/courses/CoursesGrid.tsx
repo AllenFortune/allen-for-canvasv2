@@ -1,10 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import CourseCard from './CourseCard';
 import { useAuth } from "@/contexts/AuthContext";
 import { Course, isPastCourse, getCachedSession, withRetry } from '@/utils/courseUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { groupCoursesByTerm, getTermDisplayName } from '@/utils/termUtils';
+import { Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface CoursesGridProps {
   courses: Course[];
@@ -102,6 +105,27 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
   }
 
   if (error) {
+    // Special handling for Canvas not configured
+    if (error === 'CANVAS_NOT_CONFIGURED') {
+      return (
+        <div className="text-center py-8">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 max-w-md mx-auto">
+            <Settings className="h-12 w-12 text-amber-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-amber-800 mb-2">Canvas Not Connected</h3>
+            <p className="text-amber-700 mb-4">
+              Your Canvas account is not connected yet. Set up your Canvas integration to view and manage your courses.
+            </p>
+            <Button asChild className="bg-amber-600 hover:bg-amber-700">
+              <Link to="/canvas-setup">
+                <Settings className="h-4 w-4 mr-2" />
+                Connect Canvas
+              </Link>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="text-center py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">

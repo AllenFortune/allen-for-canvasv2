@@ -50,14 +50,26 @@ serve(async (req) => {
       );
     }
 
-    // Get user's Canvas credentials from profile (decrypt token at database level)
+    // Get user's Canvas credentials from profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+    if (profileError) {
+      console.error('Error fetching profile:', profileError.message);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user profile' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
+      console.log('Canvas credentials missing for user:', user.id);
       return new Response(
         JSON.stringify({ error: 'Canvas credentials not configured' }),
         { 
@@ -67,7 +79,29 @@ serve(async (req) => {
       );
     }
 
-    const { canvas_instance_url, canvas_access_token } = profile;
+    // Decrypt the token using RPC if it appears encrypted
+    let canvas_access_token = profile.canvas_access_token;
+    const canvas_instance_url = profile.canvas_instance_url;
+    
+    // Check if token looks encrypted (not in Canvas format: NNNN~XXXXX)
+    if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+      console.log('Token appears encrypted, decrypting via RPC...');
+      const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+        encrypted_token: canvas_access_token
+      });
+      
+      if (decryptError) {
+        console.error('Error decrypting token:', decryptError.message);
+        return new Response(
+          JSON.stringify({ error: 'Failed to decrypt Canvas token' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      canvas_access_token = decryptedToken;
+    }
     
     console.log(`Fetching all courses from Canvas: ${canvas_instance_url}`);
 
