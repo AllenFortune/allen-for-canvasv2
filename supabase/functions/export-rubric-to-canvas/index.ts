@@ -113,10 +113,10 @@ serve(async (req) => {
       throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
     }
 
-    // Get user's Canvas credentials
+    // Get user's Canvas credentials (decrypt token at database level)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
+      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
       .eq('id', user.id)
       .single();
 

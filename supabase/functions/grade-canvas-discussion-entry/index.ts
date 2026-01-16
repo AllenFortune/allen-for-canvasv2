@@ -35,9 +35,10 @@ serve(async (req) => {
 
     console.log('Grading discussion entry:', { courseId, discussionId, userId, grade, aiGradeReview: !!aiGradeReview });
 
+    // Decrypt token at database level
     const { data: profile } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
+      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
       .eq('id', user.id)
       .single();
 
