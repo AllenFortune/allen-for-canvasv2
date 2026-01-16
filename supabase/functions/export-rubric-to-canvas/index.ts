@@ -113,15 +113,37 @@ serve(async (req) => {
       throw new Error(`Missing ${missingFields.join(' and ')}. Canvas rubrics require both assignment and course context.`);
     }
 
-    // Get user's Canvas credentials (decrypt token at database level)
+    // Get user's Canvas credentials (select raw columns)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      throw new Error('Failed to fetch user profile');
+    }
+
+    if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
       throw new Error('Canvas credentials not configured');
+    }
+
+    // Decrypt token via RPC if it appears encrypted (not in Canvas format: NNNN~XXXXX)
+    let canvas_access_token = profile.canvas_access_token;
+    const canvas_instance_url = profile.canvas_instance_url;
+
+    if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+      console.log('Token appears encrypted, decrypting via RPC...');
+      const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+        encrypted_token: canvas_access_token
+      });
+      
+      if (decryptError || !decryptedToken) {
+        console.error('Token decryption failed:', decryptError);
+        throw new Error('Failed to decrypt Canvas token');
+      }
+      canvas_access_token = decryptedToken;
     }
 
     // Convert rubric to Canvas format
@@ -132,7 +154,7 @@ serve(async (req) => {
     console.log('Using course ID:', courseId, 'for assignment:', rubric.source_assignment_id);
 
     // Create rubric in Canvas using the correct course-based endpoint
-    const canvasUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
+    const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/rubrics`;
     
     console.log('Creating rubric at URL:', canvasUrl);
     console.log('Sending rubric data:', JSON.stringify(canvasRubric, null, 2));
@@ -140,7 +162,7 @@ serve(async (req) => {
     const canvasResponse = await fetch(canvasUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ rubric: canvasRubric }),
@@ -183,7 +205,7 @@ serve(async (req) => {
 
     // Associate rubric with assignment
     if (rubric.source_assignment_id && canvasRubricId && courseId) {
-      const associateUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
+      const associateUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/rubric_associations`;
       
       console.log('Associating rubric with assignment at URL:', associateUrl);
       console.log('Association data:', {
@@ -197,7 +219,7 @@ serve(async (req) => {
       const associateResponse = await fetch(associateUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${profile.canvas_access_token}`,
+          'Authorization': `Bearer ${canvas_access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
