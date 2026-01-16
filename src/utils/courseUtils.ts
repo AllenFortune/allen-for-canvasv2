@@ -194,12 +194,33 @@ export const filterCourses = (courses: Course[], favoriteCourses: Course[], filt
 // Session cache to avoid repeated auth calls
 let sessionCache: { token: string | null; expiry: number } | null = null;
 
+// Clear session cache - call this on auth state changes
+export const clearSessionCache = () => {
+  console.log('Clearing session cache');
+  sessionCache = null;
+};
+
 export const getCachedSession = async () => {
   const now = Date.now();
   
   // Check if we have a valid cached session (5 minutes cache)
-  if (sessionCache && sessionCache.expiry > now) {
-    return { data: { session: { access_token: sessionCache.token } }, error: null };
+  if (sessionCache && sessionCache.expiry > now && sessionCache.token) {
+    // Validate token hasn't expired (check JWT exp claim)
+    try {
+      const tokenPayload = JSON.parse(atob(sessionCache.token.split('.')[1]));
+      const tokenExpiry = tokenPayload.exp * 1000;
+      
+      // If token expires within 1 minute, clear cache and get fresh
+      if (tokenExpiry < now + 60000) {
+        console.log('Cached token about to expire, refreshing...');
+        sessionCache = null;
+      } else {
+        return { data: { session: { access_token: sessionCache.token } }, error: null };
+      }
+    } catch (e) {
+      console.log('Error parsing cached token, refreshing...');
+      sessionCache = null;
+    }
   }
   
   // Get fresh session

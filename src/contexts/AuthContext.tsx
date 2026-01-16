@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { clearSessionCache } from '@/utils/courseUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +25,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     // Set up auth state listener FIRST to catch PASSWORD_RECOVERY events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       console.log('Auth state change:', event, session?.user?.email);
+      
+      // Clear session cache on any auth state change to prevent stale tokens
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        clearSessionCache();
+      }
+      
       setUser(session?.user ?? null);
       setSession(session);
       
@@ -127,6 +134,9 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const signOut = async () => {
     try {
       console.log('Starting sign out process...');
+      
+      // Clear session cache immediately to prevent stale tokens
+      clearSessionCache();
       
       // Clear state immediately
       setUser(null);
