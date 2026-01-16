@@ -208,13 +208,13 @@ export const useSubscriptionData = () => {
       const total_limit = isUnlimited ? -1 : base_limit + purchased_submissions;
       const percentage = isUnlimited ? 0 : (total_limit > 0 ? (submissions_used / total_limit) * 100 : 0);
 
-      // Get billing period for display
+      // Get billing period for display (use maybeSingle to avoid 406 when no row exists)
       const { data: trackingData } = await supabase
         .from('usage_tracking')
         .select('billing_period')
         .eq('email', user.email)
         .eq('month_year', new Date().toISOString().slice(0, 7))
-        .single();
+        .maybeSingle();
 
       const newUsageData = { 
         submissions_used, 

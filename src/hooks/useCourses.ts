@@ -58,6 +58,13 @@ export const useCourses = () => {
         }
         throw error;
       }
+
+      // Check for Canvas credentials not configured error
+      if (data?.error === 'Canvas credentials not configured') {
+        console.log('Canvas credentials not configured for user');
+        setError('CANVAS_NOT_CONFIGURED');
+        return [];
+      }
       
       if (data.courses) {
         console.log(`Successfully loaded ${data.courses.length} courses`);
@@ -67,7 +74,14 @@ export const useCourses = () => {
       return [];
     } catch (error) {
       console.error('Error fetching courses:', error);
-      setError('Failed to load courses. Please try signing out and back in.');
+      
+      // Check if the error response contains "Canvas credentials not configured"
+      const errorStr = String(error);
+      if (errorStr.includes('Canvas credentials not configured')) {
+        setError('CANVAS_NOT_CONFIGURED');
+      } else {
+        setError('Failed to load courses. Please try signing out and back in.');
+      }
       return [];
     }
   }, [user]);
