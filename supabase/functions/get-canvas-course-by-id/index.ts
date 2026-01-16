@@ -67,10 +67,10 @@ serve(async (req) => {
 
     console.log(`Attempting to fetch course ${courseId} for user ${user.email}`);
 
-    // Get Canvas credentials from the user's profile (same method as get-canvas-courses)
+    // Get Canvas credentials from the user's profile (decrypt token at database level)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
+      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
       .eq('id', user.id)
       .single()
 

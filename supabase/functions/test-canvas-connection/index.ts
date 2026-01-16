@@ -16,8 +16,8 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const canvasUrl = body.canvasUrl;
-    // Sanitize token - remove any whitespace/newlines that may have been introduced
-    const canvasToken = body.canvasToken?.replace(/[\r\n\s]+/g, '');
+    // Token comes directly from user input during setup, no need to decrypt
+    const canvasToken = body.canvasToken?.trim();
 
     if (!canvasUrl || !canvasToken) {
       return new Response(

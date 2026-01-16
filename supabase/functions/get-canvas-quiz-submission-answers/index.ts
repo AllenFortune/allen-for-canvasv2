@@ -61,9 +61,10 @@ serve(async (req) => {
 
     console.log(`[MainFunction] Fetching quiz submission answers for course ${courseId}, quiz ${quizId}, submission ${submissionId}, user: ${user.email}`);
 
+    // Decrypt token at database level
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
+      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
       .eq('id', user.id)
       .single();
 

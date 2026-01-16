@@ -50,10 +50,10 @@ serve(async (req) => {
       );
     }
 
-    // Get user's Canvas credentials from profile
+    // Get user's Canvas credentials from profile (decrypt token at database level)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, canvas_access_token')
+      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
       .eq('id', user.id)
       .single();
 
@@ -67,9 +67,7 @@ serve(async (req) => {
       );
     }
 
-    const canvas_instance_url = profile.canvas_instance_url;
-    // Sanitize token - remove any whitespace/newlines that may have been introduced during encryption/decryption
-    const canvas_access_token = profile.canvas_access_token.replace(/[\r\n\s]+/g, '');
+    const { canvas_instance_url, canvas_access_token } = profile;
     
     console.log(`Fetching favorite courses from Canvas: ${canvas_instance_url}`);
 
