@@ -51,21 +51,47 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt token at database level
+    // Get user's Canvas credentials from profile (select raw columns)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile?.canvas_instance_url || !profile?.canvas_access_token) {
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user profile' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
       return new Response(
         JSON.stringify({ error: 'Canvas credentials not configured' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { canvas_instance_url, canvas_access_token } = profile;
+    // Decrypt token via RPC if it appears encrypted (not in Canvas format: NNNN~XXXXX)
+    let canvas_access_token = profile.canvas_access_token;
+    const canvas_instance_url = profile.canvas_instance_url;
+
+    if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+      console.log('Token appears encrypted, decrypting via RPC...');
+      const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+        encrypted_token: canvas_access_token
+      });
+      
+      if (decryptError || !decryptedToken) {
+        console.error('Token decryption failed:', decryptError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to decrypt Canvas token' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      canvas_access_token = decryptedToken;
+    }
     
     // First, get the discussion details to find the assignment_id
     const discussionUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}`;

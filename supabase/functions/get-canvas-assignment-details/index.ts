@@ -60,10 +60,10 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id, user.email);
 
-    // Get user profile to retrieve Canvas credentials (decrypt token at database level)
+    // Get user profile to retrieve Canvas credentials (select raw columns)
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
@@ -83,18 +83,38 @@ serve(async (req) => {
       });
     }
 
+    // Decrypt token via RPC if it appears encrypted (not in Canvas format: NNNN~XXXXX)
+    let canvas_access_token = profile.canvas_access_token;
+    const canvas_instance_url = profile.canvas_instance_url;
+
+    if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+      console.log('Token appears encrypted, decrypting via RPC...');
+      const { data: decryptedToken, error: decryptError } = await supabaseClient.rpc('decrypt_canvas_token', {
+        encrypted_token: canvas_access_token
+      });
+      
+      if (decryptError || !decryptedToken) {
+        console.error('Token decryption failed:', decryptError);
+        return new Response(JSON.stringify({ error: 'Failed to decrypt Canvas token' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      canvas_access_token = decryptedToken;
+    }
+
     const { courseId, assignmentId } = await req.json();
 
     console.log(`Fetching assignment details for assignment ${assignmentId} in course ${courseId}`);
-    console.log('Canvas URL:', profile.canvas_instance_url);
+    console.log('Canvas URL:', canvas_instance_url);
 
     // Fetch assignment details from Canvas with include parameters to get full description
-    const assignmentUrl = `${profile.canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}?include[]=description&include[]=rubric_criteria`;
+    const assignmentUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/assignments/${assignmentId}?include[]=description&include[]=rubric_criteria`;
     console.log('Making Canvas API request to:', assignmentUrl);
 
     const assignmentResponse = await fetch(assignmentUrl, {
       headers: {
-        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Authorization': `Bearer ${canvas_access_token}`,
         'Content-Type': 'application/json',
       },
     });

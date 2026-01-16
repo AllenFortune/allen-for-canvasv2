@@ -86,10 +86,10 @@ serve(async (req) => {
       });
     }
 
-    // Load Canvas credentials (decrypt token at database level)
+    // Get user's Canvas credentials from profile (select raw columns)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 
@@ -108,7 +108,25 @@ serve(async (req) => {
       });
     }
 
-    const { canvas_instance_url, canvas_access_token } = profile;
+    // Decrypt token via RPC if it appears encrypted (not in Canvas format: NNNN~XXXXX)
+    let canvas_access_token = profile.canvas_access_token;
+    const canvas_instance_url = profile.canvas_instance_url;
+
+    if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+      console.log('Token appears encrypted, decrypting via RPC...');
+      const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+        encrypted_token: canvas_access_token
+      });
+      
+      if (decryptError || !decryptedToken) {
+        console.error('Token decryption failed:', decryptError);
+        return new Response(JSON.stringify({ error: 'Failed to decrypt Canvas token' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      canvas_access_token = decryptedToken;
+    }
 
     const canvasUrl = `${canvas_instance_url}/api/v1/courses/${courseId}/discussion_topics/${discussionId}`;
     console.log(`Fetching discussion ${discussionId} for course ${courseId} from Canvas: ${canvasUrl}`);

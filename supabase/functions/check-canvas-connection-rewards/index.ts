@@ -41,10 +41,10 @@ serve(async (req) => {
       );
     }
 
-    // Check if user has Canvas credentials (decrypt token at database level)
+    // Check if user has Canvas credentials (select raw columns)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+      .select('canvas_instance_url, canvas_access_token')
       .eq('id', user.id)
       .single();
 

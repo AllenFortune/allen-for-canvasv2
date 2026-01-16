@@ -19,19 +19,41 @@ export async function authenticateUser(req: Request) {
 }
 
 export async function getCanvasCredentials(supabase: any, userId: string) {
-  // Decrypt token at database level
-  const { data: profile } = await supabase
+  // Get user's Canvas credentials from profile (select raw columns)
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('canvas_instance_url, decrypt_canvas_token(canvas_access_token) as canvas_access_token')
+    .select('canvas_instance_url, canvas_access_token')
     .eq('id', userId)
     .single();
+
+  if (profileError) {
+    console.error('Profile fetch error:', profileError);
+    throw new Error('Failed to fetch user profile');
+  }
 
   if (!profile?.canvas_instance_url || !profile?.canvas_access_token) {
     throw new Error('Canvas credentials not configured');
   }
 
+  // Decrypt token via RPC if it appears encrypted (not in Canvas format: NNNN~XXXXX)
+  let canvas_access_token = profile.canvas_access_token;
+  const canvas_instance_url = profile.canvas_instance_url;
+
+  if (!canvas_access_token.match(/^\d+~[A-Za-z0-9]+$/)) {
+    console.log('Token appears encrypted, decrypting via RPC...');
+    const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+      encrypted_token: canvas_access_token
+    });
+    
+    if (decryptError || !decryptedToken) {
+      console.error('Token decryption failed:', decryptError);
+      throw new Error('Failed to decrypt Canvas token');
+    }
+    canvas_access_token = decryptedToken;
+  }
+
   return {
-    canvas_instance_url: profile.canvas_instance_url,
-    canvas_access_token: profile.canvas_access_token
+    canvas_instance_url: canvas_instance_url,
+    canvas_access_token: canvas_access_token
   };
 }
