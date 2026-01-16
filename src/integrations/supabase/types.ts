@@ -774,8 +774,8 @@ export type Database = {
       }
       encrypt_canvas_token: { Args: { token: string }; Returns: string }
       generate_referral_code:
-        | { Args: { user_id_param: string }; Returns: string }
         | { Args: { user_email: string }; Returns: string }
+        | { Args: { user_id_param: string }; Returns: string }
       get_admin_user_list: {
         Args: never
         Returns: {
