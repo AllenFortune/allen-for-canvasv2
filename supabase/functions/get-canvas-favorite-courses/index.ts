@@ -67,7 +67,9 @@ serve(async (req) => {
       );
     }
 
-    const { canvas_instance_url, canvas_access_token } = profile;
+    const canvas_instance_url = profile.canvas_instance_url;
+    // Sanitize token - remove any whitespace/newlines that may have been introduced during encryption/decryption
+    const canvas_access_token = profile.canvas_access_token.replace(/[\r\n\s]+/g, '');
     
     console.log(`Fetching favorite courses from Canvas: ${canvas_instance_url}`);
 
