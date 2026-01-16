@@ -14,7 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    const { canvasUrl, canvasToken } = await req.json();
+    const body = await req.json();
+    const canvasUrl = body.canvasUrl;
+    // Sanitize token - remove any whitespace/newlines that may have been introduced
+    const canvasToken = body.canvasToken?.replace(/[\r\n\s]+/g, '');
 
     if (!canvasUrl || !canvasToken) {
       return new Response(
