@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
-import { Course, filterCourses, getCachedSession, withRetry } from '@/utils/courseUtils';
+import { Course, filterCourses, getCachedSession, clearSessionCache, withRetry } from '@/utils/courseUtils';
 
 export const useCourses = () => {
   const { user } = useAuth();
@@ -14,10 +14,10 @@ export const useCourses = () => {
   const [filter, setFilter] = useState<string>('active');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCourses = useCallback(async () => {
+  const fetchCourses = useCallback(async (retryOnAuthError = true): Promise<Course[]> => {
     if (!user) {
       setLoading(false);
-      return;
+      return [];
     }
 
     try {
@@ -37,7 +37,27 @@ export const useCourses = () => {
         })
       );
       
-      if (error) throw error;
+      // Check for auth errors (401/400 with auth message)
+      if (error) {
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isAuthError = errorMessage.includes('auth') || 
+                           errorMessage.includes('401') || 
+                           errorMessage.includes('invalid') ||
+                           errorMessage.includes('session');
+        
+        if (isAuthError && retryOnAuthError) {
+          console.log('Auth error detected, clearing cache and retrying...');
+          clearSessionCache();
+          
+          // Try to refresh the session
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (refreshData.session) {
+            console.log('Session refreshed, retrying fetch...');
+            return fetchCourses(false); // Retry once without further retries
+          }
+        }
+        throw error;
+      }
       
       if (data.courses) {
         console.log(`Successfully loaded ${data.courses.length} courses`);
@@ -47,12 +67,12 @@ export const useCourses = () => {
       return [];
     } catch (error) {
       console.error('Error fetching courses:', error);
-      setError('Failed to load courses. Please try refreshing.');
+      setError('Failed to load courses. Please try signing out and back in.');
       return [];
     }
   }, [user]);
 
-  const fetchFavoriteCourses = useCallback(async () => {
+  const fetchFavoriteCourses = useCallback(async (retryOnAuthError = true): Promise<Course[]> => {
     if (!user) return [];
 
     try {
@@ -71,7 +91,24 @@ export const useCourses = () => {
         })
       );
       
-      if (error) throw error;
+      // Check for auth errors and retry once
+      if (error) {
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isAuthError = errorMessage.includes('auth') || 
+                           errorMessage.includes('401') || 
+                           errorMessage.includes('invalid') ||
+                           errorMessage.includes('session');
+        
+        if (isAuthError && retryOnAuthError) {
+          console.log('Auth error on favorites, clearing cache and retrying...');
+          clearSessionCache();
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (refreshData.session) {
+            return fetchFavoriteCourses(false);
+          }
+        }
+        throw error;
+      }
       
       if (data.courses) {
         console.log(`Successfully loaded ${data.courses.length} favorite courses`);
