@@ -40,7 +40,7 @@ const FallPromotionBanner = () => {
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div>
-                <h3 className="text-lg font-bold">Black Friday Speical!</h3>
+                <h3 className="text-lg font-bold">Spring Speical!</h3>
                 <p className="text-sm text-orange-100">
                   Get 1 month of Lite Plan FREE with code <span className="font-semibold bg-white/20 px-2 py-1 rounded">ALLEN2025</span>
                 </p>
