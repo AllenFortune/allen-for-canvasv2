@@ -1,19 +1,12 @@
-
 import { Link } from "react-router-dom";
-
 const Footer = () => {
-  return (
-    <footer className="bg-gray-900 text-white py-12">
+  return <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 flex items-center justify-center">
-                <img 
-                  src="/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png" 
-                  alt="A.L.L.E.N. Logo" 
-                  className="w-8 h-8 object-contain"
-                />
+                <img src="/lovable-uploads/82237aca-ea13-4bc4-b27b-75d688d97a7f.png" alt="A.L.L.E.N. Logo" className="w-8 h-8 object-contain" />
               </div>
               <span className="text-xl font-bold">A.L.L.E.N.</span>
             </div>
@@ -56,12 +49,10 @@ const Footer = () => {
             </p>
           </div>
           <div className="text-center text-gray-400">
-            <p>© 2025 A.L.L.E.N. All rights reserved.</p>
+            <p>© 2026 A.L.L.E.N. All rights reserved.</p>
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
