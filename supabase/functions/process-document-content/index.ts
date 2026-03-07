@@ -174,9 +174,29 @@ serve(async (req) => {
       extractedText = textDecoder.decode(fileBuffer);
       
     } else if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
-      // For PDF files, we'll return a message indicating manual review needed
-      console.log('Processing .pdf file - manual review needed');
-      extractedText = `[PDF Document "${fileName}" submitted - Manual review required for detailed content analysis. AI grading will be based on assignment requirements only.]`;
+      console.log('Processing .pdf file with pdf-parse');
+      try {
+        const uint8Array = new Uint8Array(fileBuffer);
+        const data = await pdf(uint8Array);
+        extractedText = data.text || '';
+
+        // Clean up whitespace
+        extractedText = extractedText
+          .replace(/\r\n/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .replace(/[ \t]+/g, ' ')
+          .trim();
+
+        console.log(`PDF text extracted: ${extractedText.length} characters`);
+        console.log(`PDF text preview: ${extractedText.substring(0, 200)}...`);
+      } catch (pdfError) {
+        console.error('PDF extraction failed:', pdfError);
+        extractedText = '';
+      }
+
+      if (!extractedText || extractedText.length < 10) {
+        extractedText = `[PDF Document "${fileName}" submitted - The file may be a scanned image or contain no extractable text. Manual review required for detailed content analysis.]`;
+      }
       
     } else {
       // Unsupported file type
