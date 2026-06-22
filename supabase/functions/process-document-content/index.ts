@@ -3,7 +3,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Import mammoth for better .docx processing
 import mammoth from "https://esm.sh/mammoth@1.6.0";
-import pdf from "https://esm.sh/pdf-parse@1.1.1";
+// NOTE: pdf-parse is imported lazily inside the PDF branch. Importing it at the
+// top level runs a file-read at module load that crashes the function on boot
+// under Deno, which 500s every request (including non-PDF docx/txt grading).
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -176,6 +178,8 @@ serve(async (req) => {
     } else if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
       console.log('Processing .pdf file with pdf-parse');
       try {
+        const pdfModule = await import("https://esm.sh/pdf-parse@1.1.1");
+        const pdf = pdfModule.default ?? pdfModule;
         const uint8Array = new Uint8Array(fileBuffer);
         const data = await pdf(uint8Array);
         extractedText = data.text || '';
