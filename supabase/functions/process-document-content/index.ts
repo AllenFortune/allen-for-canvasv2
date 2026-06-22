@@ -1,11 +1,9 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// Import mammoth for better .docx processing
-import mammoth from "https://esm.sh/mammoth@1.6.0";
-// NOTE: pdf-parse is imported lazily inside the PDF branch. Importing it at the
-// top level runs a file-read at module load that crashes the function on boot
-// under Deno, which 500s every request (including non-PDF docx/txt grading).
+// NOTE: mammoth and pdf-parse are imported lazily inside their respective
+// branches. Importing either at the top level crashes the function on boot
+// under Deno (WORKER_ERROR / 500 on every request, including docx/txt grading).
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +19,10 @@ const corsHeaders = {
 async function extractTextFromDocxWithMammoth(arrayBuffer: ArrayBuffer, fileName: string): Promise<string> {
   try {
     console.log(`Using Mammoth to extract text from: ${fileName}`);
-    
+
+    const mammothModule = await import("https://esm.sh/mammoth@1.6.0");
+    const mammoth = mammothModule.default ?? mammothModule;
+
     // Use mammoth to extract raw text from the .docx file
     const result = await mammoth.extractRawText({ arrayBuffer });
 
