@@ -5,7 +5,7 @@ export const CORS_HEADERS = {
 };
 
 export const OPENAI_CONFIG = {
-  model: 'gpt-4o',
+  model: 'gpt-4o-mini',
   temperature: 0.7,
   max_tokens: 1500,
 };

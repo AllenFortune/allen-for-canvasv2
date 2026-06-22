@@ -3,12 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Submission } from '@/types/grading';
 import { toast } from '@/hooks/use-toast';
 import { useCanvasCredentials } from './useCanvasCredentials';
-import { useSubscription } from './useSubscription';
 import { useAuditLog } from './useAuditLog';
 
 export const useGradeSaving = () => {
   const { getCanvasCredentials } = useCanvasCredentials();
-  const { incrementUsage } = useSubscription();
   const { logAction } = useAuditLog();
 
   const saveGrade = async (
@@ -39,11 +37,8 @@ export const useGradeSaving = () => {
       return false;
     }
 
-    // Check usage limits before proceeding (now uses billing period logic)
-    const canProceed = await incrementUsage();
-    if (!canProceed) {
-      return false; // Toast message already shown in incrementUsage
-    }
+    // Usage is metered on AI feedback generation (the cost event), not on save.
+    // Saving a grade — manual or AI-assisted — does not consume a submission.
 
     // Find the submission to get the user_id
     const submission = submissions.find(sub => sub.id === submissionId);
