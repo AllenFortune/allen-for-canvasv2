@@ -73,7 +73,7 @@ const Auth = () => {
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
           });
-          navigate('/dashboard');
+          navigate(nextPath);
         }
       } else {
         const { error } = await signUp(email, password, fullName, schoolName);
