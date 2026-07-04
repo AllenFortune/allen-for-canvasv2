@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CORS_HEADERS } from './config.ts';
 import { generateSystemPrompt, generateUserPrompt, GradingRequest } from './prompt-generators.ts';
 import { callOpenAI, parseAIResponse } from './openai-service.ts';
+import { overLimitResponse } from './usage-guard.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,8 +13,12 @@ serve(async (req) => {
   }
 
   try {
+    // Server-side submission-limit backstop (fails open — see usage-guard.ts).
+    const limitResponse = await overLimitResponse(req, CORS_HEADERS);
+    if (limitResponse) return limitResponse;
+
     const requestBody = await req.json();
-    
+
     // Handle quiz question grading
     if (requestBody.isQuizQuestion) {
       const {
