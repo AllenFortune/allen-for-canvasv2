@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getTierByAmount } from "../_shared/plans.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -149,75 +150,38 @@ serve(async (req) => {
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
       
-      logStep("Price details retrieved", { priceId, amount, currency: price.currency });
-      
-      // First try explicit price ID mapping for known price IDs
-      const priceIdToTierMap: { [key: string]: string } = {
-        // Lite Plan price IDs
-        'price_1RXUqTGG0TRs3C9HhMklQ6OX': 'Lite Plan',
-        'price_1RfZ7nGG0TRs3C9Hdv7X8esV': 'Lite Plan',
-        
-        // Core Plan price IDs (updated based on upgrade logic)
-        'price_1RxIaOGG0TRs3C9Hzx4y8frJ': 'Core Plan', // Fixed: $19.00 Core Plan
-        'price_1RXUq9GG0TRs3C9HyLzQcO5X': 'Core Plan',
-        'price_1Swk9KGG0TRs3C9Hcore2024': 'Core Plan', // Dynamic Core Plan price
-        'price_core_plan_monthly': 'Core Plan', // Generic Core Plan monthly
-        'price_core_plan_yearly': 'Core Plan', // Generic Core Plan yearly
-        
-        // Full-Time Plan price IDs
-        'price_1RXUrFGG0TRs3C9HfullTime': 'Full-Time Plan',
-        
-        // Super Plan price IDs
-        'price_1RXUsGGG0TRs3C9Hsuper2024': 'Super Plan',
-      };
-      
-      if (priceIdToTierMap[priceId]) {
-        subscriptionTier = priceIdToTierMap[priceId];
-        logStep("Tier determined by price ID mapping", { priceId, subscriptionTier });
-      } else {
-        // Enhanced amount-based mapping with coupon handling - CORRECTED PRICING
-        if (amount >= 9999) { // $99.99+ = Super Plan
-          subscriptionTier = "Super Plan";
-        } else if (amount >= 5900) { // $59.00+ = Full-Time Plan (FIXED: was 6999)
-          subscriptionTier = "Full-Time Plan";
-        } else if (amount >= 1900) { // $19.00+ = Core Plan (FIXED: was 4999)
-          subscriptionTier = "Core Plan";
-        } else if (amount >= 900) { // $9.00+ = Lite Plan
-          subscriptionTier = "Lite Plan";
-        } else if (amount === 0) {
-          // For $0 subscriptions (coupons), check the product/price metadata
-          logStep("Zero amount subscription detected - likely coupon", { priceId, subscriptionId: subscription.id });
-          
-          try {
-            const product = await stripe.products.retrieve(price.product as string);
-            logStep("Product metadata for zero amount sub", { productMetadata: product.metadata });
-            
-            // Check if there's a tier indicated in metadata
-            if (product.metadata?.tier) {
-              subscriptionTier = product.metadata.tier;
-            } else if (product.name?.toLowerCase().includes('lite')) {
-              subscriptionTier = "Lite Plan";
-            } else if (product.name?.toLowerCase().includes('core')) {
-              subscriptionTier = "Core Plan";
-            } else if (product.name?.toLowerCase().includes('full')) {
-              subscriptionTier = "Full-Time Plan";
-            } else {
-              // Default for coupon subscriptions - assume Lite Plan
-              subscriptionTier = "Lite Plan";
-            }
-          } catch (productError) {
-            logStep("Error retrieving product for zero amount sub", { error: productError });
-            subscriptionTier = "Lite Plan"; // Safe default for coupons
+      const interval = price.recurring?.interval === "year" ? "year" : "month";
+      logStep("Price details retrieved", { priceId, amount, interval, currency: price.currency });
+
+      if (amount === 0) {
+        // For $0 subscriptions (coupons), the paid amount tells us nothing —
+        // fall back to product/price metadata to recover the intended tier.
+        logStep("Zero amount subscription detected - likely coupon", { priceId, subscriptionId: subscription.id });
+
+        try {
+          const product = await stripe.products.retrieve(price.product as string);
+          logStep("Product metadata for zero amount sub", { productMetadata: product.metadata });
+
+          if (product.metadata?.tier) {
+            subscriptionTier = product.metadata.tier;
+          } else if (product.name?.toLowerCase().includes('lite')) {
+            subscriptionTier = "Lite Plan";
+          } else if (product.name?.toLowerCase().includes('core')) {
+            subscriptionTier = "Core Plan";
+          } else if (product.name?.toLowerCase().includes('full')) {
+            subscriptionTier = "Full-Time Plan";
+          } else {
+            // Default for coupon subscriptions - assume Lite Plan
+            subscriptionTier = "Lite Plan";
           }
-        } else {
-          subscriptionTier = "Free Trial"; // Fallback for unexpected amounts
+        } catch (productError) {
+          logStep("Error retrieving product for zero amount sub", { error: productError });
+          subscriptionTier = "Lite Plan"; // Safe default for coupons
         }
-        logStep("Tier determined by amount mapping", { priceId, amount, subscriptionTier });
-        
-        // Log unknown price IDs for future mapping
-        if (!priceIdToTierMap[priceId]) {
-          logStep("Unknown price ID encountered - add to mapping", { priceId, amount, detectedTier: subscriptionTier });
-        }
+      } else {
+        // Infer tier from paid amount + interval via the shared catalog.
+        subscriptionTier = getTierByAmount(amount, interval);
+        logStep("Tier determined by amount mapping", { priceId, amount, interval, subscriptionTier });
       }
     } else {
       logStep("No active subscription found");

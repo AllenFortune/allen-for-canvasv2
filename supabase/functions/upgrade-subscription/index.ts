@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getPlanPrice } from "../_shared/plans.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,8 +37,19 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const body = await req.json();
-    const { planName, monthlyPrice, yearlyPrice, isYearly } = body;
-    
+    const { planName, isYearly } = body;
+
+    // Server-authoritative price. Never trust a price from the request body —
+    // otherwise a caller can self-upgrade to any tier for an arbitrary amount.
+    const price = getPlanPrice(planName, isYearly === true);
+    if (price === null) {
+      logStep("Rejected unknown/unsellable plan", { planName });
+      return new Response(
+        JSON.stringify({ error: `Invalid plan: ${planName}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2023-10-16" });
     
     // Find existing customer
@@ -66,7 +78,6 @@ serve(async (req) => {
       currentPriceId: currentSubscription.items.data[0].price.id
     });
 
-    const price = isYearly ? yearlyPrice : monthlyPrice;
     const interval = isYearly ? "year" : "month";
 
     // Create new price for the upgrade

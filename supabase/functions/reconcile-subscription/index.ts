@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getTierByAmount } from "../_shared/plans.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -105,30 +106,21 @@ async function reconcileUserSubscription(userEmail: string, supabase: any, strip
       billingCycleStart = new Date(subscription.current_period_start * 1000).toISOString();
       nextResetDate = new Date(subscription.current_period_end * 1000).toISOString();
       
-      // Get price to determine tier
+      // Get price to determine tier. Checkout mints ad-hoc Stripe prices, so
+      // infer tier from the paid amount + interval via the shared catalog.
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
-      
-      // Map price IDs and amounts to subscription tiers
-      const priceToTierMap: { [key: string]: string } = {
-        'price_1QbkZqE6GV5VVdXqHDYWl8lN': 'Lite Plan',     // $24.95/month
-        'price_1QbkaIE6GV5VVdXqaI4bGTBX': 'Lite Plan',     // $249.50/year
-        'price_1QbkbJE6GV5VVdXq8RWMCMIp': 'Core Plan',     // $74.95/month
-        'price_1QbkbgE6GV5VVdXqhKnP5xar': 'Core Plan',     // $749.50/year
-        'price_1QbkcXE6GV5VVdXqJLWiFlYb': 'Full-Time Plan', // $199.95/month
-        'price_1QbkctE6GV5VVdXqtWzGNxjL': 'Full-Time Plan', // $1999.50/year
-        'price_1QbkdOE6GV5VVdXqwLz4vCAW': 'Super Plan',    // $299.95/month
-        'price_1QbkdlE6GV5VVdXqZLpHMmwC': 'Super Plan',    // $2999.50/year
-      };
-      
-      subscriptionTier = priceToTierMap[priceId] || determineTierByAmount(amount);
-      
-      logStep("Determined subscription tier from Stripe", { 
-        priceId, 
-        amount, 
+      const interval = price.recurring?.interval === "year" ? "year" : "month";
+
+      subscriptionTier = getTierByAmount(amount, interval);
+
+      logStep("Determined subscription tier from Stripe", {
+        priceId,
+        amount,
+        interval,
         subscriptionTier,
-        userEmail 
+        userEmail
       });
     }
 
@@ -169,12 +161,4 @@ async function reconcileUserSubscription(userEmail: string, supabase: any, strip
   } catch (error) {
     logStep("Error reconciling user subscription", { error, userEmail });
   }
-}
-
-function determineTierByAmount(amount: number): string {
-  if (amount >= 29995) return "Super Plan";      // $299.95+
-  if (amount >= 19995) return "Full-Time Plan";  // $199.95+
-  if (amount >= 7495) return "Core Plan";        // $74.95+
-  if (amount >= 2495) return "Lite Plan";        // $24.95+
-  return "Free Trial";
 }
