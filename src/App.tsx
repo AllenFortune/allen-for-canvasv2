@@ -35,6 +35,7 @@ import AdminSetup from "./pages/AdminSetup";
 import AIRubricBuilder from "@/pages/AIRubricBuilder";
 import CustomGPTBuilder from "./pages/CustomGPTBuilder";
 import AISyllabusBuilder from "./pages/AISyllabusBuilder";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
@@ -74,7 +75,9 @@ function App() {
               <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />
               <Route path="/custom-gpt-builder" element={<CustomGPTBuilder />} />
               <Route path="/ai-syllabus-builder" element={<AISyllabusBuilder />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               <Route path="*" element={<NotFound />} />
+
             </Routes>
             <Toaster />
           </div>
