@@ -17,6 +17,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // This function performs a privileged mass reset of every user's usage and
+  // is deployed with verify_jwt = false, so it must authorize callers itself.
+  // Require the service-role key (the scheduler already runs with it); reject
+  // anon/public callers so nobody can hand out free submissions on demand.
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const bearer = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
+  if (!serviceRoleKey || bearer !== serviceRoleKey) {
+    logStep("Rejected unauthorized caller");
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401,
+    });
+  }
+
   try {
     logStep("Starting daily usage reset check");
 
