@@ -35,6 +35,7 @@ import AdminSetup from "./pages/AdminSetup";
 import AIRubricBuilder from "@/pages/AIRubricBuilder";
 import CustomGPTBuilder from "./pages/CustomGPTBuilder";
 import AISyllabusBuilder from "./pages/AISyllabusBuilder";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
