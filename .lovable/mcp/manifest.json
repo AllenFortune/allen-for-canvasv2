@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://fnxbysvezshnikqboplh.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "allen-canvas-mcp",
+      "version": "0.1.0",
+      "title": "Allen for Canvas"
+    },
+    "tools": [
+      {
+        "name": "list_courses",
+        "title": "List Canvas courses",
+        "description": "List the signed-in teacher's Canvas courses via the connected Canvas account. Requires the user to have connected Canvas in Allen.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_assignments",
+        "title": "List assignments in a Canvas course",
+        "description": "List assignments for a specific Canvas course belonging to the signed-in teacher. Provide the numeric Canvas course id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "courseId": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "The Canvas course id (as returned by list_courses)."
+            }
+          },
+          "required": [
+            "courseId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_assignments_needing_grading",
+        "title": "List assignments needing grading",
+        "description": "List all assignments across the signed-in teacher's Canvas courses that currently have submissions needing grading.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
