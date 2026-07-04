@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import Seo from "@/components/Seo";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -82,6 +83,11 @@ const InstitutionalInquiry = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"For Departments & Institutions | Allen Grade Assist"}
+        description={"Bring AI-assisted Canvas grading to your department. Volume plans, onboarding, and FERPA-aware handling for community colleges and universities."}
+        path="/institutional-inquiry"
+      />
       
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-6">

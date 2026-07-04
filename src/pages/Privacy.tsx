@@ -1,5 +1,6 @@
 
 import React from 'react';
+import Seo from "@/components/Seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,11 @@ const Privacy = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"Privacy & FERPA | Allen Grade Assist"}
+        description={"How Allen Grade Assist handles your data and student information, with FERPA-aware practices for AI-assisted grading."}
+        path="/privacy"
+      />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-indigo-50 to-white py-16">

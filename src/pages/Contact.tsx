@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import Seo from "@/components/Seo";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -83,6 +84,11 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"Contact | Allen Grade Assist"}
+        description={"Questions about AI-assisted Canvas grading? Get in touch with Allen Grade Assist."}
+        path="/contact"
+      />
       
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-6">

@@ -1,6 +1,7 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -112,6 +113,11 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Seo
+        title="Pricing — Allen Grade Assist | AI Canvas Grading Plans"
+        description="Simple plans for AI-assisted Canvas grading. Start free with 10 submissions, then scale to 250, 750, or unlimited graded submissions per month. Built by a working professor."
+        path="/pricing"
+      />
       <Header />
       
       <section className="py-20">

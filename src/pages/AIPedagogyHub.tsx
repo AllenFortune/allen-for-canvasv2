@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Seo from "@/components/Seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PedagogyHero from "@/components/pedagogy/PedagogyHero";
@@ -17,6 +18,11 @@ const AIPedagogyHub = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"AI in Teaching — Pedagogy Hub | Allen Grade Assist"}
+        description={"Practical, honest guidance on using AI in higher-ed teaching: rubric design, academic-integrity policy, and communicating AI-assisted grading to students."}
+        path="/ai-pedagogy"
+      />
       <div className="py-20">
         <div className="max-w-7xl mx-auto px-6 py-8">
         <PedagogyHero />

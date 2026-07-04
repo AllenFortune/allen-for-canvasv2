@@ -1,4 +1,5 @@
 import React from 'react';
+import Seo from "@/components/Seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,11 @@ const Features = () => {
   }];
   return <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"Features — AI Canvas Grading, Rubrics & Feedback | Allen Grade Assist"}
+        description={"See how Allen Grade Assist imports Canvas work, drafts rubric-aligned feedback you control, and passes grades back to SpeedGrader — for discussions, assignments, and short-answer quizzes."}
+        path="/features"
+      />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-indigo-50 to-white py-20">

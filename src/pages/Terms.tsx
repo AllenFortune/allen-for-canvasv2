@@ -1,5 +1,6 @@
 
 import React from 'react';
+import Seo from "@/components/Seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,11 @@ const Terms = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <Seo
+        title={"Terms of Service | Allen Grade Assist"}
+        description={"The terms of service for Allen Grade Assist, the AI-powered Canvas grading assistant."}
+        path="/terms"
+      />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-indigo-50 to-white py-16">
