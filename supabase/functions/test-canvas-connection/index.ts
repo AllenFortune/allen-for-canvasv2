@@ -1,11 +1,30 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Resolve a token to plaintext: freshly-typed plaintext passes through; a
+// stored (encrypted) token being re-tested is decrypted.
+async function resolveCanvasToken(token: string): Promise<string> {
+  if (/^\d+~[A-Za-z0-9]+$/.test(token)) return token;
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+    const { data, error } = await admin.rpc("decrypt_canvas_token", { encrypted_token: token });
+    if (error || !data) return token;
+    return data as string;
+  } catch (_e) {
+    return token;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,8 +35,8 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const canvasUrl = body.canvasUrl;
-    // Token comes directly from user input during setup, no need to decrypt
-    const canvasToken = body.canvasToken?.trim();
+    const rawToken = body.canvasToken?.trim();
+    const canvasToken = rawToken ? await resolveCanvasToken(rawToken) : rawToken;
 
     if (!canvasUrl || !canvasToken) {
       return new Response(

@@ -1,6 +1,26 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+// Canvas tokens are stored encrypted at rest. The client passes whatever it
+// read from profiles, so resolve it to plaintext here. A freshly-typed
+// plaintext token passes through unchanged (decrypt_canvas_token handles both).
+async function resolveCanvasToken(token: string): Promise<string> {
+  if (/^\d+~[A-Za-z0-9]+$/.test(token)) return token; // plaintext Canvas token
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+    const { data, error } = await admin.rpc("decrypt_canvas_token", { encrypted_token: token });
+    if (error || !data) return token;
+    return data as string;
+  } catch (_e) {
+    return token;
+  }
+}
 
 // CORS headers for browser access
 const corsHeaders = {
@@ -33,6 +53,8 @@ serve(async (req) => {
       });
     }
 
+    const resolvedToken = await resolveCanvasToken(canvasToken);
+
     // Build the full URL with query parameters
     let apiUrl = `${canvasUrl}/api/v1/${endpoint}`;
 
@@ -62,7 +84,7 @@ serve(async (req) => {
     const requestOptions: RequestInit = {
       method: method,
       headers: {
-        'Authorization': `Bearer ${canvasToken}`,
+        'Authorization': `Bearer ${resolvedToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }

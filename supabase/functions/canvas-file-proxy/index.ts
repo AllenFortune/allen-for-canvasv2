@@ -103,12 +103,30 @@ serve(async (req) => {
     }
 
     console.log('✅ Canvas credentials found for instance:', profile.canvas_instance_url);
+
+    // Decrypt the token if it is stored encrypted (same pattern as the other
+    // Canvas functions). Plaintext tokens pass through unchanged.
+    let canvasToken = profile.canvas_access_token as string;
+    if (!canvasToken.match(/^\d+~[A-Za-z0-9]+$/)) {
+      const { data: decryptedToken, error: decryptError } = await supabase.rpc('decrypt_canvas_token', {
+        encrypted_token: canvasToken
+      });
+      if (decryptError || !decryptedToken) {
+        console.error('Error decrypting Canvas token:', decryptError?.message);
+        return new Response(JSON.stringify({ error: 'Failed to decrypt Canvas token' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        });
+      }
+      canvasToken = decryptedToken;
+    }
+
     console.log('📡 Fetching Canvas file:', fileUrl);
 
     // Fetch the file from Canvas with proper authorization
     const fileResponse = await fetch(fileUrl, {
       headers: {
-        'Authorization': `Bearer ${profile.canvas_access_token}`,
+        'Authorization': `Bearer ${canvasToken}`,
         'User-Agent': 'Allen-AI-Grading-Assistant'
       }
     });
