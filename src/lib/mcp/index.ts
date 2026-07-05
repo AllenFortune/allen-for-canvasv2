@@ -82,13 +82,11 @@ if (typeof Deno !== "undefined" && Deno?.serve && !g.__mcpServePatched) {
   denoRef.serve = ((innerHandler: (req: Request) => Response | Promise<Response>) => {
     return originalServe(async (request: Request) => {
       const url = new URL(request.url);
-      const forwardedProto =
-        request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
-      const forwardedHost =
-        request.headers.get("x-forwarded-host") ??
-        request.headers.get("host") ??
-        url.host;
-      const origin = `${forwardedProto}://${forwardedHost}`;
+      // Always derive the public origin from SUPABASE_URL — inside Supabase's
+      // edge runtime the request Host is `edge-runtime.supabase.com`, which
+      // would break OAuth resource-URL matching for MCP clients.
+      const publicSupabaseUrl = denoRef.env.get("SUPABASE_URL") ?? `https://${projectRef}.supabase.co`;
+      const origin = publicSupabaseUrl.replace(/\/+$/, "");
       const prmUrl = `${origin}${MCP_RESOURCE_PATH}${PRM_SUFFIX}`;
 
       if (url.pathname.endsWith(PRM_SUFFIX)) {
