@@ -172,6 +172,19 @@ const CanvasAiGrading = () => {
         </div>
       </section>
 
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Comparing Canvas AI Grading Tools?</h2>
+          <p className="text-gray-600 mb-6">
+            Honest head-to-heads — including what each competitor does better than we do:{' '}
+            <Link to="/vs/timelygrader" className="text-indigo-600 font-medium hover:text-indigo-700">vs TimelyGrader</Link> ·{' '}
+            <Link to="/vs/gradewithai" className="text-indigo-600 font-medium hover:text-indigo-700">vs GradeWithAI</Link> ·{' '}
+            <Link to="/vs/essaygrader" className="text-indigo-600 font-medium hover:text-indigo-700">vs EssayGrader</Link> ·{' '}
+            <Link to="/vs/gradescope" className="text-indigo-600 font-medium hover:text-indigo-700">vs Gradescope</Link>
+          </p>
+        </div>
+      </section>
+
       <FaqSection items={faqs} />
 
       <section className="py-20 bg-indigo-600">

@@ -41,6 +41,10 @@ import GradeCanvasDiscussions from "./pages/GradeCanvasDiscussions";
 import GradeCanvasAssignments from "./pages/GradeCanvasAssignments";
 import CanvasQuizGrading from "./pages/CanvasQuizGrading";
 import SecurityAndPrivacy from "./pages/SecurityAndPrivacy";
+import VsEssayGrader from "./pages/VsEssayGrader";
+import VsTimelyGrader from "./pages/VsTimelyGrader";
+import VsGradescope from "./pages/VsGradescope";
+import VsGradeWithAi from "./pages/VsGradeWithAi";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +84,10 @@ function App() {
               <Route path="/grade-canvas-assignments" element={<GradeCanvasAssignments />} />
               <Route path="/canvas-quiz-grading" element={<CanvasQuizGrading />} />
               <Route path="/security-and-privacy" element={<SecurityAndPrivacy />} />
+              <Route path="/vs/essaygrader" element={<VsEssayGrader />} />
+              <Route path="/vs/timelygrader" element={<VsTimelyGrader />} />
+              <Route path="/vs/gradescope" element={<VsGradescope />} />
+              <Route path="/vs/gradewithai" element={<VsGradeWithAi />} />
               <Route path="/admin-portal" element={<AdminPortal />} />
               <Route path="/admin-setup" element={<AdminSetup />} />
               <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />
