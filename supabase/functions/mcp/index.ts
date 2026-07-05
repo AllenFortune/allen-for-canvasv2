@@ -3,7 +3,9 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { createClient } from "npm:@supabase/supabase-js@^2.110.0";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 // src/lib/mcp/tools/list-courses.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
@@ -138,17 +140,117 @@ var list_assignments_needing_grading_default = defineTool3({
 });
 
 // src/lib/mcp/index.ts
+var authStore = new AsyncLocalStorage();
+function wrap(tool) {
+  const original = tool.handler;
+  return {
+    ...tool,
+    handler: (input, rawCtx) => {
+      const store = authStore.getStore();
+      const proxy = new Proxy(rawCtx ?? {}, {
+        get(target, prop) {
+          if (prop === "isAuthenticated") return () => !!store;
+          if (prop === "getToken") return () => store?.token;
+          if (prop === "getUserId") return () => store?.userId;
+          if (prop === "getUserEmail") return () => store?.email;
+          const v = target[prop];
+          return typeof v === "function" ? v.bind(target) : v;
+        }
+      });
+      return original(input, proxy);
+    }
+  };
+}
 var projectRef = "fnxbysvezshnikqboplh";
+var AS_ISSUER = `https://${projectRef}.supabase.co/auth/v1`;
+var PRM_SUFFIX = "/.well-known/oauth-protected-resource";
+var MCP_RESOURCE_PATH = "/functions/v1/mcp";
+var CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, mcp-protocol-version",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS, HEAD"
+};
+var g = globalThis;
+if (typeof Deno !== "undefined" && Deno?.serve && !g.__mcpServePatched) {
+  g.__mcpServePatched = true;
+  const denoRef = Deno;
+  const originalServe = denoRef.serve.bind(denoRef);
+  denoRef.serve = ((innerHandler) => {
+    return originalServe(async (request) => {
+      const url = new URL(request.url);
+      const forwardedProto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+      const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
+      const origin = `${forwardedProto}://${forwardedHost}`;
+      const prmUrl = `${origin}${MCP_RESOURCE_PATH}${PRM_SUFFIX}`;
+      if (url.pathname.endsWith(PRM_SUFFIX)) {
+        if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+        return new Response(
+          JSON.stringify({
+            resource: `${origin}${MCP_RESOURCE_PATH}`,
+            authorization_servers: [AS_ISSUER],
+            bearer_methods_supported: ["header"],
+            resource_name: "Allen for Canvas"
+          }),
+          {
+            headers: {
+              ...CORS,
+              "Content-Type": "application/json",
+              "Cache-Control": "public, max-age=300"
+            }
+          }
+        );
+      }
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: CORS });
+      }
+      const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization");
+      const token = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : void 0;
+      const unauthorized = (desc) => new Response(
+        JSON.stringify({ error: "unauthorized", error_description: desc }),
+        {
+          status: 401,
+          headers: {
+            ...CORS,
+            "Content-Type": "application/json",
+            "WWW-Authenticate": `Bearer realm="mcp", resource_metadata="${prmUrl}", error="invalid_token", error_description="${desc}"`
+          }
+        }
+      );
+      if (!token) return unauthorized("missing_bearer_token");
+      const supabaseUrl = denoRef.env.get("SUPABASE_URL");
+      const supabaseAnonKey = denoRef.env.get("SUPABASE_ANON_KEY");
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return new Response(JSON.stringify({ error: "server_misconfigured" }), {
+          status: 500,
+          headers: { ...CORS, "Content-Type": "application/json" }
+        });
+      }
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data?.user) {
+        return unauthorized(error?.message ?? "invalid_token");
+      }
+      return authStore.run(
+        { token, userId: data.user.id, email: data.user.email ?? void 0 },
+        () => Promise.resolve(innerHandler(request))
+      );
+    });
+  });
+}
 var mcp_default = defineMcp({
   name: "allen-canvas-mcp",
   title: "Allen for Canvas",
   version: "0.1.0",
   instructions: "Tools for the Allen for Canvas grading assistant. Use `list_courses` to see the signed-in teacher's Canvas courses, `list_assignments` to browse assignments in one course, and `list_assignments_needing_grading` to find submissions that still need grading.",
-  auth: auth.oauth.issuer({
-    issuer: `https://${projectRef}.supabase.co/auth/v1`,
-    acceptedAudiences: "authenticated"
-  }),
-  tools: [list_courses_default, list_assignments_default, list_assignments_needing_grading_default]
+  // No SDK `auth` here — the monkey-patched Deno.serve above enforces auth via
+  // supabase.auth.getUser(token), which works with legacy HS256 signing.
+  tools: [
+    wrap(list_courses_default),
+    wrap(list_assignments_default),
+    wrap(list_assignments_needing_grading_default)
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts
