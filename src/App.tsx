@@ -36,6 +36,11 @@ import AIRubricBuilder from "@/pages/AIRubricBuilder";
 import CustomGPTBuilder from "./pages/CustomGPTBuilder";
 import AISyllabusBuilder from "./pages/AISyllabusBuilder";
 import OAuthConsent from "./pages/OAuthConsent";
+import CanvasAiGrading from "./pages/CanvasAiGrading";
+import GradeCanvasDiscussions from "./pages/GradeCanvasDiscussions";
+import GradeCanvasAssignments from "./pages/GradeCanvasAssignments";
+import CanvasQuizGrading from "./pages/CanvasQuizGrading";
+import SecurityAndPrivacy from "./pages/SecurityAndPrivacy";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +75,11 @@ function App() {
               <Route path="/ai-pedagogy" element={<AIPedagogyHub />} />
               <Route path="/ai-assignment-integration" element={<AIAssignmentIntegration />} />
               <Route path="/institutional-inquiry" element={<InstitutionalInquiry />} />
+              <Route path="/canvas-ai-grading" element={<CanvasAiGrading />} />
+              <Route path="/grade-canvas-discussions" element={<GradeCanvasDiscussions />} />
+              <Route path="/grade-canvas-assignments" element={<GradeCanvasAssignments />} />
+              <Route path="/canvas-quiz-grading" element={<CanvasQuizGrading />} />
+              <Route path="/security-and-privacy" element={<SecurityAndPrivacy />} />
               <Route path="/admin-portal" element={<AdminPortal />} />
               <Route path="/admin-setup" element={<AdminSetup />} />
               <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />

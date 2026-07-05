@@ -16,13 +16,17 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
+              <li><Link to="/canvas-ai-grading" className="text-gray-400 hover:text-white">Canvas AI Grading</Link></li>
+              <li><Link to="/grade-canvas-discussions" className="text-gray-400 hover:text-white">Grade Discussions</Link></li>
+              <li><Link to="/grade-canvas-assignments" className="text-gray-400 hover:text-white">Grade Assignments</Link></li>
+              <li><Link to="/canvas-quiz-grading" className="text-gray-400 hover:text-white">Grade Quizzes</Link></li>
               <li><Link to="/ai-pedagogy" className="text-gray-400 hover:text-white">AI Literacy</Link></li>
               <li><Link to="/features" className="text-gray-400 hover:text-white">Features</Link></li>
               <li><Link to="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
               <li><Link to="/canvas-setup" className="text-gray-400 hover:text-white">Get Started</Link></li>
             </ul>
           </div>
-          
+
           <div>
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
@@ -35,6 +39,7 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2">
+              <li><Link to="/security-and-privacy" className="text-gray-400 hover:text-white">Security &amp; Privacy</Link></li>
               <li><Link to="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</Link></li>
               <li><Link to="/terms" className="text-gray-400 hover:text-white">Terms of Service</Link></li>
             </ul>
