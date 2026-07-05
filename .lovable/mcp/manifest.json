@@ -3,11 +3,7 @@
   "sdk_version": "0.20.0",
   "path": "/functions/v1/mcp",
   "auth": {
-    "type": "oauth",
-    "issuer": "https://fnxbysvezshnikqboplh.supabase.co/auth/v1",
-    "accepted_audiences": [
-      "authenticated"
-    ]
+    "type": "none"
   },
   "mcp": {
     "server": {
