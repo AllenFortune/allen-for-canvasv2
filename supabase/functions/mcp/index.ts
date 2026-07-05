@@ -178,9 +178,8 @@ if (typeof Deno !== "undefined" && Deno?.serve && !g.__mcpServePatched) {
   denoRef.serve = ((innerHandler) => {
     return originalServe(async (request) => {
       const url = new URL(request.url);
-      const forwardedProto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
-      const forwardedHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? url.host;
-      const origin = `${forwardedProto}://${forwardedHost}`;
+      const publicSupabaseUrl = denoRef.env.get("SUPABASE_URL") ?? `https://${projectRef}.supabase.co`;
+      const origin = publicSupabaseUrl.replace(/\/+$/, "");
       const prmUrl = `${origin}${MCP_RESOURCE_PATH}${PRM_SUFFIX}`;
       if (url.pathname.endsWith(PRM_SUFFIX)) {
         if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
