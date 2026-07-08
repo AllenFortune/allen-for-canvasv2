@@ -47,6 +47,7 @@ import VsGradescope from "./pages/VsGradescope";
 import VsGradeWithAi from "./pages/VsGradeWithAi";
 import BlogIndex from "./pages/blog/BlogIndex";
 import RubricDesignForAiGrading from "./pages/blog/RubricDesignForAiGrading";
+import HowIGraded3782Submissions from "./pages/blog/HowIGraded3782Submissions";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ function App() {
               <Route path="/vs/gradewithai" element={<VsGradeWithAi />} />
               <Route path="/blog" element={<BlogIndex />} />
               <Route path="/blog/rubric-design-for-ai-grading" element={<RubricDesignForAiGrading />} />
+              <Route path="/blog/how-i-graded-3782-submissions-with-ai" element={<HowIGraded3782Submissions />} />
               <Route path="/admin-portal" element={<AdminPortal />} />
               <Route path="/admin-setup" element={<AdminSetup />} />
               <Route path="/ai-rubric-builder" element={<AIRubricBuilder />} />
