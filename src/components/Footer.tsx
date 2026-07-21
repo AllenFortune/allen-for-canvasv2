@@ -34,6 +34,7 @@ const Footer = () => {
               <li><Link to="/blog" className="text-gray-400 hover:text-white">Blog</Link></li>
               <li><Link to="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               <li><Link to="/contact" className="text-gray-400 hover:text-white">Support</Link></li>
+              <li><a href="https://www.amazon.com/dp/B0H7LWSP3N" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">The DIVER Book</a></li>
             </ul>
           </div>
           
