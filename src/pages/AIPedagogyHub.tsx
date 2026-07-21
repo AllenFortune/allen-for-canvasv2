@@ -99,6 +99,31 @@ const AIPedagogyHub = () => {
           </CardContent>
         </Card>
 
+        {/* The DIVER Framework Book Promo Card */}
+        <Card className="mb-12 border-l-4 border-l-amber-600 bg-gradient-to-r from-amber-50 to-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="w-6 h-6 text-amber-600" />
+              The DIVER Framework — The Book
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              The complete framework behind the AI Literacy Builder. The DIVER Framework: Teaching Thinking in the Age of AI — A Practical Handbook for College Faculty, by Allen Fortune Jr. Available in paperback and Kindle.
+            </p>
+            <a
+              href="https://www.amazon.com/dp/B0H7LWSP3N"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button className="bg-amber-600 hover:bg-amber-700">
+                Get the Book on Amazon
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
+
         {/* AI Syllabus Policy Builder Card */}
         <Card className="mb-12 border-l-4 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white">
           <CardHeader>
