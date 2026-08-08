@@ -10,13 +10,13 @@ const FallPromotionBanner = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const showBanner = urlParams.get('showBanner');
     if (showBanner === 'true') {
-      localStorage.removeItem("fall2025-banner-dismissed");
+      localStorage.removeItem("fall2026-banner-dismissed");
       setIsVisible(true);
       return;
     }
 
     // Check if user has dismissed the banner
-    const isDismissed = localStorage.getItem("fall2025-banner-dismissed");
+    const isDismissed = localStorage.getItem("fall2026-banner-dismissed");
     console.log("Banner dismissed status:", isDismissed);
     if (isDismissed) {
       setIsVisible(false);
@@ -24,7 +24,7 @@ const FallPromotionBanner = () => {
   }, []);
   const handleDismiss = () => {
     setIsVisible(false);
-    localStorage.setItem("fall2025-banner-dismissed", "true");
+    localStorage.setItem("fall2026-banner-dismissed", "true");
   };
   const handleClaimDiscount = () => {
     navigate("/pricing");
@@ -40,9 +40,9 @@ const FallPromotionBanner = () => {
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div>
-                <h3 className="text-lg font-bold">Summer Special!</h3>
+                <h3 className="text-lg font-bold">Fall 2026 Special!</h3>
                 <p className="text-sm text-orange-100">
-                  Get 1 month of Lite Plan FREE with code <span className="font-semibold bg-white/20 px-2 py-1 rounded">ALLEN2025</span>
+                  Start the semester right — get 1 month of Lite Plan FREE with code <span className="font-semibold bg-white/20 px-2 py-1 rounded">FALL2026</span>
                 </p>
               </div>
               <Button onClick={handleClaimDiscount} variant="secondary" className="bg-white text-orange-600 hover:bg-orange-50 font-semibold whitespace-nowrap">
