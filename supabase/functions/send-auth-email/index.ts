@@ -299,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
       type: email_data.email_action_type,
       redirect_to: email_data.redirect_to
     });
-    let { token, redirect_to, email_action_type } = email_data;
+    let { token_hash, redirect_to, email_action_type } = email_data;
 
     // Ensure password recovery redirects to /update-password
     if (email_action_type === 'recovery') {
@@ -323,13 +323,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Construct the appropriate link based on the email type
     const baseUrl = Deno.env.get("SUPABASE_URL") || "https://fnxbysvezshnikqboplh.supabase.co";
-    const authLink = `${baseUrl}/auth/v1/verify?token=${token}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
-    
+    const authLink = `${baseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
+
     console.log('Auth link constructed:', {
       type: email_action_type,
-      hasToken: !!token,
+      hasToken: !!token_hash,
       redirectTo: redirect_to,
-      token: token ? `${token.substring(0, 8)}...` : 'none'
+      token: token_hash ? `${token_hash.substring(0, 8)}...` : 'none'
     });
 
     let emailHtml: string;
