@@ -48,6 +48,7 @@ import VsGradeWithAi from "./pages/VsGradeWithAi";
 import BlogIndex from "./pages/blog/BlogIndex";
 import RubricDesignForAiGrading from "./pages/blog/RubricDesignForAiGrading";
 import HowIGraded3782Submissions from "./pages/blog/HowIGraded3782Submissions";
+import InPractice from "./pages/InPractice";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ function App() {
               <Route path="/features" element={<Features />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<About />} />
+              <Route path="/in-practice" element={<InPractice />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/update-password" element={<UpdatePassword />} />
